@@ -56,7 +56,7 @@ export default function ResponsiveNav() {
   const { isOpen, close, toggle } = useMobileMenu(pathname);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-white/10 bg-zinc-950/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-11/12 items-center justify-between px-3 md:px-4">
         {/* Logo — left */}
         <Link

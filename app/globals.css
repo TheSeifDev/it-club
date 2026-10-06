@@ -81,5 +81,4 @@ body {
 
 .arabic {
   font-family: var(--font-alexandria), sans-serif;
-  direction: rtl;
 }

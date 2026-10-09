@@ -9,7 +9,7 @@ export default function HeadsSection() {
       id="heads"
       className="w-full border-t border-white/10 bg-[#050708] text-white"
     >
-      <div className="mx-auto w-full max-w-342.5 px-6 py-28 md:px-10 lg:px-0 lg:py-36">
+      <div className="mx-auto w-full max-w-[1520px] px-6 py-28 md:px-10 lg:px-12 lg:py-36">
         {/* Section Header Eyebrow */}
         <div className="flex items-center gap-5">
           <span className="font-mono text-sm font-medium tracking-[0.12em] text-[#8d8cff]">
@@ -41,9 +41,9 @@ export default function HeadsSection() {
 
           <div className="max-w-160">
             <p className="text-[18px] leading-[1.55] text-[#aeb4bb] md:text-[19px]">
-              Every track and committee is driven by people who build, organize,
-              support, and push the community forward. These are the leaders you
-              will meet, learn from, and work with inside IT Club.
+              Every track and committee is driven by dedicated leaders who build,
+              organize, support, and push the community forward. These are the people
+              you will meet, learn from, and collaborate with inside IT Club.
             </p>
 
             <p className="arabic mt-7 text-[17px] leading-[1.8] text-[#8f969d]">

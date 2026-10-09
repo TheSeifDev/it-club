@@ -18,9 +18,9 @@ const heads: Head[] = [
   },
   {
     name: "HEAD NAME",
-    role: "Student Relations",
-    arabicRole: "علاقات الطلاب",
-    track: "SR",
+    role: "Public Relations",
+    arabicRole: "العلاقات العامة",
+    track: "PR",
     color: "#ff3ca7",
   },
   {

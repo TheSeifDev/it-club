@@ -16,17 +16,18 @@ const tracks: Track[] = [
     background: "#061b16",
   },
   {
-    id: "sr",
+    id: "pr",
     number: "02",
-    title: "Student Relations",
-    arabicTitle: "علاقات الطلاب",
+    title: "Public Relations",
+    arabicTitle: "العلاقات العامة",
     description:
-      "Connecting the club with students and creating a strong community around technology, learning, events, and opportunities.",
+      "Building strong relationships between the club, students, university, and external partners. PR manages communication, partnerships, outreach, and the club's public image.",
     arabicDescription:
-      "ربط النادي بالطلاب وبناء مجتمع قوي حول التكنولوجيا والتعلم والفعاليات والفرص المختلفة.",
+      "بناء علاقات قوية بين النادي والطلاب والجامعة والشركاء الخارجيين. يهتم فريق العلاقات العامة بالتواصل والشراكات والتعاون وإبراز صورة النادي.",
     color: "#ff3ca7",
     background: "#1c0a18",
   },
+
   {
     id: "sm",
     number: "03",

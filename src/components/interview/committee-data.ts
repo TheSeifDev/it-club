@@ -41,6 +41,8 @@ export type TeamMember = {
   needsReview?: boolean;
   /** Notes regarding manual verification requirement */
   reviewNotes?: string;
+  /** Set to true if this record represents an alternate photo for an existing member */
+  isAlternate?: boolean;
 };
 
 export const teamMembers: TeamMember[] = [
@@ -236,6 +238,7 @@ export const teamMembers: TeamMember[] = [
     order: 19,
     needsReview: false,
     reviewNotes: "Alternate portrait for Marwan Awad.",
+    isAlternate: true,
   },
 ];
 
@@ -251,9 +254,17 @@ export const getMembersByCommittee = (committee: string): TeamMember[] => {
 };
 
 export const getVerifiedMembers = (): TeamMember[] => {
-  return teamMembers.filter((m) => !m.needsReview);
+  return teamMembers.filter((m) => !m.needsReview && !m.isAlternate);
 };
 
 export const getPendingReviewMembers = (): TeamMember[] => {
-  return teamMembers.filter((m) => m.needsReview);
+  return teamMembers.filter((m) => m.needsReview && !m.isAlternate);
+};
+
+/**
+ * Returns distinct active team members for gallery presentation,
+ * excluding alternate photos to avoid duplicate entries.
+ */
+export const getGalleryMembers = (): TeamMember[] => {
+  return teamMembers.filter((m) => !m.isAlternate);
 };

@@ -97,3 +97,69 @@ select:-webkit-autofill:focus {
   box-shadow: 0 0 0 1000px #050708 inset;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+
+/* ========================================
+   IT CLUB — Modern Professional Scrollbar
+   Sharp edges · Dark UI · Emerald accent
+======================================== */
+
+:root {
+  --scrollbar-track: #080a0b;
+  --scrollbar-thumb: #292e30;
+  --scrollbar-thumb-hover: #35e6a0;
+  --scrollbar-width: 8px;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 0;
+  border-radius: 0;
+  min-height: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #22c98a;
+}
+
+/* Corner between horizontal and vertical scrollbars */
+::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* Optional: horizontal scrollbar */
+::-webkit-scrollbar:horizontal {
+  height: 6px;
+}
+
+/* Respect nested scrollable areas */
+[ data-scrollable="true" ] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+[ data-scrollable="true" ]::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}

@@ -2,30 +2,32 @@
 
 import Image from "next/image";
 import type { TeamMember } from "@/src/components/interview/committee-data";
+import {
+  formatRoleMetadata,
+  formatCommitteeMetadata,
+} from "@/src/components/interview/committee-data";
+import { CountryFlag } from "./CountryFlag";
 
 export interface TeamMemberCardProps {
   member: TeamMember;
   priority?: boolean;
   onSelect?: (member: TeamMember) => void;
+  id?: string;
 }
 
 export const TeamMemberCard = ({
   member,
   priority = false,
   onSelect,
+  id,
 }: TeamMemberCardProps) => {
-  const countryLabel = member.countryName || "EGYPT";
-  const countryFlag = member.countryFlag || "🇪🇬";
-
-  const formatRoleTitle = () => {
-    if (member.committee && member.committee !== "IT Club" && member.committee !== "PENDING_VERIFICATION") {
-      return `${member.role} of ${member.committee}`;
-    }
-    if (member.committee === "IT Club") {
-      return `${member.role} of IT Club`;
-    }
-    return member.role || "Leader";
-  };
+  const countryLabel = member.countryName;
+  const roleLine = formatRoleMetadata(
+    member.role,
+    member.committee,
+    member.needsReview
+  );
+  const committeeLine = formatCommitteeMetadata(member.committee);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.key === "Enter" || e.key === " ") && onSelect) {
@@ -36,20 +38,21 @@ export const TeamMemberCard = ({
 
   return (
     <article
+      id={id ?? `team-card-${member.id}`}
       tabIndex={0}
       role="button"
       onClick={() => onSelect?.(member)}
       onKeyDown={handleKeyDown}
-      aria-label={`${member.name}, ${member.role} in ${member.committee}`}
+      aria-label={`${member.name}, ${roleLine}${committeeLine ? ` in ${committeeLine}` : ""}`}
       className="group relative aspect-3/4 w-full overflow-hidden bg-[#0a0d10] select-none rounded-none border border-white/5 transition-all duration-400 ease-out hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#35d98a] focus-visible:ring-offset-2 focus-visible:ring-offset-black cursor-pointer"
     >
       {/* Portrait Image */}
       {member.image ? (
         <Image
           src={member.image}
-          alt={`${member.name} — ${member.role}`}
+          alt={`${member.name} — ${roleLine}`}
           fill
-          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 17vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
           className="object-cover object-top filter grayscale contrast-[1.05] transition-all duration-400 ease-out group-hover:grayscale-0 group-hover:scale-[1.02] group-focus-visible:grayscale-0 group-focus-visible:scale-[1.02] motion-reduce:transition-none motion-reduce:transform-none"
           priority={priority}
           loading={priority ? undefined : "lazy"}
@@ -89,13 +92,17 @@ export const TeamMemberCard = ({
           className="w-7 h-[2px] bg-[#35d98a] mb-2 transform origin-left transition-all duration-400 ease-out opacity-0 scale-x-0 group-hover:opacity-100 group-hover:scale-x-100 group-focus-visible:opacity-100 group-focus-visible:scale-x-100 motion-reduce:transition-none"
         />
 
-        {/* Country Flag & Label (Visible in default state) */}
-        <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono font-medium tracking-[0.16em] uppercase text-neutral-400 mb-0.5">
-          <span className="text-xs shrink-0 select-none" aria-hidden="true">
-            {countryFlag}
-          </span>
-          <span className="truncate">{countryLabel}</span>
-        </div>
+        {/* Country Flag & Label (Visible in default state when available) */}
+        {(countryLabel || member.countryCode) && (
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono font-medium tracking-[0.16em] uppercase text-neutral-400 mb-0.5">
+            <CountryFlag
+              countryCode={member.countryCode}
+              countryName={countryLabel}
+              className="w-4 h-auto aspect-3/2 shrink-0 rounded-[1px] shadow-xs"
+            />
+            {countryLabel && <span className="truncate">{countryLabel}</span>}
+          </div>
+        )}
 
         {/* Member Name (Visible in default state) */}
         <h3 className="font-sans text-sm sm:text-base lg:text-[17px] font-bold text-white tracking-tight leading-snug line-clamp-1">
@@ -104,15 +111,17 @@ export const TeamMemberCard = ({
 
         {/* On-hover Role & Committee (Hidden in default state, smoothly revealed on hover/focus) */}
         <div className="max-h-0 opacity-0 overflow-hidden transform translate-y-1 transition-all duration-400 ease-out group-hover:max-h-24 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:max-h-24 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 motion-reduce:transition-none">
-          {/* Role */}
-          <p className="text-neutral-300 text-xs sm:text-[13px] font-medium pt-1 leading-tight truncate">
-            {formatRoleTitle()}
+          {/* Role (Gray line) */}
+          <p className="text-neutral-400 text-[10px] sm:text-[11px] font-mono font-medium tracking-[0.12em] uppercase pt-1 leading-tight truncate">
+            {roleLine}
           </p>
 
-          {/* Committee / Organization in Emerald Green */}
-          <p className="text-[#35d98a] text-[11px] sm:text-xs font-bold tracking-wider uppercase mt-0.5 truncate">
-            {member.committee}
-          </p>
+          {/* Committee / Organization in Emerald Green (Green line) - omitted if unverified */}
+          {committeeLine && (
+            <p className="text-[#35d98a] text-[11px] sm:text-xs font-bold tracking-wider uppercase mt-0.5 truncate">
+              {committeeLine}
+            </p>
+          )}
         </div>
       </div>
     </article>

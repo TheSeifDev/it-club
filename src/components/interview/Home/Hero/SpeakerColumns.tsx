@@ -4,14 +4,14 @@ import { SpeakerTile } from "./SpeakerTile";
 export const SpeakerColumns = () => {
   return (
     <div className="absolute inset-0 grid grid-cols-2 gap-px bg-black md:grid-cols-4">
-      {columns.map((column, index) => {
-        const isRightSide = index >= 2;
+      {columns.map((column, colIndex) => {
+        const isRightSide = colIndex >= 2;
 
         return (
           <div
-            key={index}
+            key={colIndex}
             className={`overflow-hidden ${
-              index > 1 ? "hidden md:block" : ""
+              colIndex > 1 ? "hidden md:block" : ""
             }`}
           >
             <div
@@ -28,14 +28,13 @@ export const SpeakerColumns = () => {
                     : "-8s",
                 }}
               >
-                {[...column, ...column].map(
-                  (speaker, i) => (
-                    <SpeakerTile
-                      key={`${speaker.name}-${i}`}
-                      speaker={speaker}
-                    />
-                  ),
-                )}
+                {[...column, ...column].map((speaker, rowIndex) => (
+                  <SpeakerTile
+                    key={`${speaker.id || speaker.name}-col-${colIndex}-idx-${rowIndex}`}
+                    speaker={speaker}
+                    priority={colIndex < 2 && rowIndex === 0}
+                  />
+                ))}
               </div>
             </div>
           </div>

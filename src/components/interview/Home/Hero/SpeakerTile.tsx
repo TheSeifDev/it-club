@@ -4,18 +4,23 @@ import type { Speaker } from "./hero-data";
 
 export const SpeakerTile = ({
   speaker,
+  priority = false,
 }: {
   speaker: Speaker;
+  priority?: boolean;
 }) => {
+  const label = speaker.roleLabel ?? speaker.company;
+
   return (
     <div className="relative aspect-3/4 w-full shrink-0 overflow-hidden border-b border-white/5 bg-linear-to-b from-neutral-800 to-neutral-900">
       {speaker.image ? (
         <Image
           src={speaker.image}
-          alt={`${speaker.name} — ${speaker.company}`}
+          alt={`${speaker.name} — ${label}`}
           fill
           sizes="(max-width: 768px) 50vw, 25vw"
           className="object-cover object-top grayscale"
+          priority={priority}
         />
       ) : (
         <svg
@@ -31,13 +36,13 @@ export const SpeakerTile = ({
 
       <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent" />
 
-      <div className="absolute bottom-10 left-11 font-mono">
-        <p className="text-base font-bold tracking-[0.12em] text-white">
+      <div className="absolute bottom-6 left-6 right-6 font-mono md:bottom-10 md:left-11 md:right-8">
+        <p className="truncate text-sm font-bold tracking-[0.12em] text-white md:text-base">
           {speaker.name}
         </p>
 
-        <p className="mt-2 text-xs tracking-[0.2em] text-neutral-500">
-          {speaker.company}
+        <p className="mt-1 truncate text-[10px] tracking-[0.15em] text-neutral-400 md:mt-2 md:text-xs md:tracking-[0.2em]">
+          {label}
         </p>
       </div>
     </div>

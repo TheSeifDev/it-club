@@ -1,8 +1,22 @@
-export type Speaker = {
+import {
+  teamMembers,
+  getTeamMemberById,
+  type TeamMember,
+} from "./committee-data";
+
+export { teamMembers, getTeamMemberById, type TeamMember };
+
+export type HeroSpeaker = {
+  id: string;
   name: string;
-  company: string;
+  role: string;
+  committee: string;
+  roleLabel: string;
+  company: string; // Kept for backwards compatibility
   image?: string;
 };
+
+export type Speaker = HeroSpeaker;
 
 export type Track = {
   label: string;
@@ -18,37 +32,30 @@ export const TARGET_DATE = new Date(
   "2026-10-10T00:00:00",
 ).getTime();
 
-export const speakers: Speaker[] = [
-  { name: "LOREM IPSUM", company: "DOLOR SIT" },
-  { name: "AMET CONSECTETUR", company: "ADIPISCING" },
-  { name: "SED EIUSMOD", company: "TEMPOR INC" },
-  { name: "DR. LABORE DOLORE", company: "MAGNAALIQUA" },
-  { name: "UT ENIM", company: "MINIM VENIAM" },
-  { name: "QUIS NOSTRUD", company: "EXERCITATION" },
-  { name: "ULLAMCO LABORIS", company: "NISI.AI" },
-  { name: "ALIQUIP COMMODO", company: "CONSEQUAT" },
-];
-
 export const tracks: Track[] = [
   {
-    label: "Lorem ipsum dolor sit",
-    color: "bg-cyan-400",
-  },
-  {
-    label: "Consectetur adipiscing",
+    label: "Human Resources",
     color: "bg-emerald-400",
   },
   {
-    label: "Sed do eiusmod tempor",
+    label: "Public Relations",
     color: "bg-pink-500",
   },
   {
-    label: "Incididunt ut labore",
-    color: "bg-yellow-400",
+    label: "Social Media",
+    color: "bg-lime-400",
   },
   {
-    label: "Dolore magna aliqua",
+    label: "Organizing Committee",
     color: "bg-orange-400",
+  },
+  {
+    label: "Information Technology",
+    color: "bg-cyan-400",
+  },
+  {
+    label: "Research & Development",
+    color: "bg-violet-400",
   },
 ];
 
@@ -60,10 +67,70 @@ export const stats: Stat[] = [
   { value: "BATU", label: "UNIVERSITY" },
 ];
 
-export const columns: Speaker[][] = [0, 1, 2, 3].map((c) =>
-  [0, 1, 2, 3].map(
-    (i) => speakers[(c * 2 + i) % speakers.length],
-  ),
+/**
+ * Configurable list of member IDs selected for display in the Hero animated columns.
+ * Order here determines layout placement in the Hero independently of the master registry.
+ */
+export const HERO_MEMBER_IDS: string[] = [
+  "seif-ayman",
+  "mahmoud-sameh",
+  "marwan-awad",
+  "shahd-ahssen",
+  "mohamed-al-amir",
+  "abdulrahman-ashraf",
+  "farida-mohamed",
+  "omar-mehawed",
+  "mohamed-sherif",
+  "youssef-soliman",
+  "mohamed-nagi",
+  "adham-ahmed",
+  "ahmed-mohsen",
+  "ahmed-samir",
+  "habiba-ahmed",
+  "saif-kambo",
+];
+
+const formatRoleLabel = (member: TeamMember): string => {
+  if (member.committee && member.committee !== "PENDING_VERIFICATION") {
+    return `${member.role} • ${member.committee}`;
+  }
+  return member.role || "TEAM MEMBER";
+};
+
+/**
+ * Hero speaker items derived from centralized team data registry.
+ */
+export const speakers: Speaker[] = HERO_MEMBER_IDS.map((id) => {
+  const member = getTeamMemberById(id);
+  if (!member) {
+    return {
+      id,
+      name: "IT CLUB MEMBER",
+      role: "MEMBER",
+      committee: "",
+      roleLabel: "IT CLUB",
+      company: "IT CLUB",
+    };
+  }
+  const roleLabel = formatRoleLabel(member);
+  return {
+    id: member.id,
+    name: member.name.toUpperCase(),
+    role: member.role,
+    committee: member.committee,
+    roleLabel,
+    company: roleLabel,
+    image: member.image || undefined,
+  };
+});
+
+/**
+ * 4 columns of speakers for the infinite-scroll columns.
+ */
+export const columns: Speaker[][] = [0, 1, 2, 3].map((colIndex) =>
+  [0, 1, 2, 3].map((rowIndex) => {
+    return speakers[(colIndex * 4 + rowIndex) % speakers.length];
+  }),
 );
 
 export const columnMotion = [

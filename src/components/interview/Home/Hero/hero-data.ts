@@ -88,6 +88,8 @@ export const HERO_MEMBER_IDS: string[] = [
   "ahmed-samir",
   "habiba-ahmed",
   "saif-kambo",
+  "marwan",
+  "Sherif-alt",
 ];
 
 const formatRoleLabel = (member: TeamMember): string => {

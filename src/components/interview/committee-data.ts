@@ -60,10 +60,8 @@ export function formatRoleMetadata(
   const upperRole = r.toUpperCase();
 
   if (
-    upperRole === "LEADER" ||
     upperRole === "MEMBER" ||
-    upperRole === "MAIN" ||
-    upperRole.startsWith("LEADER OF")
+    upperRole === "MAIN"
   ) {
     return "MAIN";
   }
@@ -72,35 +70,45 @@ export function formatRoleMetadata(
   const abbrev =
     COMMITTEE_ABBREVIATIONS[c] ||
     COMMITTEE_ABBREVIATIONS[
-      Object.keys(COMMITTEE_ABBREVIATIONS).find(
-        (key) => key.toLowerCase() === c.toLowerCase()
-      ) || ""
+    Object.keys(COMMITTEE_ABBREVIATIONS).find(
+      (key) => key.toLowerCase() === c.toLowerCase()
+    ) || ""
     ] ||
     (c && c !== "PENDING_VERIFICATION" ? c.toUpperCase() : "");
 
   if (upperRole.includes(" OF ")) {
     if (upperRole.startsWith("LEADER OF")) {
-      return "MAIN";
+      return abbrev ? `LEADER OF ${abbrev}` : "LEADER";
     }
     return upperRole;
   }
 
   const isHead = upperRole === "HEAD";
   const isViceHead = upperRole === "VICE HEAD";
+  const isLeader = upperRole === "LEADER";
 
-  if (!isHead && !isViceHead) {
-    return "MAIN";
+  if (isHead) {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
+      return "HEAD OF CLUB";
+    }
+    return abbrev ? `HEAD OF ${abbrev}` : "HEAD";
   }
 
-  if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
-    return isHead ? "HEAD OF CLUB" : "VICE HEAD OF CLUB";
+  if (isViceHead) {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
+      return "VICE HEAD OF CLUB";
+    }
+    return abbrev ? `VICE HEAD OF ${abbrev}` : "VICE HEAD";
   }
 
-  if (abbrev) {
-    return isHead ? `HEAD OF ${abbrev}` : `VICE HEAD OF ${abbrev}`;
+  if (isLeader) {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
+      return "LEADER";
+    }
+    return abbrev ? `LEADER OF ${abbrev}` : "LEADER";
   }
 
-  return "MAIN";
+  return upperRole;
 }
 
 export function formatCommitteeMetadata(committee?: string): string | undefined {
@@ -265,6 +273,7 @@ export type TeamMember = {
   role: LeadershipRole;
   committee: CommitteeName;
   image: string;
+  cutoutImage?: string;
   order: number;
   countryName?: string;
   countryFlag?: string;
@@ -277,6 +286,35 @@ export type TeamMember = {
   github?: string;
   portfolio?: string;
 };
+
+export const MEMBER_CUTOUT_MAP: Record<string, string> = {
+  "ahmed-samir": "/COMMITTEES/cutouts/ahmed-samir.png",
+  "ahmed-mohsen": "/COMMITTEES/cutouts/ahmed-mohsen.png",
+  "mohamed-ibrahim": "/COMMITTEES/cutouts/mohamed-ibrahim.png",
+  "seif-ayman": "/COMMITTEES/cutouts/seif-ayman.png",
+  "farida-mohamed": "/COMMITTEES/cutouts/farida-mohamed.png",
+  "mahmoud-sameh": "/COMMITTEES/cutouts/mahmoud-sameh.png",
+  "marwan-awad": "/COMMITTEES/cutouts/marwan-awad.png",
+  "shahd-ahssen": "/COMMITTEES/cutouts/shahd-ahssen.png",
+  "mohamed-al-amir": "/COMMITTEES/cutouts/mohamed-al-amir.png",
+  "abdulrahman-ashraf": "/COMMITTEES/cutouts/abdulrahman-ashraf.png",
+  "adham-ahmed": "/COMMITTEES/cutouts/adham-ahmed.png",
+  "habiba-ahmed": "/COMMITTEES/cutouts/habiba-ahmed.png",
+  "mohamed-nagi": "/COMMITTEES/cutouts/mohamed-nagi.png",
+  "mohamed-sherif": "/COMMITTEES/cutouts/mohamed-sherif.png",
+  "omar-mehawed": "/COMMITTEES/cutouts/omar-mehawed.png",
+  "saif-kambo": "/COMMITTEES/cutouts/saif-kambo.png",
+  "youssef-soliman": "/COMMITTEES/cutouts/youssef-soliman.png",
+  "ziad-ayman": "/COMMITTEES/cutouts/ziad-ayman.png",
+  "merna": "/COMMITTEES/cutouts/merna.png",
+  "sherif-hamdy": "/COMMITTEES/cutouts/sherif-hamdy.png",
+};
+
+export function getMemberCutoutImage(memberOrId?: TeamMember | string): string | undefined {
+  if (!memberOrId) return undefined;
+  const id = typeof memberOrId === "string" ? memberOrId : memberOrId.id;
+  return MEMBER_CUTOUT_MAP[id] || (typeof memberOrId === "object" ? memberOrId.cutoutImage : undefined);
+}
 
 export function isValidHttpsUrl(url?: string): boolean {
   if (!url || typeof url !== "string") return false;
@@ -293,9 +331,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "ahmed-samir",
     name: "Ahmed Samir",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Head",
+    committee: "IT Club",
     image: "/COMMITTEES/Ahmed Samir.webp",
+    cutoutImage: "/COMMITTEES/cutouts/ahmed-samir.png",
     order: 1,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -305,9 +344,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "ahmed-mohsen",
     name: "Ahmed Mohsen",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Vice Head",
+    committee: "IT Club",
     image: "/COMMITTEES/Ahmed Mohsen.webp",
+    cutoutImage: "/COMMITTEES/cutouts/ahmed-mohsen.png",
     order: 2,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -317,9 +357,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "mohamed-ibrahim",
     name: "Mohamed Ibrahim",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Head",
+    committee: "Information Technology",
     image: "/COMMITTEES/mohamed ibrahim.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-ibrahim.png",
     order: 3,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -329,9 +370,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "seif-ayman",
     name: "Seif Ayman",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Vice Head",
+    committee: "Information Technology",
     image: "/COMMITTEES/ken.webp",
+    cutoutImage: "/COMMITTEES/cutouts/seif-ayman.png",
     order: 4,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -344,9 +386,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "farida-mohamed",
     name: "Farida Mohamed",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Head",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Farida Mohamed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/farida-mohamed.png",
     order: 5,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -356,9 +399,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "mahmoud-sameh",
     name: "Mahmoud Sameh",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Leader",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Mahmoud Sameh.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mahmoud-sameh.png",
     order: 6,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -368,9 +412,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "marwan-awad",
     name: "Marwan Awad",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Leader",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Marwan Awad.webp",
+    cutoutImage: "/COMMITTEES/cutouts/marwan-awad.png",
     order: 7,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -380,9 +425,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "shahd-ahssen",
     name: "Shahd Ahssen",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Vice Head",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Shahd Ahssen.webp",
+    cutoutImage: "/COMMITTEES/cutouts/shahd-ahssen.png",
     order: 8,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -392,9 +438,10 @@ export const teamMembers: TeamMember[] = [
   {
     id: "mohamed-al-amir",
     name: "Mohamed Al-Amir",
-    role: "Main",
-    committee: "IT CLUB",
+    role: "Vice Head",
+    committee: "Social Media",
     image: "/COMMITTEES/Mohamed Al-Amir.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-al-amir.png",
     order: 9,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -405,8 +452,9 @@ export const teamMembers: TeamMember[] = [
     id: "abdulrahman-ashraf",
     name: "Abdulrahman Ashraf",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Abdulrahman Ashraf.webp",
+    cutoutImage: "/COMMITTEES/cutouts/abdulrahman-ashraf.png",
     order: 10,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -418,8 +466,9 @@ export const teamMembers: TeamMember[] = [
     id: "adham-ahmed",
     name: "Adham Ahmed",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Adham Ahmed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/adham-ahmed.png",
     order: 11,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -431,8 +480,9 @@ export const teamMembers: TeamMember[] = [
     id: "habiba-ahmed",
     name: "Habiba Ahmed",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Habiba Ahmed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/habiba-ahmed.png",
     order: 12,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -444,8 +494,9 @@ export const teamMembers: TeamMember[] = [
     id: "mohamed-nagi",
     name: "Mohamed Nagi",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Mohamed Nagi.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-nagi.png",
     order: 13,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -457,8 +508,9 @@ export const teamMembers: TeamMember[] = [
     id: "mohamed-sherif",
     name: "Mohamed Sherif",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Mohamed Sherif.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-sherif.png",
     order: 14,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -470,8 +522,9 @@ export const teamMembers: TeamMember[] = [
     id: "omar-mehawed",
     name: "Omar Mehawed",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Omar Mehawed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/omar-mehawed.png",
     order: 15,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -483,8 +536,9 @@ export const teamMembers: TeamMember[] = [
     id: "saif-kambo",
     name: "Saif Kambo",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Saif Kambo.webp",
+    cutoutImage: "/COMMITTEES/cutouts/saif-kambo.png",
     order: 16,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -496,8 +550,9 @@ export const teamMembers: TeamMember[] = [
     id: "youssef-soliman",
     name: "Youssef Soliman",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Youssef soliman.webp",
+    cutoutImage: "/COMMITTEES/cutouts/youssef-soliman.png",
     order: 17,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -509,8 +564,9 @@ export const teamMembers: TeamMember[] = [
     id: "ziad-ayman",
     name: "Ziad Ayman",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Ziad Ayman.webp",
+    cutoutImage: "/COMMITTEES/cutouts/ziad-ayman.png",
     order: 18,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -522,8 +578,9 @@ export const teamMembers: TeamMember[] = [
     id: "merna",
     name: "Merna",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Merna.webp",
+    cutoutImage: "/COMMITTEES/cutouts/merna.png",
     order: 19,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
@@ -533,9 +590,9 @@ export const teamMembers: TeamMember[] = [
   },
   {
     id: "marwan",
-    name: "Marwan Awad ",
-    role: "Main",
-    committee: "IT CLUB",
+    name: "Marwan Awad",
+    role: "Leader",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/marwan.webp",
     order: 20,
     countryName: "EGYPT",
@@ -546,20 +603,22 @@ export const teamMembers: TeamMember[] = [
     isAlternate: true,
   },
   {
-    id: "Sherif-alt",
+    id: "sherif-hamdy",
     name: "Sherif Hamdy",
     role: "Main",
-    committee: "IT CLUB",
+    committee: "IT Club",
     image: "/COMMITTEES/Sherif.webp",
+    cutoutImage: "/COMMITTEES/cutouts/sherif-hamdy.png",
     order: 21,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: false,
-    reviewNotes: "Alternate portrait for Marwan Awad.",
-    isAlternate: true,
+    needsReview: true,
+    reviewNotes: "Role and committee assignment pending official confirmation.",
+    isAlternate: false,
   },
 ];
+
 export const unverifiedLeadershipPositions = [
   {
     role: "Head",
@@ -591,8 +650,11 @@ export const getTeamMemberById = (id: string): TeamMember | undefined => {
   return teamMembers.find(
     (m) =>
       m.id === id ||
+      (id === "Sherif-alt" && (m.id === "sherif-hamdy" || m.id === "Sherif-alt")) ||
+      (id === "sherif-hamdy" && (m.id === "Sherif-alt" || m.id === "sherif-hamdy")) ||
       (id === "farida" && m.id === "farida-mohamed") ||
-      (id === "farida-mohamed" && m.id === "farida"),
+      (id === "farida-mohamed" && m.id === "farida") ||
+      (id === "marwan-alt" && m.id === "marwan")
   );
 };
 
@@ -608,8 +670,109 @@ export const getPendingReviewMembers = (): TeamMember[] => {
   return teamMembers.filter((m) => m.needsReview && !m.isAlternate);
 };
 
-export const getGalleryMembers = (): TeamMember[] => {
+export const getLegitimateMembers = (): TeamMember[] => {
   return teamMembers
     .filter((m) => !m.isAlternate)
     .sort((a, b) => a.order - b.order);
 };
+
+export const getGalleryMembers = (): TeamMember[] => {
+  return getLegitimateMembers();
+};
+
+export const getFeaturedHeroMembers = (): TeamMember[] => {
+  return getLegitimateMembers().slice(0, 10);
+};
+
+export interface TeamDataDiagnosticResult {
+  totalRecords: number;
+  legitimateMembersCount: number;
+  alternatePortraitsCount: number;
+  needsReviewCount: number;
+  duplicateIds: string[];
+  duplicateNames: string[];
+  missingNames: string[];
+  missingImages: string[];
+  invalidUrls: { id: string; field: string; url: string }[];
+}
+
+export function validateTeamData(): TeamDataDiagnosticResult {
+  const ids = new Set<string>();
+  const duplicateIds: string[] = [];
+  const nameMap = new Map<string, string[]>();
+  const missingNames: string[] = [];
+  const missingImages: string[] = [];
+  const invalidUrls: { id: string; field: string; url: string }[] = [];
+
+  for (const m of teamMembers) {
+    if (ids.has(m.id)) {
+      duplicateIds.push(m.id);
+    } else {
+      ids.add(m.id);
+    }
+
+    if (!m.name || !m.name.trim()) {
+      missingNames.push(m.id);
+    } else {
+      const normalized = m.name.trim().toLowerCase();
+      const existing = nameMap.get(normalized) || [];
+      existing.push(m.id);
+      nameMap.set(normalized, existing);
+    }
+
+    if (!m.image || !m.image.trim()) {
+      missingImages.push(m.id);
+    }
+
+    if (m.linkedin && !isValidHttpsUrl(m.linkedin)) {
+      invalidUrls.push({ id: m.id, field: "linkedin", url: m.linkedin });
+    }
+    if (m.github && !isValidHttpsUrl(m.github)) {
+      invalidUrls.push({ id: m.id, field: "github", url: m.github });
+    }
+    if (m.portfolio && !isValidHttpsUrl(m.portfolio)) {
+      invalidUrls.push({ id: m.id, field: "portfolio", url: m.portfolio });
+    }
+  }
+
+  const duplicateNames: string[] = [];
+  nameMap.forEach((memberIds, name) => {
+    const nonAlt = memberIds.filter((id) => {
+      const member = teamMembers.find((m) => m.id === id);
+      return !member?.isAlternate;
+    });
+    if (nonAlt.length > 1) {
+      duplicateNames.push(name);
+    }
+  });
+
+  const legitimate = teamMembers.filter((m) => !m.isAlternate);
+  const alternates = teamMembers.filter((m) => m.isAlternate);
+  const needsReview = teamMembers.filter((m) => m.needsReview && !m.isAlternate);
+
+  const result: TeamDataDiagnosticResult = {
+    totalRecords: teamMembers.length,
+    legitimateMembersCount: legitimate.length,
+    alternatePortraitsCount: alternates.length,
+    needsReviewCount: needsReview.length,
+    duplicateIds,
+    duplicateNames,
+    missingNames,
+    missingImages,
+    invalidUrls,
+  };
+
+  if (process.env.NODE_ENV === "development") {
+    if (duplicateIds.length > 0) {
+      console.warn("[TeamData Diagnostic] Duplicate IDs found:", duplicateIds);
+    }
+    if (duplicateNames.length > 0) {
+      console.warn("[TeamData Diagnostic] Duplicate member names found:", duplicateNames);
+    }
+    if (missingImages.length > 0) {
+      console.warn("[TeamData Diagnostic] Members with missing images:", missingImages);
+    }
+  }
+
+  return result;
+}

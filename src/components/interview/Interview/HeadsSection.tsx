@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { TeamGrid } from "@/src/components/interview/Team";
 import { getGalleryMembers } from "@/src/components/interview/committee-data";
 
@@ -57,6 +59,21 @@ export default function HeadsSection() {
         {/* BrainsMingle-Inspired Leadership Gallery Grid */}
         <div className="mt-20">
           <TeamGrid members={members} />
+        </div>
+
+        {/* Primary CTA leading to full Community Directory */}
+        <div className="mt-14 flex justify-center">
+          <Link
+            href="/community"
+            className="group inline-flex items-center gap-3 bg-[#42e895] px-8 py-4 text-sm font-bold text-[#050708] transition-all duration-300 hover:bg-[#6af0ad] hover:shadow-[0_0_25px_rgba(66,232,149,0.35)] cursor-pointer"
+          >
+            <span>Meet the Community</span>
+            <ArrowRight
+              size={18}
+              strokeWidth={2.2}
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
+          </Link>
         </div>
 
         {/* Bottom Section Metadata */}

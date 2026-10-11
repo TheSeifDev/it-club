@@ -40,7 +40,7 @@ const trackLinks = [
     href: "/tracks#hr",
   },
   {
-    label: "Student Relations",
+    label: "public Relations",
     href: "/tracks#sr",
   },
   {

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- icealex logo: icealex wordmark with target crosshair graphic -->
+  <text x="15" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" letter-spacing="-1.5" fill="#18c8ed">icealex</text>
+  
+  <!-- Target Crosshair Graphic on the right -->
+  <g transform="translate(230, 40)">
+    <!-- Outer concentric ring segments -->
+    <circle cx="0" cy="0" r="24" stroke="#18c8ed" stroke-width="3.5" fill="none" opacity="0.85" />
+    <circle cx="0" cy="0" r="14" stroke="#18c8ed" stroke-width="3" fill="none" />
+    <circle cx="0" cy="0" r="5" fill="#42e895" />
+    
+    <!-- Crosshair ticks / rays -->
+    <line x1="-32" y1="0" x2="-22" y2="0" stroke="#18c8ed" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="22" y1="0" x2="32" y2="0" stroke="#18c8ed" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="0" y1="-32" x2="0" y2="-22" stroke="#18c8ed" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="0" y1="22" x2="0" y2="32" stroke="#18c8ed" stroke-width="3.5" stroke-linecap="round" />
+    
+    <!-- Accent corner dots -->
+    <circle cx="17" cy="-17" r="2.5" fill="#42e895" />
+    <circle cx="-17" cy="17" r="2.5" fill="#42e895" />
+  </g>
+</svg>

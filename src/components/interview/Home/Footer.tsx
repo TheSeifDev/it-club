@@ -26,7 +26,11 @@ const eventLinks = [
   },
   {
     label: "Sponsors & Partners",
-    href: "#sponsors",
+    href: "/sponsors",
+  },
+  {
+    label: "Events & Archives",
+    href: "/events",
   },
 ];
 

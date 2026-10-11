@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" fill="none">
+  <!-- wrk+r logo: bold lowercase modern wordmark with plus sign -->
+  <g transform="translate(20, 10)">
+    <text x="0" y="48" font-family="system-ui, -apple-system, 'Montserrat', sans-serif" font-size="46" font-weight="900" letter-spacing="-1" fill="#FFFFFF">wrk</text>
+    
+    <!-- Bold emerald plus accent -->
+    <g transform="translate(112, 33)">
+      <rect x="-4" y="-14" width="8" height="28" rx="2" fill="#42e895" />
+      <rect x="-14" y="-4" width="28" height="8" rx="2" fill="#42e895" />
+    </g>
+    
+    <text x="144" y="48" font-family="system-ui, -apple-system, 'Montserrat', sans-serif" font-size="46" font-weight="900" letter-spacing="-1" fill="#FFFFFF">r</text>
+    
+    <!-- Small subtle dot -->
+    <circle cx="182" cy="46" r="4.5" fill="#42e895" />
+  </g>
+</svg>

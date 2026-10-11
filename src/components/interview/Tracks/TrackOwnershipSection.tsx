@@ -2,11 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
 import { IT_CLUB_TRACKS } from "./tracks-data";
 
 export default function TrackOwnershipSection() {
-  const scrollToTrack = (trackId: string) => {
+  const scrollToTrack = (trackId?: string) => {
+    if (!trackId) return;
     const el = document.getElementById(trackId);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -16,124 +16,133 @@ export default function TrackOwnershipSection() {
 
   return (
     <section
-      aria-label="Track Ownership and Application Section"
-      className="relative w-full overflow-hidden bg-[#050708] text-white border-t border-white/10 py-20 md:py-28"
+      id="own-a-track"
+      aria-label="Own a Track Sponsorship Section"
+      className="relative w-full overflow-hidden bg-[#050708] text-white pt-20 md:pt-28 pb-24 md:pb-32 border-t border-white/5"
     >
-      {/* Background ambient lighting */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] opacity-20 blur-[140px]"
-        style={{
-          background:
-            "radial-gradient(ellipse at bottom, rgba(53,217,138,0.4) 0%, rgba(24,200,237,0.2) 40%, transparent 75%)",
-        }}
-      />
+      <div className="relative tracks-content-container">
+        {/* =============================================================== */}
+        {/* 1. TOP SECTION LABEL & HORIZONTAL DIVIDER HAIRLINE              */}
+        {/* =============================================================== */}
+        <div className="flex items-center gap-4 mb-12 sm:mb-14">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="font-mono text-xs font-bold text-[#6366f1] tracking-wider">
+              02
+            </span>
+            <span className="font-mono text-xs font-bold tracking-[0.2em] text-white uppercase">
+              OWN A TRACK
+            </span>
+            <span className="arabic text-sm text-neutral-400 font-medium">
+              رعاية مسار
+            </span>
+          </div>
 
-      <div className="relative mx-auto max-w-7xl px-6">
-        {/* =============================================================== */}
-        {/* HEADER & HEADLINE (Page 7 Reference: 02 OWN A TRACK)             */}
-        {/* =============================================================== */}
-        <div className="flex flex-wrap items-center gap-3 font-mono text-xs font-semibold tracking-[0.2em] text-[#35d98a] mb-6">
-          <span>02</span>
-          <span>•</span>
-          <span className="text-white">OWN A TRACK</span>
-          <span className="text-neutral-500">|</span>
-          <span className="arabic text-sm text-neutral-400">رحلة مسار</span>
+          {/* Thin horizontal line stretching to the right boundary */}
+          <div className="h-px flex-1 bg-white/10" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-14">
-          <div className="lg:col-span-8">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-[-0.03em] leading-[1.05] text-white">
+        {/* =============================================================== */}
+        {/* 2. HEADLINE (3 LINES, LEFT) & EXPLANATORY TEXT (RIGHT)          */}
+        {/* =============================================================== */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-14 sm:mb-16">
+          {/* Left: 3-line Large Display Headline */}
+          <div className="lg:col-span-7">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight leading-[1.04] text-white">
               Own a track.
               <br />
-              Own the conversation.
+              Own the
+              <br />
+              conversation.
             </h2>
           </div>
 
-          <div className="lg:col-span-4">
-            <p className="text-sm sm:text-base text-neutral-400 font-light leading-relaxed">
-              Join one of our six dedicated technical and operational tracks for
-              the full academic season and lead every project in it. Six exist.
-              Find the one built for you.
+          {/* Right: Supporting Description Text */}
+          <div className="lg:col-span-5 lg:pb-3">
+            <p className="text-xs sm:text-sm text-neutral-400 font-light leading-relaxed max-w-md">
+              A track sponsor names one of these six for the full season and
+              leads every session and initiative in it. Six exist. Find the one built for you.
             </p>
           </div>
         </div>
 
         {/* =============================================================== */}
-        {/* 6 COMPACT COLORED TRACK PANELS (Page 7 Reference)                */}
+        {/* 3. ROW OF SIX REAL IT CLUB TRACK SPONSORSHIP CARDS               */}
         {/* =============================================================== */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-10">
           {IT_CLUB_TRACKS.map((track) => (
-            <button
+            <a
               key={`ownership-${track.id}`}
-              type="button"
-              onClick={() => scrollToTrack(track.id)}
-              className="group relative flex flex-col justify-between p-4 sm:p-5 bg-white/[0.02] border border-white/10 hover:border-white/30 text-left transition-all duration-300 cursor-pointer overflow-hidden focus:outline-none focus:ring-1 focus:ring-white/40"
+              href={`#${track.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToTrack(track.id);
+              }}
+              className="group relative flex flex-col justify-between p-4 bg-[#0a0c0e] border border-white/10 hover:border-white/25 transition-all duration-300 overflow-hidden text-left cursor-pointer"
               style={{
-                background: `linear-gradient(180deg, ${track.color}0a 0%, rgba(5,7,8,0.9) 100%)`,
+                background: `linear-gradient(180deg, ${track.color}0a 0%, rgba(10,12,14,0.98) 100%)`,
               }}
             >
-              {/* Top accent bar */}
+              {/* Thin Colored Top Border */}
               <div
-                className="absolute top-0 left-0 right-0 h-[3px] transition-all duration-300"
+                className="absolute top-0 left-0 right-0 h-[2.5px] transition-all duration-300"
                 style={{ backgroundColor: track.color }}
               />
 
-              {/* Hover glow */}
-              <div
-                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background: `radial-gradient(circle at 50% 0%, ${track.color}20 0%, transparent 70%)`,
-                }}
-              />
-
-              {/* Track Title */}
-              <div className="relative z-10 mb-6">
-                <span className="font-mono text-[10px] tracking-widest text-neutral-400 uppercase block mb-1">
-                  {track.number}
-                </span>
-                <span className="text-sm sm:text-base font-bold text-white group-hover:text-white transition-colors block leading-snug">
-                  {track.title}
-                </span>
+              {/* Colored Rectangular Visual Element with Glowing Wash */}
+              <div className="relative w-full h-14 sm:h-16 overflow-hidden rounded-[2px] mb-5 bg-black/60 border border-white/5">
+                <div
+                  className="absolute inset-0 opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{
+                    background: `linear-gradient(180deg, ${track.color}66 0%, ${track.color}22 55%, transparent 100%)`,
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-30 blur-sm"
+                  style={{ background: track.color }}
+                />
+                <div className="absolute top-0 inset-x-0 h-px bg-white/30" />
               </div>
 
-              {/* Status Indicator */}
-              <div className="relative z-10 flex items-center justify-between text-[11px] font-mono">
-                <span
-                  className="font-bold tracking-wider uppercase"
+              {/* Card Details: Title & Status */}
+              <div>
+                <h4 className="text-xs sm:text-[13px] font-bold text-white tracking-tight group-hover:text-white transition-colors leading-tight">
+                  {track.title}
+                </h4>
+                <span className="arabic text-[11px] text-neutral-400 group-hover:text-neutral-300 transition-colors block mt-0.5">
+                  {track.arabicTitle}
+                </span>
+                <div
+                  className="mt-2 text-[10px] font-mono font-bold tracking-widest uppercase"
                   style={{ color: track.color }}
                 >
                   OPEN
-                </span>
-                <span className="text-neutral-500 group-hover:text-neutral-300 transition-colors">
-                  &darr;
-                </span>
+                </div>
               </div>
-            </button>
+            </a>
           ))}
         </div>
 
         {/* =============================================================== */}
-        {/* PRIMARY CTA BAR                                                  */}
+        {/* 4. GREEN CTA BUTTON & ADJACENT SUPPORTING TEXT                  */}
         {/* =============================================================== */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-8 border-t border-white/10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 pt-2">
           <Link
-            href="/register"
-            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#35d98a] hover:bg-[#40f09b] text-[#050708] font-bold text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_30px_rgba(53,217,138,0.3)] hover:shadow-[0_0_45px_rgba(53,217,138,0.5)] focus:outline-none focus:ring-2 focus:ring-[#35d98a]"
+            href="/sponsors"
+            className="inline-flex items-center justify-center px-6 py-3.5 bg-[#00e599] hover:bg-[#35f0ab] text-[#050708] font-bold text-xs sm:text-sm tracking-wide transition-colors duration-200 rounded-none shrink-0"
           >
-            <Sparkles size={16} />
-            <span>Register for Recruitment</span>
-            <ArrowRight
-              size={16}
-              className="transition-transform duration-300 group-hover:translate-x-1"
-            />
+            Become a track sponsor
           </Link>
 
-          <p className="text-xs sm:text-sm text-neutral-400 font-light max-w-md">
-            Official recruitment is open for all university students. Includes
-            access to technical mentorship, workshops, and cross-track projects.
+          <p className="text-xs sm:text-sm text-neutral-400 font-light leading-relaxed max-w-lg">
+            Includes the track&apos;s name, its colour across every channel, and a
+            speaking slot inside it.
           </p>
         </div>
+
+        {/* =============================================================== */}
+        {/* 5. BOTTOM DIVIDER HAIRLINE                                       */}
+        {/* =============================================================== */}
+        <div className="border-t border-white/10 mt-20 md:mt-24" />
       </div>
     </section>
   );

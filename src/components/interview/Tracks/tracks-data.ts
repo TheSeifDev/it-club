@@ -10,6 +10,13 @@ export interface TrackStats {
   time: string;
 }
 
+export interface TrackPartner {
+  name: string;
+  logo: string;
+  description: string;
+  website: string;
+}
+
 export interface TrackDefinition {
   id: string;
   anchorIds: string[];
@@ -27,6 +34,7 @@ export interface TrackDefinition {
   terrain: TrackTerrainItem[];
   whoItsFor: string[];
   memberIds: string[];
+  partner?: TrackPartner;
 }
 
 export const IT_CLUB_TRACKS: TrackDefinition[] = [
@@ -84,6 +92,13 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Problem solvers focused on team dynamics and motivation",
     ],
     memberIds: ["farida-mohamed", "shahd-ahssen", "habiba-ahmed", "merna"],
+    partner: {
+      name: "WRK+R",
+      logo: "/sponsors/wrkr.svg",
+      description:
+        "WRK+R is a creative innovation workspace and venue partner in Egypt, providing community hubs, meeting rooms, and collaborative environments for student leaders and organizations.",
+      website: "https://wrkr.space",
+    },
   },
   {
     id: "pr",
@@ -139,6 +154,13 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Ambassadors passionate about external representation and community reach",
     ],
     memberIds: ["omar-mehawed", "abdulrahman-ashraf", "mohamed-al-amir", "saif-kambo"],
+    partner: {
+      name: "icealex",
+      logo: "/sponsors/icealex.svg",
+      description:
+        "icealex is a technology innovation hub and ecosystem catalyst in Egypt, building startup capacity, accelerating talent, and fostering public-private tech alliances across the MENA region.",
+      website: "https://icealex.com",
+    },
   },
   {
     id: "sm",
@@ -194,6 +216,13 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Creative minds who want their work seen by thousands of tech students",
     ],
     memberIds: ["marwan-awad", "ziad-ayman", "adham-ahmed", "marwan"],
+    partner: {
+      name: "WRK+R",
+      logo: "/sponsors/wrkr.svg",
+      description:
+        "WRK+R provides creative makers and media teams with dedicated collaborative spaces, creator facilities, and modern workspaces for digital storytelling and community production.",
+      website: "https://wrkr.space",
+    },
   },
   {
     id: "oc",
@@ -249,6 +278,13 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students eager to master large-scale event management and operations",
     ],
     memberIds: ["mohamed-sherif", "sherif-hamdy", "youssef-soliman", "mohamed-ibrahim"],
+    partner: {
+      name: "WRK+R",
+      logo: "/sponsors/wrkr.svg",
+      description:
+        "WRK+R is a premier venue and ecosystem partner supporting large-scale tech meetups, hackathons, and high-energy student gatherings across Alexandria.",
+      website: "https://wrkr.space",
+    },
   },
   {
     id: "it",
@@ -304,6 +340,13 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Builders looking to level up code quality, TypeScript rigor, and web standards",
     ],
     memberIds: ["seif-ayman", "ahmed-mohsen", "ahmed-samir", "mahmoud-sameh"],
+    partner: {
+      name: "icealex",
+      logo: "/sponsors/icealex.svg",
+      description:
+        "icealex is a technology and engineering hub in Egypt connecting technical creators, hosting developer bootcamps, and incubating cutting-edge open-source software initiatives.",
+      website: "https://icealex.com",
+    },
   },
   {
     id: "rnd",
@@ -359,5 +402,12 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students driven by exploration, deep technical curiosity, and novel solutions",
     ],
     memberIds: ["mohamed-nagi", "ahmed-samir", "seif-ayman", "adham-ahmed"],
+    partner: {
+      name: "icealex",
+      logo: "/sponsors/icealex.svg",
+      description:
+        "icealex accelerates experimental tech research, prototyping labs, and student venture incubation to transform innovative ideas into real-world applications.",
+      website: "https://icealex.com",
+    },
   },
 ];

@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles } from "lucide-react";
 import { type TrackDefinition } from "./tracks-data";
 import { teamMembers, type TeamMember } from "../committee-data";
 
@@ -14,7 +13,6 @@ interface TrackDetailSectionProps {
 
 export default function TrackDetailSection({
   track,
-  isFirst = false,
 }: TrackDetailSectionProps) {
   // Find verified team members assigned to this track
   const trackMembers: TeamMember[] = track.memberIds
@@ -25,9 +23,9 @@ export default function TrackDetailSection({
     <section
       id={track.id}
       aria-label={`${track.title} Track Section`}
-      className="relative w-full overflow-hidden bg-[#050708] text-white border-t border-white/10 scroll-mt-20"
+      className="relative w-full overflow-hidden bg-[#050708] text-white border-t border-white/5 scroll-mt-16 py-20 md:py-28 lg:py-32"
     >
-      {/* Invisible anchor targets for aliases (e.g. #sr for public relations) */}
+      {/* Invisible anchor targets for aliases (e.g. #sr for public relations, #rd for rnd) */}
       {track.anchorIds
         .filter((alias) => alias !== track.id)
         .map((alias) => (
@@ -39,153 +37,124 @@ export default function TrackDetailSection({
           />
         ))}
 
-      {/* Ambient Track-Colored Background Glow */}
+      {/* Ambient Overhead Track-Colored Glow (Exact Reference Radial Wash) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-24 left-0 w-[600px] h-[600px] rounded-full opacity-15 blur-[120px]"
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[360px] opacity-15 blur-[100px]"
         style={{
-          background: `radial-gradient(circle, ${track.color} 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse 70% 280px at 50% 0%, ${track.color} 0%, transparent 75%)`,
         }}
       />
 
-      <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-24">
+      <div className="tracks-content-container">
         {/* =============================================================== */}
-        {/* SECTION INTRO BANNER (Page 1 Reference: 01 FIVE WAYS IN)         */}
+        {/* 1. TRACK HEADER & STATS (Exact Reference Match)                 */}
         {/* =============================================================== */}
-        {isFirst && (
-          <div className="mb-20 pb-12 border-b border-white/10">
-            <div className="flex flex-wrap items-center gap-3 font-mono text-xs font-semibold tracking-[0.2em] text-[#35d98a]">
-              <span>01</span>
-              <span>•</span>
-              <span className="text-white">SIX WAYS IN</span>
-              <span className="text-neutral-500">|</span>
-              <span className="arabic text-sm text-neutral-400">
-                ستة مسارات للمستقبل
-              </span>
-            </div>
-
-            <p className="mt-4 max-w-2xl text-lg md:text-xl text-neutral-300 font-light leading-relaxed">
-              Every track runs throughout the academic year and recruitment
-              season. Pick the one that is yours &mdash; or collaborate across
-              teams, because nothing here is built in isolation.
-            </p>
-          </div>
-        )}
-
-        {/* =============================================================== */}
-        {/* TRACK HEADER & STATS (Page 1-6 Layout Reference)                 */}
-        {/* =============================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-14">
-          {/* Main Title & Description (Col 1-8) */}
-          <div className="lg:col-span-8">
-            {/* Monospace Eyebrow Tag */}
-            <div className="flex items-center gap-3 mb-3">
-              <span
-                className="font-mono text-xs font-bold tracking-[0.2em] uppercase"
-                style={{ color: track.color }}
-              >
-                {track.number} &mdash; {track.tag}
-              </span>
-            </div>
-
-            {/* Giant Track Title */}
-            <h2
-              className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.05]"
+        <div className="mb-10">
+          {/* Eyebrow Tag in Track Color */}
+          <div className="mb-2.5">
+            <span
+              className="font-mono text-xs font-bold tracking-[0.2em] uppercase"
               style={{ color: track.color }}
             >
-              {track.title}
-            </h2>
-
-            {/* Arabic Title */}
-            <h3 className="arabic mt-2 text-2xl sm:text-3xl font-bold text-white/50">
-              {track.arabicTitle}
-            </h3>
-
-            {/* Description */}
-            <p className="mt-6 max-w-2xl text-base sm:text-lg text-neutral-300 leading-relaxed font-light">
-              {track.description}
-            </p>
-
-            <p className="arabic mt-3 max-w-2xl text-sm sm:text-base text-neutral-400 leading-relaxed">
-              {track.arabicDescription}
-            </p>
+              {track.tag}
+            </span>
           </div>
 
-          {/* Quick Metrics Strip (Col 9-12) */}
-          <div className="lg:col-span-4 grid grid-cols-2 gap-3 p-4 sm:p-5 bg-white/[0.02] border border-white/10">
-            <div className="p-3 border border-white/5 bg-black/40">
-              <div
-                className="font-mono text-2xl sm:text-3xl font-extrabold tracking-tight"
-                style={{ color: track.color }}
-              >
-                {track.stats.sessions}
-              </div>
-              <div className="mt-1 font-mono text-[11px] font-semibold tracking-widest text-neutral-400 uppercase">
-                Sessions
-              </div>
+          {/* Giant Track Title */}
+          <h2
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08]"
+            style={{ color: track.color }}
+          >
+            {track.title}
+          </h2>
+
+          {/* Arabic Subtitle */}
+          <h3 className="arabic mt-2 text-xl sm:text-2xl font-bold text-white/80">
+            {track.arabicTitle}
+          </h3>
+
+          {/* Description Paragraph & 2x2 Stats Strip */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mt-8">
+            {/* Description (Col 1-8 / ~65%) */}
+            <div className="lg:col-span-8">
+              <p className="text-sm sm:text-base text-neutral-300 font-light leading-relaxed max-w-3xl">
+                {track.description}
+              </p>
+
+              <p className="arabic mt-3 text-xs sm:text-sm text-neutral-400 font-light leading-relaxed max-w-3xl">
+                {track.arabicDescription}
+              </p>
             </div>
 
-            <div className="p-3 border border-white/5 bg-black/40">
-              <div className="font-mono text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                {track.stats.speakers}
-              </div>
-              <div className="mt-1 font-mono text-[11px] font-semibold tracking-widest text-neutral-400 uppercase">
-                Workshops
-              </div>
-            </div>
+            {/* Quick Metrics 2x2 Grid (Col 9-12 / ~35%) with Hairline Divider */}
+            <div className="lg:col-span-4 border-l border-white/10 pl-6 sm:pl-8 lg:pl-10">
+              <div className="grid grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-5">
+                <div>
+                  <div className="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    {track.stats.sessions}
+                  </div>
+                  <div className="font-mono text-[10px] font-semibold tracking-widest text-neutral-500 uppercase mt-0.5">
+                    SESSIONS
+                  </div>
+                </div>
 
-            <div className="p-3 border border-white/5 bg-black/40">
-              <div className="font-mono text-lg sm:text-xl font-bold tracking-tight text-neutral-200">
-                {track.stats.days}
-              </div>
-              <div className="mt-1 font-mono text-[11px] font-semibold tracking-widest text-neutral-400 uppercase">
-                Duration
-              </div>
-            </div>
+                <div>
+                  <div className="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    {track.stats.speakers}
+                  </div>
+                  <div className="font-mono text-[10px] font-semibold tracking-widest text-neutral-500 uppercase mt-0.5">
+                    WORKSHOPS
+                  </div>
+                </div>
 
-            <div className="p-3 border border-white/5 bg-black/40">
-              <div
-                className="font-mono text-lg sm:text-xl font-bold tracking-tight"
-                style={{ color: track.color }}
-              >
-                {track.stats.time}
-              </div>
-              <div className="mt-1 font-mono text-[11px] font-semibold tracking-widest text-neutral-400 uppercase">
-                Status
+                <div>
+                  <div className="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    {track.stats.days}
+                  </div>
+                  <div className="font-mono text-[10px] font-semibold tracking-widest text-neutral-500 uppercase mt-0.5">
+                    DURATION
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-mono text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    {track.stats.time}
+                  </div>
+                  <div className="font-mono text-[10px] font-semibold tracking-widest text-neutral-500 uppercase mt-0.5">
+                    STATUS
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* =============================================================== */}
-        {/* EDITORIAL BREAKDOWN: THE TERRAIN & WHO IT'S FOR                  */}
+        {/* 2. HORIZONTAL DIVIDER HAIRLINE                                   */}
         {/* =============================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-16 pt-8 border-t border-white/10">
-          {/* THE TERRAIN: 6 Focus Disciplines (Col 1-8) */}
+        <div className="border-t border-white/10 mt-12 mb-10" />
+
+        {/* =============================================================== */}
+        {/* 3. THE TERRAIN & WHO IT'S FOR                                    */}
+        {/* =============================================================== */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* THE TERRAIN: 2-Column Grid (Col 1-8 / ~65%) */}
           <div className="lg:col-span-8">
-            <div className="flex items-center gap-2 mb-6">
-              <span className="font-mono text-xs font-bold tracking-[0.2em] text-neutral-400 uppercase">
-                THE TERRAIN
-              </span>
-              <div className="h-px flex-1 bg-white/10" />
+            <div className="font-mono text-[10px] tracking-[0.2em] text-neutral-500 uppercase mb-6">
+              THE TERRAIN
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-7">
               {track.terrain.map((item, idx) => (
                 <div
                   key={`${track.id}-terrain-${idx}`}
-                  className="group relative p-4 sm:p-5 bg-white/[0.02] border border-white/10 hover:border-white/20 transition-all duration-300"
+                  className="group p-2.5 -m-2.5 rounded transition-colors duration-200 hover:bg-white/[0.04]"
                 >
-                  {/* Subtle hover accent line */}
-                  <div
-                    className="absolute top-0 left-0 w-0 h-[2px] transition-all duration-300 group-hover:w-full"
-                    style={{ backgroundColor: track.color }}
-                  />
-
-                  <h4 className="text-sm sm:text-base font-semibold text-white group-hover:text-white transition-colors">
+                  <h4 className="text-sm sm:text-base font-bold text-white tracking-tight mb-1">
                     {item.title}
                   </h4>
-                  <p className="mt-2 text-xs sm:text-sm text-neutral-400 leading-relaxed font-light">
+                  <p className="text-xs sm:text-sm text-neutral-400 font-light leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
@@ -193,132 +162,146 @@ export default function TrackDetailSection({
             </div>
           </div>
 
-          {/* WHO IT'S FOR: Target Profiles (Col 9-12) */}
+          {/* WHO IT'S FOR: Bulleted Persona List (Col 9-12 / ~35%) */}
           <div className="lg:col-span-4">
-            <div className="flex items-center gap-2 mb-6">
-              <span className="font-mono text-xs font-bold tracking-[0.2em] text-neutral-400 uppercase">
-                WHO IT&apos;S FOR
-              </span>
-              <div className="h-px flex-1 bg-white/10" />
+            <div className="font-mono text-[10px] tracking-[0.2em] text-neutral-500 uppercase mb-6">
+              WHO IT&apos;S FOR
             </div>
 
             <ul className="space-y-4">
               {track.whoItsFor.map((persona, idx) => (
                 <li
                   key={`${track.id}-persona-${idx}`}
-                  className="flex items-start gap-3 p-3 bg-white/[0.02] border border-white/5"
+                  className="flex items-start gap-3"
                 >
                   <span
-                    className="mt-1.5 h-1.5 w-1.5 rounded-none shrink-0"
+                    className="w-1.5 h-1.5 shrink-0 mt-1.5"
                     style={{ backgroundColor: track.color }}
                   />
-                  <span className="text-sm text-neutral-300 font-light leading-snug">
+                  <span className="text-xs sm:text-sm text-neutral-300 font-light leading-snug">
                     {persona}
                   </span>
                 </li>
               ))}
             </ul>
-
-            {/* Direct Track Registration Callout */}
-            <div className="mt-8 p-5 bg-white/[0.02] border border-white/10">
-              <div className="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-neutral-400 uppercase">
-                <Sparkles size={14} style={{ color: track.color }} />
-                <span>MEMBERSHIP INTAKE</span>
-              </div>
-              <p className="mt-2 text-xs text-neutral-400 leading-relaxed">
-                Ready to contribute to {track.title}? Join our upcoming cohort
-                and access hands-on training and real projects.
-              </p>
-              <Link
-                href="/register"
-                className="mt-4 inline-flex items-center gap-2 text-xs font-bold tracking-widest uppercase transition-all duration-300 hover:gap-3"
-                style={{ color: track.color }}
-              >
-                <span>APPLY FOR {track.title.toUpperCase()}</span>
-                <ArrowUpRight size={15} />
-              </Link>
-            </div>
           </div>
         </div>
 
         {/* =============================================================== */}
-        {/* ON THIS TRACK: TEAM & LEADERSHIP GRID (Reference PDF Pattern)    */}
+        {/* 4. SPONSOR / PARTNER BOX ("BROUGHT TO YOU BY")                   */}
+        {/* =============================================================== */}
+        {track.partner && (
+          <div
+            className="mt-12 mb-12 p-6 sm:p-8 lg:p-10 bg-black/60 border backdrop-blur-sm"
+            style={{ borderColor: track.color }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
+              {/* Left Logo Column (Col 1-4) */}
+              <div className="md:col-span-4 flex flex-col justify-center">
+                <span
+                  className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase mb-4"
+                  style={{ color: track.color }}
+                >
+                  BROUGHT TO YOU BY
+                </span>
+                <div className="relative h-12 w-44 brightness-0 invert opacity-90 hover:opacity-100 transition-opacity">
+                  <Image
+                    src={track.partner.logo}
+                    alt={track.partner.name}
+                    fill
+                    className="object-contain object-left"
+                  />
+                </div>
+              </div>
+
+              {/* Right Description Column (Col 5-12) */}
+              <div className="md:col-span-8">
+                <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed mb-3">
+                  {track.partner.description}
+                </p>
+                <a
+                  href={track.partner.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold tracking-wider hover:underline"
+                  style={{ color: track.color }}
+                >
+                  <span>Visit</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* 5. ON THIS TRACK: MEMBER ROSTER GRID (6 COLUMNS)                 */}
         {/* =============================================================== */}
         {trackMembers.length > 0 && (
-          <div className="pt-8 border-t border-white/10">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs font-bold tracking-[0.2em] text-neutral-400 uppercase">
-                  ON THIS TRACK
-                </span>
-                <span className="font-mono text-xs text-neutral-500">
-                  {trackMembers.length} ACTIVE CONTRIBUTORS
-                </span>
-              </div>
-              <div className="hidden sm:block h-px flex-1 max-w-xs bg-white/10 ml-4" />
+          <div className="mt-12">
+            {/* Eyebrow Header */}
+            <div className="flex items-center gap-2 mb-6 font-mono text-[10px] tracking-[0.2em] uppercase">
+              <span className="text-neutral-500">ON THIS TRACK</span>
+              <span style={{ color: track.color }} className="font-bold">
+                {trackMembers.length} ANNOUNCED SO FAR
+              </span>
             </div>
 
-            {/* Team Portrait Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+            {/* 6-Column Responsive Editorial Portrait Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {trackMembers.map((member) => (
                 <div
                   key={`${track.id}-member-${member.id}`}
-                  className="group relative flex flex-col bg-white/[0.02] border border-white/10 overflow-hidden transition-all duration-300 hover:border-white/30"
+                  className="group relative flex flex-col overflow-hidden bg-neutral-900 border border-white/5 hover:border-white/20 transition-all duration-300"
                 >
-                  {/* Portrait photo with grayscale aesthetic */}
-                  <div className="relative aspect-square w-full overflow-hidden bg-neutral-900">
+                  {/* Editorial grayscale portrait with 4:5 aspect ratio */}
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-950">
                     <Image
                       src={member.image}
                       alt={member.name}
                       fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                       className="object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
 
-                  {/* Member Info */}
-                  <div className="p-3 sm:p-4 flex flex-col justify-between flex-1">
-                    <div>
-                      {/* Country badge */}
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1">
+                    {/* Bottom info pinned neatly to the bottom of the portrait */}
+                    <div className="absolute bottom-0 inset-x-0 p-3 flex flex-col justify-end">
+                      {/* Country */}
+                      <div className="flex items-center gap-1.5 text-[9px] font-mono text-neutral-400 uppercase tracking-widest mb-0.5">
                         <span>{member.countryFlag || "🇪🇬"}</span>
                         <span>{member.countryName || "EGYPT"}</span>
                       </div>
 
-                      <div className="text-sm font-bold text-white tracking-tight group-hover:text-white transition-colors">
+                      {/* Name */}
+                      <div className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight line-clamp-1">
                         {member.name}
                       </div>
-                    </div>
 
-                    <div className="mt-2 text-[10px] font-mono tracking-wider text-neutral-400 uppercase">
-                      {member.role || "MAIN"} &bull; {member.committee || "IT CLUB"}
+                      {/* Role & Committee */}
+                      <div className="text-[10px] font-mono tracking-wider text-neutral-400 uppercase mt-0.5 line-clamp-1">
+                        {member.role || "MAIN"} • {member.committee || "IT CLUB"}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Section Bottom Track Navigation CTA */}
-            <div className="mt-10 flex items-center justify-between">
+            {/* Track Bottom CTA Button: Matching Reference Screenshot 3 & 1 */}
+            <div className="mt-8">
               <Link
                 href="/register"
-                className="group inline-flex items-center gap-2 text-xs font-bold tracking-[0.16em] uppercase transition-all duration-300"
-                style={{ color: track.color }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 border text-xs font-mono font-bold tracking-wider uppercase transition-all duration-300 hover:brightness-110"
+                style={{
+                  borderColor: track.color,
+                  color: track.color,
+                  backgroundColor: `${track.color}10`,
+                }}
               >
-                <span>REGISTER FOR {track.title.toUpperCase()}</span>
-                <ArrowUpRight
-                  size={16}
-                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                />
+                <span>See {track.title} on the agenda</span>
+                <span aria-hidden="true">&rarr;</span>
               </Link>
-
-              <a
-                href="#top"
-                className="text-xs font-mono text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-widest"
-              >
-                &uarr; BACK TO TOP
-              </a>
             </div>
           </div>
         )}

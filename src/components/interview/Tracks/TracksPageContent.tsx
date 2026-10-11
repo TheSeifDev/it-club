@@ -6,36 +6,32 @@ import TrackDetailSection from "./TrackDetailSection";
 import TrackOwnershipSection from "./TrackOwnershipSection";
 import { IT_CLUB_TRACKS } from "./tracks-data";
 
-const getInitialTrackId = (): string => {
-  if (typeof window !== "undefined" && window.location.hash) {
-    const hash = window.location.hash.replace("#", "").toLowerCase();
-    const matched = IT_CLUB_TRACKS.find(
-      (t) => t.id === hash || t.anchorIds.includes(hash)
-    );
-    if (matched) return matched.id;
-  }
-  return "hr";
-};
-
 export default function TracksPageContent() {
-  const [activeTrackId, setActiveTrackId] = useState<string>(getInitialTrackId);
+  // Always initialize deterministically as "hr" so server and client initial render match 100%
+  const [activeTrackId, setActiveTrackId] = useState<string>("hr");
 
   useEffect(() => {
-    // If arriving with a hash, smooth-scroll to that track section
-    if (typeof window !== "undefined" && window.location.hash) {
-      const hash = window.location.hash.replace("#", "").toLowerCase();
-      const matched = IT_CLUB_TRACKS.find(
-        (t) => t.id === hash || t.anchorIds.includes(hash)
-      );
-      if (matched) {
-        const el = document.getElementById(matched.id);
-        if (el) {
-          requestAnimationFrame(() => {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          });
+    // Check hash asynchronously after mount to prevent cascading renders during effect initialization
+    const checkHash = () => {
+      if (typeof window !== "undefined" && window.location.hash) {
+        const hash = window.location.hash.replace("#", "").toLowerCase();
+        const matched = IT_CLUB_TRACKS.find(
+          (t) => t.id === hash || t.anchorIds.includes(hash)
+        );
+        if (matched) {
+          setActiveTrackId(matched.id);
+          const el = document.getElementById(matched.id);
+          if (el) {
+            requestAnimationFrame(() => {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }
         }
       }
-    }
+    };
+
+    const timer = setTimeout(checkHash, 0);
+    window.addEventListener("hashchange", checkHash);
 
     // Set up IntersectionObserver to update active track based on scroll position
     const observer = new IntersectionObserver(
@@ -66,6 +62,8 @@ export default function TracksPageContent() {
     });
 
     return () => {
+      clearTimeout(timer);
+      window.removeEventListener("hashchange", checkHash);
       observer.disconnect();
     };
   }, []);

@@ -2,73 +2,79 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 
 export default function ProcessFinalCTA() {
   return (
     <section
-      aria-label="Final Application Call to Action"
-      className="relative w-full overflow-hidden bg-[#050708] text-white py-24 md:py-32"
+      aria-label="Take the First Step — Final Call to Action"
+      className="relative w-full overflow-hidden text-white"
+      style={{ background: "#050708", minHeight: "360px" }}
     >
-      {/* Ambient Glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[320px] opacity-15 blur-[120px]"
-        style={{
-          background:
-            "radial-gradient(ellipse at bottom, #00e599 0%, #18c8ed 50%, transparent 75%)",
-        }}
-      />
+      {/* Full-section background: light paths image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/process-cta-lightpaths.webp"
+          alt="Colorful light paths converging toward a glowing doorway"
+          fill
+          className="object-cover object-right"
+          sizes="100vw"
+          priority={false}
+        />
+        {/* Dark overlay so text stays readable on the left */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to right, #050708 0%, #050708 40%, rgba(5,7,8,0.7) 65%, rgba(5,7,8,0.2) 100%)",
+          }}
+        />
+      </div>
 
-      <div className="relative tracks-content-container">
-        <div className="p-8 sm:p-12 lg:p-16 bg-[#080a0c] border border-white/10 relative overflow-hidden">
-          {/* Top highlight bar */}
-          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-[#00e599]" />
+      {/* Content */}
+      <div className="relative tracks-content-container py-20 md:py-28">
+        <div className="max-w-xl">
+          {/* Eyebrow */}
+          <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase text-[#00e599] mb-5">
+            READY TO BEGIN?
+          </p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Headline (Col 1-8) */}
-            <div className="lg:col-span-8">
-              <div className="font-mono text-xs font-bold tracking-[0.2em] text-[#00e599] uppercase mb-3">
-                06 • READY TO TAKE THE FIRST STEP?
-              </div>
+          {/* Heading */}
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[-0.03em] leading-[1.06] text-white mb-3">
+            Take the First Step
+          </h2>
 
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] text-white">
-                Your journey starts
-                <br />
-                with a single application.
-              </h2>
+          {/* Arabic subtitle */}
+          <p className="arabic text-lg font-semibold text-white/70 mb-5">
+            ابدأ الآن
+          </p>
 
-              <p className="arabic mt-3 text-base sm:text-lg text-neutral-300 font-medium">
-                ابدأ رحلتك معنا اليوم. التقديم مفتوح لكل من يريد أن يتعلم ويبني ويترك أثراً حقيقياً.
-              </p>
+          {/* Body copy */}
+          <p className="text-sm text-[#8f9ea0] leading-[1.8] mb-8 max-w-sm">
+            Join a community of passionate students, learn new skills, and make
+            a real impact. We can't wait to see your application!
+          </p>
 
-              <p className="mt-4 text-xs sm:text-sm text-neutral-400 font-light leading-relaxed max-w-xl">
-                Choose your track, fill out your application, and take the first step toward working on real projects alongside an ambitious community of peers and mentors.
-              </p>
-            </div>
+          {/* Buttons */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#00e599] text-[#050708] font-bold text-sm tracking-wide uppercase hover:bg-[#3bf5ad] transition-colors duration-200 shadow-[0_0_30px_rgba(0,229,153,0.25)] hover:shadow-[0_0_45px_rgba(0,229,153,0.4)]"
+              style={{ borderRadius: 0 }}
+            >
+              Apply Now
+              <ArrowRight size={16} />
+            </Link>
 
-            {/* Right Buttons (Col 9-12) */}
-            <div className="lg:col-span-4 flex flex-col items-start lg:items-end gap-4">
-              <Link
-                href="/register"
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#00e599] hover:bg-[#3af0ad] text-[#050708] font-bold text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_30px_rgba(0,229,153,0.3)] hover:shadow-[0_0_45px_rgba(0,229,153,0.5)]"
-              >
-                <Sparkles size={16} />
-                <span>Apply for Recruitment</span>
-                <ArrowRight
-                  size={16}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </Link>
-
-              <Link
-                href="/tracks"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 border border-white/15 hover:border-white/35 bg-white/[0.02] text-xs font-mono font-bold tracking-wider uppercase text-neutral-300 hover:text-white transition-all"
-              >
-                <span>Review All Six Tracks</span>
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
+            <Link
+              href="/tracks"
+              className="inline-flex items-center gap-2 px-6 py-3.5 border border-white/20 font-bold text-xs tracking-widest uppercase text-white/70 hover:text-white hover:border-white/40 transition-colors duration-200"
+              style={{ borderRadius: 0 }}
+            >
+              View Our Tracks
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
       </div>

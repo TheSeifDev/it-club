@@ -14,7 +14,7 @@ const interviewSteps = [
     title: "Interview",
     arabicTitle: "المقابلة",
     description:
-      "A conversation to understand your interests, mindset, experience, and how you can contribute.",
+      "A conversation to understand your interests, mindset, experience, and how you can contribute. Scheduled on October 17, 2026.",
     color: "#ff3ca7",
   },
   {

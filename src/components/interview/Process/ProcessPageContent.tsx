@@ -1,48 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import ProcessHero from "./ProcessHero";
+import ProcessStagesSection from "./ProcessStagesSection";
 import ProcessTimeline from "./ProcessTimeline";
-import StageDetailsSection from "./StageDetailsSection";
-import EvaluationPrinciplesSection from "./EvaluationPrinciplesSection";
+import HelpfulTipsSection from "./HelpfulTipsSection";
 import ProcessFAQSection from "./ProcessFAQSection";
 import ProcessFinalCTA from "./ProcessFinalCTA";
 
+// Reference page section order:
+// 1. Hero — "From Application to Impact" + 5-stage progress strip
+// 2. Five Main Process Stages (alternating editorial, 01–05)
+// 3. Key Dates Timeline
+// 4. Helpful Tips (4 cards)
+// 5. FAQ (2-column accordion)
+// 6. Final CTA — "Take the First Step" with light-paths visual
+
 export default function ProcessPageContent() {
-  const [selectedStageId, setSelectedStageId] = useState<string>("application");
-
-  const handleStageSelect = (stageId: string) => {
-    setSelectedStageId(stageId);
-    const element = document.getElementById("stage-details");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   return (
     <div className="w-full">
-      {/* 1. Hero Section: Overview, Stage Meter & CTA */}
+      {/* 1. Hero */}
       <ProcessHero />
 
-      {/* 2. Chronological Connected Timeline */}
-      <ProcessTimeline
-        activeStageId={selectedStageId}
-        onSelectStage={handleStageSelect}
-      />
+      {/* 2. Five Editorial Stage Sections */}
+      <ProcessStagesSection />
 
-      {/* 3. Deep-Dive Stage Breakdown: Expectations & Preparations */}
-      <StageDetailsSection
-        selectedStageId={selectedStageId}
-        onStageChange={(id) => setSelectedStageId(id)}
-      />
+      {/* 3. Key Dates Timeline */}
+      <ProcessTimeline />
 
-      {/* 4. Core Evaluation Principles & Mindset */}
-      <EvaluationPrinciplesSection />
+      {/* 4. Helpful Tips */}
+      <HelpfulTipsSection />
 
-      {/* 5. Frequently Asked Questions (Interactive Accordion) */}
+      {/* 5. FAQ */}
       <ProcessFAQSection />
 
-      {/* 6. Concluding Minimal Call to Action */}
+      {/* 6. Final CTA */}
       <ProcessFinalCTA />
     </div>
   );

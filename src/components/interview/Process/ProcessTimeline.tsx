@@ -1,181 +1,110 @@
 "use client";
 
 import React from "react";
-import { ArrowUpRight } from "lucide-react";
-import { RECRUITMENT_STAGES, type ProcessStage } from "./process-data";
+import {
+  Calendar,
+  FileText,
+  Search,
+  MessageSquare,
+  Award,
+} from "lucide-react";
+import { KEY_DATES } from "./process-data";
 
-interface ProcessTimelineProps {
-  activeStageId?: string;
-  onSelectStage?: (stageId: string) => void;
-}
+const DATE_ICONS = {
+  calendar: Calendar,
+  "file-text": FileText,
+  search: Search,
+  "message-circle": MessageSquare,
+  award: Award,
+};
 
-export default function ProcessTimeline({
-  activeStageId = "application",
-  onSelectStage,
-}: ProcessTimelineProps) {
+export default function ProcessTimeline() {
   return (
     <section
-      id="timeline"
-      aria-label="Recruitment Timeline Section"
-      className="relative w-full overflow-hidden bg-[#050708] text-white py-20 md:py-28 lg:py-32 border-b border-white/10"
+      id="key-dates"
+      aria-label="Key Recruitment Dates Timeline"
+      className="relative w-full overflow-hidden text-white border-b border-white/10"
+      style={{ background: "#050708" }}
     >
-      <div className="relative tracks-content-container">
-        {/* =============================================================== */}
-        {/* 1. SECTION HEADER                                               */}
-        {/* =============================================================== */}
-        <div className="flex items-center gap-4 mb-12 sm:mb-16">
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="font-mono text-xs font-bold text-[#18c8ed] tracking-widest uppercase">
-              02 • CHRONOLOGICAL TIMELINE
-            </span>
-            <span className="text-neutral-600">|</span>
-            <span className="arabic text-sm text-neutral-400 font-medium">
-              الجدول الزمني للقبول
-            </span>
-          </div>
-          <div className="h-px flex-1 bg-white/10" />
+      {/* ── Top Emerald-Cyan Aurora Ambient Bloom ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 left-0 right-0 h-44 opacity-[0.22] blur-[80px]"
+        style={{
+          background:
+            "radial-gradient(ellipse 85% 150px at 50% 0%, #00e599 0%, #18c8ed 45%, transparent 80%)",
+        }}
+      />
+
+      <div className="relative tracks-content-container py-16 md:py-20">
+        {/* Eyebrow */}
+        <div className="mb-2">
+          <span className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase text-[#00e599]">
+            APPLICATION TIMELINE
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-16">
-          <div className="lg:col-span-8">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.08] text-white">
-              A structured roadmap,
-              <br />
-              <span className="text-[#18c8ed]">from first click to kickoff.</span>
-            </h2>
-          </div>
-
-          <div className="lg:col-span-4">
-            <p className="text-xs sm:text-sm text-neutral-400 font-light leading-relaxed">
-              Every applicant moves through the exact same transparent evaluation checkpoints.
-              Select any stage below to inspect what happens, what to prepare, and next steps.
-            </p>
-          </div>
+        {/* Heading */}
+        <div className="mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-[-0.025em] text-white">
+            Key Dates
+          </h2>
+          <p className="arabic mt-1.5 text-base sm:text-lg font-semibold text-white/70">
+            المواعيد المهمة
+          </p>
         </div>
 
-        {/* =============================================================== */}
-        {/* 2. CONNECTED TIMELINE JOURNEY                                   */}
-        {/* =============================================================== */}
-        <div className="relative">
-          {/* Continuous Vertical Center Spine on Desktop */}
-          <div
-            aria-hidden="true"
-            className="hidden lg:block absolute left-1/2 top-4 bottom-4 w-px -translate-x-1/2 bg-gradient-to-b from-[#35d98a]/40 via-[#18c8ed]/40 to-[#9b7cff]/40"
-          />
+        {/* ── Timeline Track ── */}
+        <div className="relative overflow-x-auto pb-4 pt-2 no-scrollbar">
+          <div className="min-w-[680px] md:min-w-0 relative flex items-start justify-between">
+            {/* The continuous connecting line running through the center of all circular nodes */}
+            <div
+              aria-hidden="true"
+              className="absolute top-[22px] sm:top-[24px] left-[24px] right-[24px] h-[2px] z-0 flex pointer-events-none"
+            >
+              {KEY_DATES.slice(0, -1).map((date, i) => (
+                <div
+                  key={`line-${i}`}
+                  className="flex-1 h-full"
+                  style={{
+                    background: `linear-gradient(to right, ${date.color}, ${KEY_DATES[i + 1].color})`,
+                    boxShadow: `0 0 8px ${date.color}60`,
+                  }}
+                />
+              ))}
+            </div>
 
-          <div className="space-y-8 lg:space-y-12">
-            {RECRUITMENT_STAGES.map((stage: ProcessStage, index: number) => {
-              const isEven = index % 2 === 0;
-              const isSelected = activeStageId === stage.id;
-
+            {/* 5 Milestone Nodes */}
+            {KEY_DATES.map((date) => {
+              const Icon = DATE_ICONS[date.icon];
               return (
                 <div
-                  key={`timeline-node-${stage.id}`}
-                  id={`stage-${stage.id}`}
-                  className="relative grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center"
+                  key={date.id}
+                  className="relative z-10 flex flex-col items-center text-center flex-1 px-2"
                 >
-                  {/* Left Column (Even on Desktop, Full on Mobile) */}
+                  {/* Circular Node with neon ring & glow */}
                   <div
-                    className={`lg:col-span-5 ${
-                      isEven
-                        ? "lg:text-right"
-                        : "lg:order-last lg:col-span-5 lg:text-left"
-                    }`}
+                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 bg-[#050708] flex items-center justify-center transition-transform hover:scale-110 duration-200 cursor-default select-none"
+                    style={{
+                      borderColor: date.color,
+                      boxShadow: `0 0 18px ${date.color}45, inset 0 0 10px ${date.color}20`,
+                    }}
                   >
-                    <div
-                      className={`group relative p-6 sm:p-7 bg-[#0a0c0e] border transition-all duration-300 text-left ${
-                        isSelected
-                          ? "border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.06)]"
-                          : "border-white/10 hover:border-white/20"
-                      }`}
-                      style={{
-                        background: isSelected
-                          ? `linear-gradient(180deg, ${stage.color}0f 0%, rgba(10,12,14,0.95) 100%)`
-                          : undefined,
-                      }}
-                    >
-                      {/* Top colored indicator line */}
-                      <div
-                        className="absolute top-0 left-0 right-0 h-[2.5px] transition-all duration-300"
-                        style={{ backgroundColor: stage.color }}
-                      />
-
-                      <div className="flex items-center justify-between mb-3">
-                        <span
-                          className="font-mono text-xs font-bold tracking-widest uppercase"
-                          style={{ color: stage.color }}
-                        >
-                          {stage.stepNumber} &bull; {stage.tag}
-                        </span>
-
-                        <span className="font-mono text-[11px] text-neutral-500">
-                          {stage.durationEstimate}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                        {stage.title}
-                      </h3>
-
-                      <h4 className="arabic mt-1 text-sm sm:text-base font-bold text-white/70">
-                        {stage.arabicTitle}
-                      </h4>
-
-                      <p className="mt-4 text-xs sm:text-sm text-neutral-300 font-light leading-relaxed">
-                        {stage.shortDesc}
-                      </p>
-
-                      <p className="arabic mt-2 text-xs text-neutral-400 font-light leading-relaxed">
-                        {stage.arabicShortDesc}
-                      </p>
-
-                      {/* Interactive Deep-dive Switcher */}
-                      {onSelectStage && (
-                        <button
-                          type="button"
-                          onClick={() => onSelectStage(stage.id)}
-                          className="mt-5 inline-flex items-center gap-1.5 text-xs font-mono font-bold tracking-wider uppercase transition-colors"
-                          style={{ color: stage.color }}
-                        >
-                          <span>Inspect Stage Deep-Dive</span>
-                          <ArrowUpRight size={14} />
-                        </button>
-                      )}
-                    </div>
+                    <Icon size={17} style={{ color: date.color }} />
                   </div>
 
-                  {/* Center Node on Desktop */}
-                  <div className="hidden lg:flex lg:col-span-2 justify-center items-center">
-                    <div
-                      className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#050708] border-2 transition-transform duration-300 group-hover:scale-110"
-                      style={{ borderColor: stage.color }}
-                    >
-                      <span
-                        className="font-mono text-xs font-bold"
-                        style={{ color: stage.color }}
-                      >
-                        {stage.stepNumber}
-                      </span>
+                  {/* Label in white */}
+                  <span className="text-xs sm:text-sm font-semibold text-white tracking-wide mt-3.5 whitespace-nowrap">
+                    {date.label}
+                  </span>
 
-                      {/* Radial pulse glow behind active node */}
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 -m-1 rounded-full opacity-20 blur-md"
-                        style={{ backgroundColor: stage.color }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Empty Spacer Column on Desktop */}
-                  <div
-                    className={`hidden lg:block lg:col-span-5 ${
-                      isEven ? "lg:order-last" : ""
-                    }`}
+                  {/* Date range in accent color */}
+                  <span
+                    className="text-[11px] sm:text-xs font-mono font-semibold mt-1 whitespace-nowrap"
+                    style={{ color: date.color }}
                   >
-                    <div className="p-4 text-xs font-mono text-neutral-600 uppercase tracking-widest">
-                      MILESTONE {stage.stepNumber} / 06
-                    </div>
-                  </div>
+                    {date.dateRange}
+                  </span>
                 </div>
               );
             })}

@@ -104,18 +104,18 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     category: "organized",
     categoryLabel: "Organized by IT Club",
     role: "Organizer & Host",
-    date: "Fall 2026 Intake",
+    date: "October 17, 2026",
     location: "BATU Campus (Benha University of Applied Technology)",
     shortDescription:
       "The comprehensive annual member intake connecting prospective tech students across all six specialized IT Club tracks.",
     fullDescription:
-      "Our annual recruitment cycle welcomes hundreds of ambitious university students to apply, interview, and join the IT Club family. Over the course of the selection period, candidates undergo technical and behavioral interviews conducted by our committee heads, concluding with an induction day and cross-track team integration.",
+      "Our annual recruitment cycle welcomes hundreds of ambitious university students to apply, interview, and join the IT Club family. Over the course of the selection period, candidates undergo technical and behavioral interviews held on October 17, 2026 conducted by our committee heads, concluding with an induction day and cross-track team integration.",
     featured: true,
     coverImage: "/spotlight-stage.jpg",
     trackAffiliation: "All Tracks",
     accentColor: "#35d98a",
     highlights: [
-      "Interviews conducted by all 6 specialized committee heads",
+      "Interviews held on October 17, 2026 by all 6 specialized committee heads",
       "Structured behavioral and technical candidate assessment workflows",
       "Onboarding workshops and cross-track collaboration kickoff",
     ],

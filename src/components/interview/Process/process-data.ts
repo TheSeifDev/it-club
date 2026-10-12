@@ -1,318 +1,348 @@
+// ============================================================
+// IT CLUB — Process Page Data
+// Matches the reference image section structure:
+//   5 editorial stages + timeline + tips + FAQ
+// ============================================================
+
+// ────────────────────────────────────────────────────────────
+// 1. Five Main Process Stages
+// ────────────────────────────────────────────────────────────
+
 export interface ProcessStage {
   id: string;
   stepNumber: string;
+  tag: string;
   title: string;
   arabicTitle: string;
-  tag: string;
-  color: string;
-  shortDesc: string;
-  arabicShortDesc: string;
-  whatToExpect: string[];
-  whatToPrepare: string[];
-  whatHappensNext: string;
-  durationEstimate: string;
-}
-
-export interface EvaluationPillar {
-  number: string;
-  title: string;
-  arabicTitle: string;
-  tag: string;
   color: string;
   description: string;
   arabicDescription: string;
-  indicators: string[];
+  ctaLabel?: string;
 }
+
+export const PROCESS_STAGES: ProcessStage[] = [
+  {
+    id: "application",
+    stepNumber: "01",
+    tag: "STEP ONE",
+    title: "Submit Your Application",
+    arabicTitle: "قدّم طلبك",
+    color: "#00e599",
+    description:
+      "Begin your journey by filling out our application form. Share your background, interests, skills, and the track you're most passionate about. Don't worry if you're just starting — we value motivation and willingness to grow as much as experience.",
+    arabicDescription: "ابدأ رحلتك بملء نموذج طلبنا",
+    ctaLabel: "Apply Now",
+  },
+  {
+    id: "review",
+    stepNumber: "02",
+    tag: "STEP TWO",
+    title: "Initial Review",
+    arabicTitle: "المراجعة الأولية",
+    color: "#18c8ed",
+    description:
+      "Our team carefully reviews every application to understand your interests, experiences, and potential. We make sure to give each application a fair chance.",
+    arabicDescription: "يراجع فريقنا كل طلب بعناية",
+  },
+  {
+    id: "interview",
+    stepNumber: "03",
+    tag: "STEP THREE",
+    title: "Interview Stage",
+    arabicTitle: "مرحلة المقابلة",
+    color: "#eaff00",
+    description:
+      "If selected, you'll be invited to an interview on October 17, 2026. This is a friendly conversation to know you better, discuss your interests, and see how you contribute to the club.",
+    arabicDescription: "إذا تم اختيارك، ستُدعى لمقابلة يوم 17 أكتوبر 2026",
+  },
+  {
+    id: "decision",
+    stepNumber: "04",
+    tag: "STEP FOUR",
+    title: "Final Decision",
+    arabicTitle: "القرار النهائي",
+    color: "#ff3ca7",
+    description:
+      "After the interview is completed, our team will carefully evaluate and make the final decision. You'll receive an email with your result.",
+    arabicDescription: "بعد المقابلة، سيتخذ فريقنا القرار النهائي",
+  },
+  {
+    id: "grow",
+    stepNumber: "05",
+    tag: "STEP FIVE",
+    title: "Join & Grow",
+    arabicTitle: "انضم وطوّر من نفسك",
+    color: "#9b7cff",
+    description:
+      "Once accepted, you'll officially join IT Club and start an amazing journey filled with learning, collaboration, and real impact. This is just the beginning!",
+    arabicDescription: "بمجرد قبولك، ستنضم رسمياً لنادي IT Club",
+  },
+];
+
+// ────────────────────────────────────────────────────────────
+// 2. Application Checklist (Stage 01 visual)
+// ────────────────────────────────────────────────────────────
+
+export interface ChecklistItem {
+  label: string;
+  icon: "user" | "book" | "star" | "target" | "check";
+}
+
+export const APPLICATION_CHECKLIST: ChecklistItem[] = [
+  { label: "Personal Information", icon: "user" },
+  { label: "Academic Information", icon: "book" },
+  { label: "Experience & Skills", icon: "star" },
+  { label: "Track Preference", icon: "target" },
+  { label: "Review & Submit", icon: "check" },
+];
+
+// ────────────────────────────────────────────────────────────
+// 3. Review Cards (Stage 02 visual)
+// ────────────────────────────────────────────────────────────
+
+export interface ReviewCard {
+  icon: "check-square" | "heart" | "star" | "users";
+  label: string;
+  color: string;
+}
+
+export const REVIEW_CARDS: ReviewCard[] = [
+  { icon: "check-square", label: "Complete Applications", color: "#18c8ed" },
+  { icon: "heart", label: "Be Genuine", color: "#ff3ca7" },
+  { icon: "star", label: "Show Your Passion", color: "#eaff00" },
+  { icon: "users", label: "Equal Opportunity", color: "#00e599" },
+];
+
+// ────────────────────────────────────────────────────────────
+// 4. Interview Cards (Stage 03 visual)
+// ────────────────────────────────────────────────────────────
+
+export interface InterviewCard {
+  icon: "smile" | "compass" | "user-check";
+  title: string;
+  description: string;
+  color: string;
+}
+
+export const INTERVIEW_CARDS: InterviewCard[] = [
+  {
+    icon: "smile",
+    title: "Friendly Atmosphere",
+    description: "A casual conversation set up to make you feel at ease.",
+    color: "#eaff00",
+  },
+  {
+    icon: "compass",
+    title: "Track-Focused Discussion",
+    description: "We'll talk about your interests within your chosen track.",
+    color: "#18c8ed",
+  },
+  {
+    icon: "user-check",
+    title: "Be Yourself",
+    description: "Show your personality and authentic enthusiasm.",
+    color: "#ff3ca7",
+  },
+];
+
+// ────────────────────────────────────────────────────────────
+// 5. Decision Outcome Cards (Stage 04 visual)
+// ────────────────────────────────────────────────────────────
+
+export interface OutcomeCard {
+  icon: "check-circle" | "clock" | "x-circle";
+  title: string;
+  description: string;
+  color: string;
+  bgColor: string;
+}
+
+export const OUTCOME_CARDS: OutcomeCard[] = [
+  {
+    icon: "check-circle",
+    title: "Accepted",
+    description: "Congratulations! You're now officially part of IT Club.",
+    color: "#00e599",
+    bgColor: "rgba(0,229,153,0.08)",
+  },
+  {
+    icon: "clock",
+    title: "Waitlisted",
+    description: "You may be considered if a position opens up.",
+    color: "#eaff00",
+    bgColor: "rgba(234,255,0,0.06)",
+  },
+  {
+    icon: "x-circle",
+    title: "Not Accepted",
+    description: "Keep grinding. Apply again next recruitment round.",
+    color: "#ff3ca7",
+    bgColor: "rgba(255,60,167,0.06)",
+  },
+];
+
+// ────────────────────────────────────────────────────────────
+// 6. Join & Grow Feature Labels (Stage 05 visual)
+// ────────────────────────────────────────────────────────────
+
+export interface GrowFeature {
+  label: string;
+  icon: "layers" | "users" | "zap" | "globe";
+  color: string;
+}
+
+export const GROW_FEATURES: GrowFeature[] = [
+  { label: "Work on real projects", icon: "layers", color: "#00e599" },
+  { label: "Be part of a community", icon: "users", color: "#18c8ed" },
+  { label: "Gain your skills", icon: "zap", color: "#eaff00" },
+  { label: "Create an impact", icon: "globe", color: "#ff3ca7" },
+];
+
+// ────────────────────────────────────────────────────────────
+// 7. Key Dates Timeline
+// ────────────────────────────────────────────────────────────
+
+export interface TimelineDate {
+  id: string;
+  label: string;
+  dateRange: string;
+  icon: "calendar" | "file-text" | "search" | "message-circle" | "award";
+  color: string;
+}
+
+export const KEY_DATES: TimelineDate[] = [
+  {
+    id: "open",
+    label: "Applications Open",
+    dateRange: "Oct 1, 2026",
+    icon: "calendar",
+    color: "#00e599",
+  },
+  {
+    id: "close",
+    label: "Applications Close",
+    dateRange: "Oct 14, 2026",
+    icon: "file-text",
+    color: "#ff3ca7",
+  },
+  {
+    id: "initial-review",
+    label: "Initial Review",
+    dateRange: "Oct 15 – 16, 2026",
+    icon: "search",
+    color: "#eaff00",
+  },
+  {
+    id: "interviews",
+    label: "Interviews",
+    dateRange: "Oct 17, 2026",
+    icon: "message-circle",
+    color: "#18c8ed",
+  },
+  {
+    id: "results",
+    label: "Final Results",
+    dateRange: "Oct 20, 2026",
+    icon: "award",
+    color: "#ff3ca7",
+  },
+];
+
+// ────────────────────────────────────────────────────────────
+// 8. Helpful Tips
+// ────────────────────────────────────────────────────────────
+
+export interface TipCard {
+  icon: "shield" | "file-text" | "heart" | "check-circle";
+  title: string;
+  description: string;
+  color: string;
+}
+
+export const HELPFUL_TIPS: TipCard[] = [
+  {
+    icon: "shield",
+    title: "Be Honest",
+    description: "Share your real experience and interests.",
+    color: "#00e599",
+  },
+  {
+    icon: "file-text",
+    title: "Be Specific",
+    description: "Provide clear details about your skills and experiences.",
+    color: "#eaff00",
+  },
+  {
+    icon: "heart",
+    title: "Show Motivation",
+    description: "Tell us why you want to join and what you hope to achieve.",
+    color: "#ff3ca7",
+  },
+  {
+    icon: "check-circle",
+    title: "Proofread",
+    description: "Review your application before submitting.",
+    color: "#00e599",
+  },
+];
+
+// ────────────────────────────────────────────────────────────
+// 9. FAQ Items
+// ────────────────────────────────────────────────────────────
 
 export interface FAQItem {
   id: string;
   question: string;
-  arabicQuestion: string;
   answer: string;
-  arabicAnswer: string;
-  category: "applications" | "interviews" | "tracks" | "commitment";
 }
-
-export const RECRUITMENT_STAGES: ProcessStage[] = [
-  {
-    id: "application",
-    stepNumber: "01",
-    title: "Application Submission",
-    arabicTitle: "التقديم الإلكتروني",
-    tag: "ONLINE REGISTRATION",
-    color: "#35d98a",
-    shortDesc:
-      "Submit your official application form, pick your preferred track, and tell us about your goals and curiosity.",
-    arabicShortDesc:
-      "املأ استمارة التقديم الرسمية، واختر المسار الأنسب لشغفك واهتماماتك وأخبرنا بما تسعى لبنائه.",
-    whatToExpect: [
-      "A clean, straightforward online application form taking ~10-15 minutes.",
-      "Clear selection of your primary committee/track preference from our six tracks.",
-      "Thoughtful short-answer questions focused on mindset, motivation, and learning interest.",
-      "Optional fields for personal links (GitHub, Behance, LinkedIn, portfolios, or writing samples).",
-    ],
-    whatToPrepare: [
-      "Your student email and active WhatsApp contact number for prompt notifications.",
-      "A genuine reflection on why you want to join IT Club and what you hope to build.",
-      "Any links or projects you are proud of (not mandatory for beginner applicants).",
-    ],
-    whatHappensNext:
-      "Every submission is reviewed individually by the respective committee heads within 3 to 5 days of submission.",
-    durationEstimate: "10–15 Minutes",
-  },
-  {
-    id: "screening",
-    stepNumber: "02",
-    title: "Application & Mindset Review",
-    arabicTitle: "مراجعة الطلبات والاهتمامات",
-    tag: "PORTFOLIO & PROFILE SCREENING",
-    color: "#18c8ed",
-    shortDesc:
-      "Committee leadership reviews all candidate applications to understand your passion, background, and learning drive.",
-    arabicShortDesc:
-      "تقوم قيادات اللجان بمراجعة طلبات المتقدمين للتعرف على اهتماماتهم وخلفياتهم ورغبتهم في التطور.",
-    whatToExpect: [
-      "Holistic evaluation focused on curiosity, readiness to collaborate, and growth mindset.",
-      "No artificial disqualification based purely on academic major or prior university year.",
-      "Reviewers looking for authenticity, self-motivation, and alignment with club culture.",
-    ],
-    whatToPrepare: [
-      "Check your inbox and messaging apps regularly for updates.",
-      "Review the description and focus areas of your selected track on our Tracks page.",
-      "Keep an open mind about potential cross-committee learning opportunities.",
-    ],
-    whatHappensNext:
-      "Candidates progressing to the conversation stage receive personalized interview scheduling invites.",
-    durationEstimate: "3–5 Days",
-  },
-  {
-    id: "task",
-    stepNumber: "03",
-    title: "Exploratory Challenge",
-    arabicTitle: "المهمة الاستكشافية التجريبية",
-    tag: "PRACTICAL MINI-CHALLENGE",
-    color: "#eaff00",
-    shortDesc:
-      "A lightweight, practical exercise for technical or creative tracks to observe your problem-solving and research approach.",
-    arabicShortDesc:
-      "تحدٍ مصغر وعملي للمسارات التقنية والإبداعية يهدف للتعرف على طريقة بحثك وتفكيرك في حل المشكلات.",
-    whatToExpect: [
-      "A beginner-friendly mini-brief tailored to your chosen discipline (code, content, design, or planning).",
-      "Emphasis on thought process and methodology rather than flawless production perfection.",
-      "Clear instructions, helpful resources, and realistic completion windows.",
-    ],
-    whatToPrepare: [
-      "Document your assumptions and the decisions you made along the way.",
-      "Feel free to leverage documentation, search engines, and self-learning tools.",
-      "Be prepared to share what you learned and what challenged you during the task.",
-    ],
-    whatHappensNext:
-      "Your challenge serves as a productive talking point and discussion foundation in the interview.",
-    durationEstimate: "48–72 Hours",
-  },
-  {
-    id: "interview",
-    stepNumber: "04",
-    title: "The Interview Dialogue",
-    arabicTitle: "جلسة المقابلة الشخصية والتقنية",
-    tag: "CONVERSATIONAL EVALUATION",
-    color: "#ff3ca7",
-    shortDesc:
-      "A constructive conversation with track leaders to explore your aspirations, discuss your interests, and get to know you as a person.",
-    arabicShortDesc:
-      "حوار تفاعلي وبناء مع قادة المسار للتعرف على شخصيتك وطموحاتك وأهدافك والإجابة عن كل استفساراتك.",
-    whatToExpect: [
-      "A friendly, welcoming atmosphere designed to let you speak comfortably and authentically.",
-      "Questions about your past experiences, group dynamics, how you handle challenges, and time commitment.",
-      "An open floor to ask questions directly to heads about track roadmaps, mentors, and club life.",
-    ],
-    whatToPrepare: [
-      "Come prepared to discuss what excites you in technology and teamwork.",
-      "Reflect on how you organize your academic schedule alongside extracurricular activities.",
-      "Bring genuine questions you have about the team and what we will build together.",
-    ],
-    whatHappensNext:
-      "The interviewing team consolidates feedback to finalize cohort selections within 48 to 72 hours.",
-    durationEstimate: "20–30 Minutes",
-  },
-  {
-    id: "selection",
-    stepNumber: "05",
-    title: "Final Selection & Welcome",
-    arabicTitle: "القبول والترحيب بالأعضاء",
-    tag: "OFFICIAL DECISION NOTICE",
-    color: "#ffab18",
-    shortDesc:
-      "Official selection notifications are issued, and accepted applicants receive their official track confirmation.",
-    arabicShortDesc:
-      "إرسال إشعارات القبول الرسمية وتأكيد انضمام الأعضاء الجدد للجان والمسارات المختارة.",
-    whatToExpect: [
-      "Formal email confirmation detailing your track placement and initial cohort communications.",
-      "Next-steps guide outlining member onboarding dates and community group invites.",
-      "Constructive feedback shared whenever possible for applicants not selected in this intake.",
-    ],
-    whatToPrepare: [
-      "Confirm your acceptance promptly to secure your spot in the incoming cohort.",
-      "Join the official IT Club Discord/WhatsApp channels using the invite links in your email.",
-      "Block out calendar time for the general onboarding orientation session.",
-    ],
-    whatHappensNext:
-      "Immediate transition into member orientation and cross-track alignment activities.",
-    durationEstimate: "2–3 Days",
-  },
-  {
-    id: "onboarding",
-    stepNumber: "06",
-    title: "Onboarding & Cohort Kickoff",
-    arabicTitle: "الانضمام وبدء ورش العمل والمشاريع",
-    tag: "ACTIVE MEMBERSHIP LAUNCH",
-    color: "#9b7cff",
-    shortDesc:
-      "Full cohort orientation, mentor pairings, internal tooling setup, and the start of hands-on workshops and real club projects.",
-    arabicShortDesc:
-      "اللقاء الترحيبي العام، والتعرف على المرشدين، وبدء أولى ورش العمل والمشاريع الحقيقية في النادي.",
-    whatToExpect: [
-      "General community assembly connecting you with members across all six IT Club committees.",
-      "Introduction to track curricula, internal development workflows, and season project roadmap.",
-      "Assignment of first hands-on sprint, collaborative workshop, or campus event project.",
-    ],
-    whatToPrepare: [
-      "Set up necessary software tooling (Git, Discord, collaborative Figma/Notion workspaces).",
-      "Bring your curiosity, readiness to collaborate, and enthusiasm to build.",
-      "Be prepared to learn rapidly from experienced mentors and build lifelong friendships.",
-    ],
-    whatHappensNext:
-      "You are an active IT Club builder, contributing to real production code, major events, or digital media throughout the academic year.",
-    durationEstimate: "Full Season",
-  },
-];
-
-export const EVALUATION_PILLARS: EvaluationPillar[] = [
-  {
-    number: "01",
-    title: "Curiosity & Growth Mindset",
-    arabicTitle: "الشغف والفضول للتعلم",
-    tag: "INTRINSIC DRIVE",
-    color: "#35d98a",
-    description:
-      "Skills and frameworks can be taught; intrinsic curiosity is irreplaceable. We prioritize people who ask deep questions, seek to understand the 'why', and actively experiment with unfamiliar technologies.",
-    arabicDescription:
-      "المهارات التقنية يمكن تعلمها، لكن الشغف والفضول الداخلي لا يعوضان. نمنح الأولوية لمن يسألون ويبحثون ويجربون دون تردد.",
-    indicators: [
-      "Self-directed learning initiatives and experiments outside the classroom",
-      "Comfort with asking clarifying questions when facing unknowns",
-      "Excitement about discovering modern tools and solving real-world friction",
-    ],
-  },
-  {
-    number: "02",
-    title: "Commitment & Consistency",
-    arabicTitle: "الالتزام والاستمرارية",
-    tag: "RELIABILITY & OWNERSHIP",
-    color: "#18c8ed",
-    description:
-      "Consistent presence and steady accountability outweigh sporadic bursts of intensity. Reliable teammates who communicate early, meet project commitments, and support deadlines are the bedrock of our club.",
-    arabicDescription:
-      "الحضور الدائم والالتزام بالمسؤوليات يفوق الحماس المؤقت. الأعضاء الموثوقون الذين يتواصلون بشفافية هم عماد نجاح النادي.",
-    indicators: [
-      "Realistic estimation and transparent communication of your weekly bandwidth",
-      "Following through on agreed deliverables and meeting attendance",
-      "Proactive notification whenever academic pressures or exams arise",
-    ],
-  },
-  {
-    number: "03",
-    title: "Collaboration & Empathy",
-    arabicTitle: "روح الفريق والتواصل الإنساني",
-    tag: "TEAM DYNAMICS",
-    color: "#ff3ca7",
-    description:
-      "None of our software platforms, hackathons, or media productions are built in isolation. We value teammates who listen attentively, give and receive constructive feedback, and celebrate collective wins.",
-    arabicDescription:
-      "لا شيء في نادينا يبنى بمعزل عن الفريق. نقدر من يستمعون باهتمام، ويتبادلون الملاحظات البناءة، ويدعمون زملاءهم بكل إخلاص.",
-    indicators: [
-      "Constructive, ego-free communication during brainstorming and reviews",
-      "Willingness to share knowledge and unblock team members",
-      "Respect for diverse academic disciplines and individual learning curves",
-    ],
-  },
-  {
-    number: "04",
-    title: "Practical Action & Execution",
-    arabicTitle: "المبادرة وتحويل الأفكار لواقع",
-    tag: "BIAS TOWARD ACTION",
-    color: "#eaff00",
-    description:
-      "IT Club is a community of builders, not passive spectators. We champion applicants who take initiative, propose tangible solutions, create prototypes, and embrace the messy process of building things from scratch.",
-    arabicDescription:
-      "نادي تكنولوجيا المعلومات هو مجتمع من الصنّاع والمنفذين. نحتفي بالمبادرين الذين يحولون الأفكار إلى واقع ومشاريع ملموسة.",
-    indicators: [
-      "A proactive drive to propose solutions rather than merely highlighting problems",
-      "Resilience when code breaks, timelines shift, or plans require adaptation",
-      "Pride in shipping tangible, production-quality work for real student users",
-    ],
-  },
-];
 
 export const PROCESS_FAQS: FAQItem[] = [
   {
-    id: "prior-experience",
-    question: "Do I need prior coding or design experience to apply?",
-    arabicQuestion: "هل يشترط وجود خبرة سابقة في البرمجة أو التصميم للتقديم؟",
+    id: "multiple-tracks",
+    question: "Can I apply to more than one track?",
     answer:
-      "No! Prior experience is not mandatory for all tracks. While some advanced roles in IT or R&D benefit from foundational familiarity, our core mission is talent acceleration. We actively look for genuine passion, learning curiosity, and dedication. Our curriculum is structured to help you grow from the ground up through guided mentorship and workshops.",
-    arabicAnswer:
-      "لا، الخبرة المسبقة ليست شرطاً إلزامياً لجميع المسارات. رسالتنا الأساسية هي بناء وتمكين المواهب من الصفر. نبحث عن الشغف الحقيقي، والرغبة الصادقة في التعلم والالتزام.",
-    category: "applications",
+      "You can apply to one primary track per application cycle. However, as a member you'll collaborate with people across all tracks regularly.",
   },
   {
-    id: "multiple-tracks",
-    question: "Can I apply to more than one track simultaneously?",
-    arabicQuestion: "هل يمكنني التقديم في أكثر من مسار في نفس الوقت؟",
+    id: "know-result",
+    question: "How will I know the result?",
     answer:
-      "You will select one primary track on the registration form to ensure focused evaluation and dedicated mentorship. However, IT Club actively fosters cross-committee collaboration: as an active member, you will have regular opportunities to collaborate with developers, designers, organizers, and PR specialists on unified projects.",
-    arabicAnswer:
-      "تقوم باختيار مسار أساسي واحد في استمارة التقديم لضمان تقييم دقيق ومركز. ومع ذلك، يشجع النادي التعاون بين مختلف اللجان في المشاريع الموحدة.",
-    category: "tracks",
+      "You'll receive an official email notification at each stage of the process. Final decisions are communicated within 48–72 hours after your interview.",
+  },
+  {
+    id: "prior-experience",
+    question: "Do I need previous experience to apply?",
+    answer:
+      "No prior experience is required for most tracks. We value passion, curiosity, and willingness to learn over existing technical skills.",
+  },
+  {
+    id: "edit-application",
+    question: "Can I edit my application after submitting?",
+    answer:
+      "Once submitted, applications cannot be edited. Make sure to review all your information carefully before submitting.",
+  },
+  {
+    id: "how-long",
+    question: "How long does the application process take?",
+    answer:
+      "The full process typically takes 3–6 weeks from application open to final results. Check the Key Dates section for specific timelines.",
   },
   {
     id: "interview-format",
-    question: "What is the interview like, and how should I prepare?",
-    arabicQuestion: "كيف يبدو شكل المقابلة وكيف أستعد لها؟",
+    question: "What's the interview like?",
     answer:
-      "Our interview is a constructive, friendly conversation—never an aggressive exam or stressful interrogation. We want to understand what inspires you, learn about projects or hobbies you enjoy, and evaluate how you communicate and collaborate in a team. The best preparation is to be yourself, be honest about your current skill level, and know why you want to join IT Club.",
-    arabicAnswer:
-      "المقابلة عبارة عن حوار ودي وبناء، وليست اختباراً معقداً. هدفنا معرفة طريقة تفكيرك، وشغفك، وكيفية تنظيم وقتك. أفضل استعداد هو أن تكون على طبيعتك وبمنتهى الصدق.",
-    category: "interviews",
+      "The interview is a friendly, conversational session with track leaders. It's designed to learn about you — your interests, goals, and how you'd contribute to the team.",
   },
   {
-    id: "time-commitment",
-    question: "What is the expected weekly time commitment for members?",
-    arabicQuestion: "ما هو الوقت المتوقع تخصيصه أسبوعياً لأنشطة النادي؟",
+    id: "when-interviews",
+    question: "When will the interviews be held?",
     answer:
-      "Active members typically commit around 3 to 5 hours per week. This covers weekly committee syncs, hands-on workshops, and collaborative project sprint tasks. During major summit weeks or recruitment hackathons, commitments may increase temporarily, but academic exams and midterms always take absolute priority.",
-    arabicAnswer:
-      "يخصص العضو الفعال عادة من 3 إلى 5 ساعات أسبوعياً للاجتماعات، وورش العمل، وتنفيذ مهام المشاريع. فترات الامتحانات الأكاديمية لها الأولوية القصوى دائماً.",
-    category: "commitment",
+      "Interviews will be held on October 17, 2026 (17 Oct). Selected applicants will receive an official invitation with their assigned time slot.",
   },
   {
-    id: "eligibility",
-    question: "Is membership open to all university faculties and academic years?",
-    arabicQuestion: "هل الانضمام متاح لجميع كليات وسنوات الجامعة المختلفة؟",
+    id: "contact",
+    question: "Who can I contact if I have more questions?",
     answer:
-      "Yes! Membership is open to all university students regardless of faculty, department, or academic year (from freshmen to senior year). We believe diverse backgrounds—from computer science and engineering to business, arts, and languages—strengthen our multi-disciplinary projects.",
-    arabicAnswer:
-      "نعم! التقديم متاح لجميع طلاب الجامعة بمختلف الكليات والسنوات الدراسية (من السنة الأولى وحتى التخرج). تنوع الخلفيات هو سر قوة مشاريعنا وتكاملها.",
-    category: "applications",
-  },
-  {
-    id: "timeline-notification",
-    question: "How and when will I be notified regarding my application status?",
-    arabicQuestion: "متى وكيف سأعرف نتيجة طلبي وموعد الخطوات التالية؟",
-    answer:
-      "You will receive official updates via email and WhatsApp at each stage of the recruitment process. Initial screening confirmations are sent within 3–5 days after application review, and final cohort results are communicated within 48–72 hours following your interview.",
-    arabicAnswer:
-      "ستصلك رسائل رسمية عبر البريد الإلكتروني وتطبيق واتساب في كل مرحلة. نتائج الفرز المبدئي تصل خلال 3-5 أيام، وقرارات القبول النهائية خلال 48-72 ساعة من المقابلة.",
-    category: "interviews",
+      "Reach out through our official social media channels or email contact@itclub.one. Our team is happy to help with any questions.",
   },
 ];

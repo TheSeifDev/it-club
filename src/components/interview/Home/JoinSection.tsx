@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
-
-const TARGET_DATE = new Date("2026-10-10T00:00:00").getTime();
+import { TARGET_DATE } from "./Hero/hero-data";
 
 function getDaysRemaining() {
   const difference = TARGET_DATE - Date.now();
@@ -74,7 +73,10 @@ export default function JoinSection() {
             </span>
 
             <div className="mt-4 flex items-end lg:flex-col lg:items-end">
-              <span className="text-[82px] font-bold leading-[0.82] tracking-[-0.06em] md:text-[100px]">
+              <span
+                suppressHydrationWarning
+                className="text-[82px] font-bold leading-[0.82] tracking-[-0.06em] md:text-[100px]"
+              >
                 {days}
               </span>
 

@@ -164,7 +164,7 @@ export default function HeroSection() {
         </h1>
 
         <p className="mt-8 text-[28px] font-bold leading-none tracking-tight">
-          10 – 31 October 2026
+          17 – 31 October 2026
         </p>
 
         {/* Countdown */}

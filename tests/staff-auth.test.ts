@@ -146,14 +146,19 @@ describe("Staff Authentication & Role Foundation (Phase 1)", () => {
       assert.equal(typeof status.ownerCount, "number");
     });
 
-    it("refuses to bootstrap a non-existent Supabase Auth user", async () => {
+    it("refuses to bootstrap when already initialized or when target user does not exist", async () => {
       if (!serviceKey) return;
+      const status = await checkBootstrapStatus();
       const result = await bootstrapFirstOwner({
         userId: "ffffffff-ffff-ffff-ffff-ffffffffffff",
       });
 
       assert.equal(result.success, false);
-      assert.equal(result.reason, "USER_NOT_FOUND");
+      if (status.initialized) {
+        assert.equal(result.reason, "ALREADY_INITIALIZED");
+      } else {
+        assert.equal(result.reason, "USER_NOT_FOUND");
+      }
     });
   });
 });

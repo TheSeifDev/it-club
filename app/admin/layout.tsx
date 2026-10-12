@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck, LogOut, ExternalLink } from "lucide-react";
 import { requireStaffRole } from "../../lib/auth/page-guard";
+import AdminSidebar from "./AdminSidebar";
 
 export const metadata: Metadata = {
   title: "Admin Portal — IT Club Recruitment",
@@ -72,10 +73,15 @@ export default async function AdminLayout({
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 tracks-content-container py-8 sm:py-10">
-        {children}
-      </main>
+      {/* Main Administrative Layout with Sidebar */}
+      <div className="flex-1 tracks-content-container py-8 sm:py-10">
+        <div className="flex flex-col md:flex-row items-start gap-8">
+          <AdminSidebar />
+          <main className="flex-1 w-full min-w-0">
+            {children}
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

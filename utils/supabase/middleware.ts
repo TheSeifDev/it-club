@@ -36,7 +36,18 @@ export const createClient = async (request: NextRequest) => {
   );
 
   // Refresh auth token if expired
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    if (!user) {
+      const redirectUrl = new URL("/login", request.url);
+      redirectUrl.searchParams.set("next", pathname + request.nextUrl.search);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
   return supabaseResponse;
 };

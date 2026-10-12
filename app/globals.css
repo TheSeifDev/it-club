@@ -47,8 +47,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-montserrat);
-  --font-arabic: var(--font-alexandria);
+  --font-sans: var(--font-montserrat), var(--font-alexandria), sans-serif;
+  --font-arabic: var(--font-alexandria), sans-serif;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -70,7 +70,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-montserrat), sans-serif;
+  font-family: var(--font-montserrat), var(--font-alexandria), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -79,8 +79,11 @@ body {
   color: var(--primary-foreground);
 }
 
-.arabic {
+.arabic,
+[dir="rtl"],
+:lang(ar) {
   font-family: var(--font-alexandria), sans-serif;
+  letter-spacing: normal;
 }
 
 input:-webkit-autofill,

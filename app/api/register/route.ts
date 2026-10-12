@@ -1,152 +1,303 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server.js";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { validateRegistrationPayload } from "../../../lib/validation/registration-schema.ts";
+import {
+  checkRateLimit,
+  extractClientIp,
+  hashRateLimitKey,
+} from "../../../lib/security/rate-limiter.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type RegistrationBody = {
-  fullName?: unknown;
-  nationalId?: unknown;
-  academicId?: unknown;
-  phone?: unknown;
-  whatsapp?: unknown;
-  universityEmail?: unknown;
-  googleEmail?: unknown;
-  year?: unknown;
-  department?: unknown;
-  experienceLevel?: unknown;
-  skills?: unknown;
-  experienceDetails?: unknown;
-  volunteerExperience?: unknown;
-  primaryTrack?: unknown;
-  secondaryTrack?: unknown;
-  motivation?: unknown;
-  learningGoal?: unknown;
-  contribution?: unknown;
-  availability?: unknown;
-  consent?: unknown;
-};
-
-const allowedTracks = new Set(["hr", "pr", "sm", "oc", "it", "rnd"]);
-const allowedLevels = new Set(["new", "beginner", "computer_skills", "experienced"]);
-const allowedYears = new Set(["first", "second", "third", "fourth", "other"]);
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phonePattern = /^[+()\d\s-]{8,20}$/;
-
-function clean(value: unknown, maxLength = 2000): string {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function badRequest(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
-}
+const MAX_PAYLOAD_BYTES = 64 * 1024; // 64 KB limit
 
 export async function POST(request: Request) {
-  let body: RegistrationBody;
-  try {
-    body = (await request.json()) as RegistrationBody;
-  } catch {
-    return badRequest("Invalid request body.");
-  }
+  const requestId = `req_${randomUUID().replaceAll("-", "").slice(0, 8)}`;
 
-  const fullName = clean(body.fullName, 160);
-  const nationalId = clean(body.nationalId, 14);
-  const academicId = clean(body.academicId, 80);
-  const phone = clean(body.phone, 30);
-  const whatsapp = clean(body.whatsapp, 30);
-  const universityEmail = clean(body.universityEmail, 254).toLowerCase();
-  const googleEmail = clean(body.googleEmail, 254).toLowerCase();
-  const year = clean(body.year, 20);
-  const department = clean(body.department, 120);
-  const experienceLevel = clean(body.experienceLevel, 40);
-  const skills = clean(body.skills, 3000);
-  const experienceDetails = clean(body.experienceDetails, 3000);
-  const volunteerExperience = clean(body.volunteerExperience, 3000);
-  const primaryTrack = clean(body.primaryTrack, 10).toLowerCase();
-  const secondaryTrack = clean(body.secondaryTrack, 10).toLowerCase();
-  const motivation = clean(body.motivation, 4000);
-  const learningGoal = clean(body.learningGoal, 3000);
-  const contribution = clean(body.contribution, 3000);
-  const availability = clean(body.availability, 30);
-  const consent = body.consent === true;
-
-  if (fullName.length < 3) return badRequest("Enter your full name.");
-  if (!/^\d{14}$/.test(nationalId)) return badRequest("National ID must contain 14 digits.");
-  if (!academicId) return badRequest("Academic ID is required.");
-  if (!phonePattern.test(phone) || !phonePattern.test(whatsapp)) return badRequest("Enter valid phone and WhatsApp numbers.");
-  if (!emailPattern.test(universityEmail)) return badRequest("Enter a valid university email.");
-  if (googleEmail && !emailPattern.test(googleEmail)) return badRequest("Enter a valid Google email or leave it empty.");
-  if (!allowedYears.has(year)) return badRequest("Choose a valid academic year.");
-  if (department.length < 2) return badRequest("Department is required.");
-  if (!allowedLevels.has(experienceLevel)) return badRequest("Choose your current experience level.");
-  if (experienceLevel !== "new" && !skills) return badRequest("Please describe your current skills.");
-  if (!allowedTracks.has(primaryTrack)) return badRequest("Choose a valid first track preference.");
-  if (secondaryTrack && (!allowedTracks.has(secondaryTrack) || secondaryTrack === primaryTrack)) {
-    return badRequest("Choose a different second track preference.");
-  }
-  if (motivation.length < 20) return badRequest("Please tell us why you want to join IT Club.");
-  if (learningGoal.length < 10) return badRequest("Please tell us what you want to learn.");
-  if (!consent) return badRequest("Please confirm that your information is accurate.");
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) {
+  // 1. Enforce JSON content-type
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
     return NextResponse.json(
-      { error: "Registration is not configured yet. Please try again later." },
-      { status: 503 },
+      {
+        error: "Content-Type must be application/json.",
+        code: "UNSUPPORTED_MEDIA_TYPE",
+      },
+      { status: 415 }
     );
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  // 2. Enforce request size limit to prevent memory exhaustion / DoS
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_PAYLOAD_BYTES) {
+    return NextResponse.json(
+      {
+        error: "Request payload too large (maximum 64KB).",
+        code: "PAYLOAD_TOO_LARGE",
+      },
+      { status: 413 }
+    );
+  }
+
+  // 3. Rate limiting by client IP
+  const clientIp = extractClientIp(request);
+  const ipRateKey = hashRateLimitKey("reg-ip", clientIp);
+  const ipRateCheck = await checkRateLimit(ipRateKey, {
+    maxRequests: 6,
+    windowSeconds: 900, // 6 attempts per 15 minutes per IP
+  });
+
+  if (!ipRateCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "Too many submission attempts from this network. Please wait a few minutes before trying again.",
+        code: "RATE_LIMITED",
+        retryAfter: ipRateCheck.retryAfter,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(ipRateCheck.retryAfter),
+        },
+      }
+    );
+  }
+
+  // 4. Safe body reading and parsing
+  let rawBodyText: string;
+  try {
+    rawBodyText = await request.text();
+    if (rawBodyText.length > MAX_PAYLOAD_BYTES) {
+      return NextResponse.json(
+        {
+          error: "Request payload too large.",
+          code: "PAYLOAD_TOO_LARGE",
+        },
+        { status: 413 }
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      {
+        error: "Could not read request body.",
+        code: "BAD_REQUEST",
+      },
+      { status: 400 }
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = JSON.parse(rawBodyText);
+  } catch {
+    return NextResponse.json(
+      {
+        error: "Invalid JSON format in request body.",
+        code: "MALFORMED_JSON",
+      },
+      { status: 400 }
+    );
+  }
+
+  // 5. Strict schema validation and protected fields stripping
+  const validation = validateRegistrationPayload(body);
+  if (!validation.isValid) {
+    if (validation.isBot) {
+      return NextResponse.json(
+        {
+          error: "Automated submission detected. Please submit using the official IT Club registration form.",
+          code: "AUTOMATION_DETECTED",
+        },
+        { status: 400 }
+      );
+    }
+
+    const firstError = Object.values(validation.errors)[0] || "Invalid submission details.";
+    return NextResponse.json(
+      {
+        error: firstError,
+        errors: validation.errors,
+        code: "VALIDATION_FAILED",
+      },
+      { status: 400 }
+    );
+  }
+
+  const { data } = validation;
+  if (!data) {
+    return NextResponse.json(
+      {
+        error: "Validation failed.",
+        code: "VALIDATION_FAILED",
+      },
+      { status: 400 }
+    );
+  }
+
+  // 6. Secondary rate limiting by student email to protect shared campus Wi-Fi
+  const emailRateKey = hashRateLimitKey("reg-email", data.universityEmail);
+  const emailRateCheck = await checkRateLimit(emailRateKey, {
+    maxRequests: 3,
+    windowSeconds: 3600, // 3 attempts per hour per university email
+  });
+
+  if (!emailRateCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "Multiple applications received for this student account. Please wait before retrying.",
+        code: "RATE_LIMITED",
+        retryAfter: emailRateCheck.retryAfter,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(emailRateCheck.retryAfter),
+        },
+      }
+    );
+  }
+
+  // 7. Supabase Database Insertion
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.SUPABASE_SECRET_KEY;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
+  const clientKey = serviceRoleKey || publishableKey;
+
+  if (!supabaseUrl || !clientKey) {
+    console.error(`[${requestId}] Supabase URL or database API key is missing in environment.`);
+    return NextResponse.json(
+      {
+        error: "Registration service is temporarily unconfigured. Please try again later.",
+        code: "CONFIGURATION_MISSING",
+        requestId,
+      },
+      { status: 503 }
+    );
+  }
+
+  const supabase = createClient(supabaseUrl, clientKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { "x-application-source": "it-club-register" } },
   });
 
+  // Reference generated exclusively on server
   const reference = `ITC-${randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
 
-  const { error } = await supabase.from("applications").insert({
-    application_reference: reference,
-    full_name: fullName,
-    national_id: nationalId,
-    academic_id: academicId,
-    phone,
-    whatsapp,
-    university_email: universityEmail,
-    google_email: googleEmail || null,
-    academic_year: year,
-    department,
-    experience_level: experienceLevel,
-    skills: skills || null,
-    experience_details: experienceDetails || null,
-    volunteer_experience: volunteerExperience || null,
-    primary_track: primaryTrack,
-    secondary_track: secondaryTrack || null,
-    motivation,
-    learning_goal: learningGoal,
-    contribution: contribution || null,
-    availability: availability || null,
-    status: "PENDING_REVIEW",
-    consented_at: new Date().toISOString(),
-  });
+  // Safe parameterized insertion: only explicit, validated fields are included.
+  // Status and consent timestamps are server-controlled.
+  try {
+    const { error } = await supabase.from("applications").insert({
+      application_reference: reference,
+      full_name: data.fullName,
+      national_id: data.nationalId,
+      academic_id: data.academicId,
+      phone: data.phone,
+      whatsapp: data.whatsapp,
+      university_email: data.universityEmail,
+      google_email: data.googleEmail,
+      academic_year: data.academicYear,
+      department: data.department,
+      experience_level: data.experienceLevel,
+      skills: data.skills,
+      experience_details: data.experienceDetails,
+      volunteer_experience: data.volunteerExperience,
+      primary_track: data.primaryTrack,
+      secondary_track: data.secondaryTrack,
+      motivation: data.motivation,
+      learning_goal: data.learningGoal,
+      contribution: data.contribution,
+      availability: data.availability,
+      status: "PENDING_REVIEW",
+      consented_at: new Date().toISOString(),
+    });
 
-  if (error) {
-    if (error.code === "23505") {
-      return badRequest(
-        "A previous application appears to use one of these details. Please check your national ID, academic ID and university email. If you think this is a mistake, contact IT Club recruitment.",
-        409,
+    if (error) {
+      if (error.code === "23505") {
+        // Friendly, non-enumerating message for duplicate conflict
+        return NextResponse.json(
+          {
+            error:
+              "An application has already been registered with one or more of these details (National ID, Academic ID, or University Email). If you believe this is an error, please reach out to IT Club recruitment.",
+            code: "DUPLICATE_APPLICATION",
+            requestId,
+          },
+          { status: 409 }
+        );
+      }
+
+      if (error.code === "23514") {
+        console.error(`[${requestId}] Database check constraint violation (23514): ${error.message}`);
+        return NextResponse.json(
+          {
+            error: "Submitted data does not satisfy registration constraints.",
+            code: "CONSTRAINT_VIOLATION",
+            requestId,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (error.code === "42501") {
+        console.error(
+          `[${requestId}] Supabase permission denied (42501). Server credentials or RLS policies need review.`
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Registration database permission error. Server credentials or RLS policies need review.",
+            code: "DATABASE_PERMISSION_DENIED",
+            requestId,
+          },
+          { status: 503 }
+        );
+      }
+
+      if (error.code === "42P01" || error.code === "42703") {
+        console.error(`[${requestId}] Database schema mismatch (code ${error.code}): ${error.message}`);
+        return NextResponse.json(
+          {
+            error: "Database configuration error. The system is undergoing maintenance.",
+            code: "DATABASE_SCHEMA_ERROR",
+            requestId,
+          },
+          { status: 500 }
+        );
+      }
+
+      // Do not leak database internals, stack traces, or credentials to client
+      console.error(`[${requestId}] Supabase insert failed: code ${error.code}`);
+      return NextResponse.json(
+        {
+          error: "We could not save your application right now. Please try again later.",
+          code: "INTERNAL_DATABASE_ERROR",
+          requestId,
+        },
+        { status: 500 }
       );
     }
-    // Do not return database error details to an unauthenticated applicant.
-    console.error("[registration] Supabase insert failed:", error.code);
+  } catch (err: unknown) {
+    console.error(
+      `[${requestId}] Database network or execution failure:`,
+      err instanceof Error ? err.name : "UnknownError"
+    );
     return NextResponse.json(
-      { error: "We could not save your application right now. Please try again later." },
-      { status: 500 },
+      {
+        error: "Unable to communicate with the database service. Please try again shortly.",
+        code: "SERVICE_UNAVAILABLE",
+        requestId,
+      },
+      { status: 503 }
     );
   }
 
   return NextResponse.json(
     { ok: true, reference, status: "PENDING_REVIEW" },
-    { status: 201 },
+    { status: 201 }
   );
 }

@@ -9,12 +9,28 @@ import {
   CheckCircle2,
   CircleHelp,
   ClipboardCheck,
+  Copy,
+  CheckCheck,
   GraduationCap,
   LoaderCircle,
   LockKeyhole,
+  Shield,
   UserRound,
   Wrench,
+  AlertCircle,
+  Calendar,
+  ChevronDown,
 } from "lucide-react";
+
+import {
+  validateUniversityEmail,
+  normalizeUniversityEmail,
+  validatePersonalEmail,
+} from "@/lib/validation/university-email";
+import {
+  validateEgyptianNationalId,
+  maskNationalId,
+} from "@/lib/validation/national-id";
 
 type FormValues = {
   fullName: string;
@@ -65,49 +81,147 @@ const initialValues: FormValues = {
 };
 
 const tracks = [
-  { id: "hr", title: "Human Resources", ar: "الموارد البشرية", color: "#35d98a", description: "People, recruitment, culture and team development." },
-  { id: "pr", title: "Public Relations", ar: "العلاقات العامة", color: "#ff3ca7", description: "Partnerships, communication and external relations." },
-  { id: "sm", title: "Social Media", ar: "التواصل الاجتماعي", color: "#eaff00", description: "Content, visual storytelling and digital presence." },
-  { id: "oc", title: "Organizing Committee", ar: "اللجنة التنظيمية", color: "#ffab18", description: "Events, logistics and attendee experience." },
-  { id: "it", title: "Information Technology", ar: "تكنولوجيا المعلومات", color: "#18c8ed", description: "Software, systems, infrastructure and technical learning." },
-  { id: "rnd", title: "Research & Development", ar: "البحث والتطوير", color: "#9b7cff", description: "Research, experiments, emerging technologies and prototypes." },
+  {
+    id: "hr",
+    tag: "TRACK 01",
+    title: "Human Resources",
+    ar: "الموارد البشرية",
+    color: "#35d98a",
+    description: "People, recruitment, internal culture, and member development.",
+  },
+  {
+    id: "pr",
+    tag: "TRACK 02",
+    title: "Public Relations",
+    ar: "العلاقات العامة",
+    color: "#ff3ca7",
+    description: "Partnerships, speaker communication, external sponsors, and relations.",
+  },
+  {
+    id: "sm",
+    tag: "TRACK 03",
+    title: "Social Media",
+    ar: "التواصل الاجتماعي",
+    color: "#eaff00",
+    description: "Content creation, visual storytelling, campaigns, and digital branding.",
+  },
+  {
+    id: "oc",
+    tag: "TRACK 04",
+    title: "Organizing Committee",
+    ar: "اللجنة التنظيمية",
+    color: "#ffab18",
+    description: "Event logistics, venue operations, crowd flow, and attendee experience.",
+  },
+  {
+    id: "it",
+    tag: "TRACK 05",
+    title: "Information Technology",
+    ar: "تكنولوجيا المعلومات",
+    color: "#18c8ed",
+    description: "Software engineering, web apps, infrastructure, systems, and tech bootcamps.",
+  },
+  {
+    id: "rnd",
+    tag: "TRACK 06",
+    title: "Research & Development",
+    ar: "البحث والتطوير",
+    color: "#9b7cff",
+    description: "Emerging tech, technical research, competitive hackathons, and prototyping.",
+  },
 ];
 
 const steps = [
-  { title: "Personal", ar: "بياناتك", icon: UserRound },
-  { title: "Academic", ar: "الدراسة", icon: GraduationCap },
-  { title: "Experience", ar: "مستواك", icon: Wrench },
-  { title: "Interests", ar: "اهتماماتك", icon: CircleHelp },
-  { title: "Review", ar: "المراجعة", icon: ClipboardCheck },
+  { number: "01", title: "Personal", ar: "البيانات الشخصية", icon: UserRound },
+  { number: "02", title: "Academic", ar: "المرحلة الدراسية", icon: GraduationCap },
+  { number: "03", title: "Experience", ar: "المستوى والمهارات", icon: Wrench },
+  { number: "04", title: "Interests", ar: "اللجان والاهتمامات", icon: CircleHelp },
+  { number: "05", title: "Review", ar: "المراجعة والتأكيد", icon: ClipboardCheck },
 ];
+
+const controlBase =
+  "w-full bg-[#050708] border border-white/10 px-4 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-[#00e599] focus:bg-[#080d0f] focus:outline-none transition-all duration-200";
+const inputClass = `${controlBase} h-12`;
+const selectClass = `${controlBase} h-12 appearance-none cursor-pointer pr-10`;
+const textareaClass = `${controlBase} min-h-32 resize-y leading-relaxed`;
 
 function Field({
   label,
+  arabicLabel,
   hint,
   required,
   children,
 }: {
   label: string;
+  arabicLabel?: string;
   hint?: string;
   required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block min-w-0">
-      <span className="mb-2 flex flex-wrap items-center gap-2 text-sm font-medium text-white/90">
-        {label}
-        {required ? <span className="text-emerald-400">*</span> : <span className="text-[10px] font-normal text-white/35">Optional</span>}
-      </span>
+    <div className="block min-w-0">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-white/70">
+            {label}
+            {required ? <span className="ml-1 text-[#00e599] font-mono font-bold">*</span> : null}
+          </span>
+          {arabicLabel ? (
+            <span className="arabic text-xs sm:text-[13px] text-white/50 font-medium tracking-normal">
+              ({arabicLabel})
+            </span>
+          ) : null}
+        </div>
+        {!required && (
+          <span className="font-mono text-[9px] tracking-wider uppercase text-white/30">
+            Optional
+          </span>
+        )}
+      </div>
       {children}
-      {hint ? <span className="mt-2 block text-xs leading-5 text-white/40">{hint}</span> : null}
-    </label>
+      {hint ? <span className="mt-2 block text-xs leading-relaxed text-white/40">{hint}</span> : null}
+    </div>
   );
 }
 
-const controlClass =
-  "w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/10";
-const selectClass = `${controlClass} appearance-none`;
-const textareaClass = `${controlClass} min-h-28 resize-y`;
+function ErrorText({ children }: { children?: React.ReactNode }) {
+  if (!children) return null;
+  return (
+    <span role="alert" className="mt-2 flex items-center gap-1.5 font-mono text-xs tracking-wide text-rose-400">
+      <AlertCircle size={13} className="shrink-0" />
+      {children}
+    </span>
+  );
+}
+
+function StepHeading({
+  title,
+  subtitle,
+  ar,
+  stepNumber,
+}: {
+  title: string;
+  subtitle: string;
+  ar: string;
+  stepNumber: string;
+}) {
+  return (
+    <div className="relative mb-8 pb-6 border-b border-white/10">
+      <div className="pointer-events-none absolute right-0 top-0 select-none font-black text-6xl sm:text-7xl leading-none text-white/[0.03]">
+        {stepNumber}
+      </div>
+      <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase text-[#00e599] mb-1.5">
+        STEP {stepNumber} · {subtitle}
+      </p>
+      <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.03em] text-white">
+        {title}
+      </h2>
+      <p className="arabic mt-2.5 text-sm sm:text-base text-white/60 leading-[1.85] font-medium tracking-normal" dir="rtl">
+        {ar}
+      </p>
+    </div>
+  );
+}
 
 export default function RegisterFlow() {
   const [step, setStep] = useState(0);
@@ -116,6 +230,7 @@ export default function RegisterFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [applicationReference, setApplicationReference] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const setValue = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -123,16 +238,47 @@ export default function RegisterFlow() {
     setSubmitError("");
   };
 
+  const handleCopy = () => {
+    if (!applicationReference) return;
+    navigator.clipboard?.writeText(applicationReference);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+  };
+
   function validateStep(targetStep: number) {
     const nextErrors: Record<string, string> = {};
     if (targetStep === 0) {
-      if (values.fullName.trim().length < 3) nextErrors.fullName = "Enter your full name.";
-      if (!/^\d{14}$/.test(values.nationalId)) nextErrors.nationalId = "The national ID must contain 14 digits.";
-      if (!values.academicId.trim()) nextErrors.academicId = "Enter your academic ID.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.universityEmail.trim())) nextErrors.universityEmail = "Enter a valid university email.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.googleEmail.trim()) && values.googleEmail.trim()) nextErrors.googleEmail = "Enter a valid Google email or leave it empty.";
-      if (!/^[+()\d\s-]{8,20}$/.test(values.phone.trim())) nextErrors.phone = "Enter a valid phone number.";
-      if (!values.whatsappSame && !/^[+()\d\s-]{8,20}$/.test(values.whatsapp.trim())) nextErrors.whatsapp = "Enter a valid WhatsApp number.";
+      if (values.fullName.trim().length < 3) {
+        nextErrors.fullName = "Enter your full name (at least 3 characters).";
+      }
+
+      const nidValidation = validateEgyptianNationalId(values.nationalId);
+      if (!nidValidation.isValid) {
+        nextErrors.nationalId = nidValidation.error || "Enter a valid 14-digit Egyptian National ID.";
+      }
+
+      if (!values.academicId.trim()) {
+        nextErrors.academicId = "Enter your university academic ID.";
+      }
+
+      const emailValidation = validateUniversityEmail(values.universityEmail);
+      if (!emailValidation.isValid) {
+        nextErrors.universityEmail = emailValidation.error || "Enter a valid university email (<student_number>@batechu.com).";
+      }
+
+      const googleValidation = validatePersonalEmail(values.googleEmail);
+      if (!googleValidation.isValid) {
+        nextErrors.googleEmail = googleValidation.error || "Enter a valid Google email or leave it empty.";
+      }
+
+      if (!/^[+()\d\s-]{8,25}$/.test(values.phone.trim())) {
+        nextErrors.phone = "Enter a valid phone number.";
+      }
+
+      const whatsappValue = values.whatsappSame ? values.phone.trim() : values.whatsapp.trim();
+      if (!/^[+()\d\s-]{8,25}$/.test(whatsappValue)) {
+        nextErrors.whatsapp = "Enter a valid WhatsApp number.";
+      }
     }
     if (targetStep === 1) {
       if (!values.year) nextErrors.year = "Choose your academic year.";
@@ -156,13 +302,14 @@ export default function RegisterFlow() {
   function nextStep() {
     if (!validateStep(step)) return;
     setStep((current) => Math.min(current + 1, steps.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 120, behavior: "smooth" });
   }
 
   function previousStep() {
     setStep((current) => Math.max(current - 1, 0));
     setErrors({});
     setSubmitError("");
+    window.scrollTo({ top: 120, behavior: "smooth" });
   }
 
   async function submitApplication() {
@@ -171,12 +318,12 @@ export default function RegisterFlow() {
         const probe: Record<string, string> = {};
         if (index === 0) {
           if (values.fullName.trim().length < 3) probe.fullName = "x";
-          if (!/^\d{14}$/.test(values.nationalId)) probe.nationalId = "x";
+          if (!validateEgyptianNationalId(values.nationalId).isValid) probe.nationalId = "x";
           if (!values.academicId.trim()) probe.academicId = "x";
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.universityEmail.trim())) probe.universityEmail = "x";
-          if (values.googleEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.googleEmail.trim())) probe.googleEmail = "x";
-          if (!/^[+()\d\s-]{8,20}$/.test(values.phone.trim())) probe.phone = "x";
-          if (!values.whatsappSame && !/^[+()\d\s-]{8,20}$/.test(values.whatsapp.trim())) probe.whatsapp = "x";
+          if (!validateUniversityEmail(values.universityEmail).isValid) probe.universityEmail = "x";
+          if (values.googleEmail.trim() && !validatePersonalEmail(values.googleEmail).isValid) probe.googleEmail = "x";
+          if (!/^[+()\d\s-]{8,25}$/.test(values.phone.trim())) probe.phone = "x";
+          if (!values.whatsappSame && !/^[+()\d\s-]{8,25}$/.test(values.whatsapp.trim())) probe.whatsapp = "x";
         }
         if (index === 1 && (!values.year || values.department.trim().length < 2)) probe.academic = "x";
         if (index === 2 && (!values.experienceLevel || (values.experienceLevel !== "new" && !values.skills.trim()))) probe.experience = "x";
@@ -194,72 +341,219 @@ export default function RegisterFlow() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...values,
+          fullName: values.fullName,
+          nationalId: values.nationalId,
+          academicId: values.academicId,
+          phone: values.phone,
           whatsapp: values.whatsappSame ? values.phone : values.whatsapp,
+          universityEmail: normalizeUniversityEmail(values.universityEmail),
+          googleEmail: values.googleEmail || undefined,
+          year: values.year,
+          department: values.department,
+          experienceLevel: values.experienceLevel,
+          skills: values.skills || undefined,
+          experienceDetails: values.experienceDetails || undefined,
+          volunteerExperience: values.volunteerExperience || undefined,
+          primaryTrack: values.primaryTrack,
+          secondaryTrack: values.secondaryTrack || undefined,
+          motivation: values.motivation,
+          learningGoal: values.learningGoal,
+          contribution: values.contribution || undefined,
+          availability: values.availability || undefined,
+          consent: values.consent,
         }),
       });
       const result = await response.json();
       if (!response.ok) {
-        setSubmitError(result.error || "We could not submit your application. Please try again.");
+        if (result.errors && typeof result.errors === "object") {
+          setErrors(result.errors);
+          const errorKeys = Object.keys(result.errors);
+          if (errorKeys.some((k) => ["fullName", "nationalId", "academicId", "phone", "whatsapp", "universityEmail", "googleEmail"].includes(k))) {
+            setStep(0);
+          } else if (errorKeys.some((k) => ["year", "department"].includes(k))) {
+            setStep(1);
+          } else if (errorKeys.some((k) => ["experienceLevel", "skills"].includes(k))) {
+            setStep(2);
+          } else if (errorKeys.some((k) => ["primaryTrack", "secondaryTrack", "motivation", "learningGoal", "consent"].includes(k))) {
+            setStep(3);
+          }
+        }
+        setSubmitError(result.error || "We could not submit your application. Please check your details and try again.");
         return;
       }
       setApplicationReference(result.reference);
+      window.scrollTo({ top: 120, behavior: "smooth" });
     } catch {
-      setSubmitError("Connection problem. Check your internet and try again. Your form is still here.");
+      setSubmitError("Connection problem. Check your internet connection and try again. Your entered data is preserved.");
     } finally {
       setSubmitting(false);
     }
   }
 
+  // ────────────────────────────────────────────────────────────
+  // Success Confirmation View
+  // ────────────────────────────────────────────────────────────
   if (applicationReference) {
     return (
-      <div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-emerald-400/20 bg-[#0d1211]">
-        <div className="border-b border-white/10 p-7 text-center sm:p-10">
-          <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-            <CheckCircle2 size={30} />
+      <div className="relative overflow-hidden border border-white/10 bg-[#080a0c]">
+        {/* Subtle top accent gradient line */}
+        <div className="h-1 w-full bg-gradient-to-r from-[#00e599] via-[#18c8ed] to-[#9b7cff]" />
+
+        <div className="p-8 sm:p-12 md:p-16">
+          {/* Header */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border-2 border-[#00e599] bg-[#00e599]/10 shadow-[0_0_30px_rgba(0,229,153,0.3)] mb-6">
+              <CheckCircle2 size={36} className="text-[#00e599]" />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+              <span className="font-mono text-xs font-bold tracking-[0.24em] uppercase text-[#00e599]">
+                APPLICATION RECEIVED
+              </span>
+              <span className="text-[#00e599]/40">·</span>
+              <span className="arabic text-sm font-semibold text-[#00e599] tracking-normal">
+                تم استلام الطلب
+              </span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[-0.03em] text-white">
+              You&apos;re officially in the queue.
+            </h2>
+
+            <p className="arabic mt-4 text-base sm:text-lg leading-[1.9] text-white/70 max-w-xl font-medium tracking-normal" dir="rtl">
+              تم تسجيل طلبك بنجاح. كل الطلبات بتبدأ في حالة انتظار المراجعة، ومش معنى الإرسال إن القبول تم. سيتم مراجعة الطلب من قِبل رؤساء اللجان.
+            </p>
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">Application received</p>
-          <h2 className="mt-3 text-2xl font-bold sm:text-3xl">You’re officially in the review queue.</h2>
-          <p className="arabic mt-4 text-sm leading-7 text-white/60" dir="rtl">
-            استلمنا طلبك. كل الطلبات بتبدأ في حالة انتظار المراجعة، ومش معنى الإرسال إن القبول تم.
-          </p>
-        </div>
-        <div className="space-y-4 p-6 sm:p-8">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <p className="text-xs text-white/45">Your application reference</p>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <p className="break-all font-mono text-xl font-semibold tracking-wider text-emerald-300">{applicationReference}</p>
-              <button type="button" onClick={() => navigator.clipboard?.writeText(applicationReference)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70 hover:bg-white/5">Copy</button>
+
+          {/* Reference Number Box */}
+          <div className="mt-10 mx-auto max-w-xl bg-[#050708] border border-white/10 p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/40">
+                APPLICATION REFERENCE CODE
+              </span>
+              <span className="font-mono text-[10px] tracking-widest text-[#00e599]">
+                CONFIDENTIAL
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 bg-white/[0.02] border border-white/5 p-4">
+              <span className="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-[#00e599] tabular-nums break-all select-all">
+                {applicationReference}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 border border-white/15 bg-white/[0.04] hover:bg-white/10 text-xs font-mono tracking-wider uppercase text-white transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <CheckCheck size={14} className="text-[#00e599]" />
+                    <span className="text-[#00e599]">COPIED</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} />
+                    <span>COPY</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-white/40 leading-relaxed font-mono">
+              Save this reference code. You may need it to verify your status or during on-campus interview check-in.
+            </p>
+          </div>
+
+          {/* Status & Next Steps Timeline Card */}
+          <div className="mt-8 mx-auto max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-[#050708] border border-white/10 p-5 flex items-start gap-3.5">
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/15 bg-white/[0.02] text-[#00e599]">
+                <LockKeyhole size={16} />
+              </div>
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-white/40">STATUS</p>
+                <p className="text-sm font-bold text-white mt-0.5">Pending Review</p>
+                <p className="text-xs text-white/45 mt-1 leading-relaxed">
+                  The Owner and committee heads evaluate every application thoroughly.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#050708] border border-white/10 p-5 flex items-start gap-3.5">
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/15 bg-white/[0.02] text-[#18c8ed]">
+                <Calendar size={16} />
+              </div>
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-white/40">INTERVIEW DATE</p>
+                <p className="text-sm font-bold text-white mt-0.5">October 17, 2026</p>
+                <p className="text-xs text-white/45 mt-1 leading-relaxed">
+                  Interviews will be held on campus for shortlisted candidates.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-white/[0.035] p-4">
-            <LockKeyhole className="mt-0.5 shrink-0 text-emerald-400" size={18} />
-            <div>
-              <p className="text-sm font-medium">Status: Pending review</p>
-              <p className="mt-1 text-xs leading-5 text-white/50">The Owner and authorized Admins will review your details. If you are shortlisted, interview details and your attendance QR will be issued later.</p>
-            </div>
+
+          {/* Navigation Action */}
+          <div className="mt-10 mx-auto max-w-xl flex flex-col sm:flex-row items-center gap-4">
+            <Link
+              href="/"
+              className="w-full sm:flex-1 h-13 inline-flex items-center justify-center gap-2.5 bg-[#00e599] text-[#050708] text-xs font-mono font-bold tracking-[0.18em] uppercase hover:bg-white transition-all duration-300"
+            >
+              RETURN TO HOMEPAGE <ArrowRight size={15} />
+            </Link>
+
+            <Link
+              href="/tracks"
+              className="w-full sm:w-auto h-13 px-6 inline-flex items-center justify-center gap-2 border border-white/15 bg-transparent text-xs font-mono font-bold tracking-[0.18em] uppercase text-white/80 hover:border-white/30 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              EXPLORE TRACKS
+            </Link>
           </div>
-          <Link href="/" className="flex w-full items-center justify-center rounded-xl bg-emerald-400 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-emerald-300">
-            Back to IT Club
-          </Link>
         </div>
       </div>
     );
   }
 
+  // ────────────────────────────────────────────────────────────
+  // Main Multi-Step Form Layout
+  // ────────────────────────────────────────────────────────────
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0d1011] shadow-[0_30px_100px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-white/10 px-5 py-5 sm:px-8 sm:py-6">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <span className="text-xs text-white/45">APPLICATION FORM</span>
-          <span className="text-xs font-medium text-emerald-300">STEP {step + 1} OF {steps.length}</span>
+    <div className="relative border border-white/10 bg-[#080a0c]">
+      {/* Top Emerald Ambient Gradient Line */}
+      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#00e599] to-transparent opacity-60" />
+
+      {/* ── Progress & Stepper Bar ── */}
+      <div className="border-b border-white/10 bg-[#050708]">
+        {/* Mobile Header Bar */}
+        <div className="md:hidden px-5 py-4 flex items-center justify-between border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold text-[#00e599]">
+              {steps[step].number}
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-white">
+              {steps[step].title}
+            </span>
+            <span className="arabic text-xs text-white/45 font-medium tracking-normal">
+              ({steps[step].ar})
+            </span>
+          </div>
+          <span className="font-mono text-[11px] text-white/40 tracking-widest">
+            STEP {step + 1} / {steps.length}
+          </span>
         </div>
-        <div className="mb-6 h-1 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-emerald-400 transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+
+        {/* Mobile Progress Line */}
+        <div className="md:hidden h-1 w-full bg-white/5 overflow-hidden">
+          <div
+            className="h-full bg-[#00e599] transition-all duration-300"
+            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+          />
         </div>
-        <div className="grid grid-cols-5 gap-2">
+
+        {/* Desktop 5-Milestone Stepper Tabs */}
+        <div className="hidden md:grid grid-cols-5 divide-x divide-white/10">
           {steps.map((item, index) => {
-            const Icon = item.icon;
             const active = index === step;
             const done = index < step;
             return (
@@ -268,244 +562,820 @@ export default function RegisterFlow() {
                 type="button"
                 onClick={() => index < step && setStep(index)}
                 disabled={index >= step}
-                className={`flex min-w-0 flex-col items-center gap-2 rounded-xl px-1 py-2 text-center transition ${active ? "text-emerald-300" : done ? "cursor-pointer text-white/65 hover:bg-white/5" : "text-white/30"}`}
+                className={`relative px-4 py-4 text-left transition-colors duration-200 select-none ${
+                  active
+                    ? "bg-[#0a0f12]"
+                    : done
+                    ? "cursor-pointer hover:bg-white/[0.02]"
+                    : "opacity-40 cursor-not-allowed"
+                }`}
                 aria-current={active ? "step" : undefined}
               >
-                <span className={`flex size-9 items-center justify-center rounded-xl border ${active ? "border-emerald-400/50 bg-emerald-400/10" : done ? "border-white/15 bg-white/5" : "border-white/10"}`}>
-                  {done ? <Check size={16} /> : <Icon size={16} />}
-                </span>
-                <span className="hidden text-[11px] font-medium sm:block">{item.title}</span>
-                <span className="arabic text-[10px] sm:hidden">{item.ar}</span>
+                {/* Active Top Highlight Line */}
+                {active && (
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#00e599] shadow-[0_0_12px_#00e599]" />
+                )}
+
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-7 h-7 flex items-center justify-center shrink-0 border text-xs font-mono font-bold transition-colors ${
+                      active
+                        ? "border-[#00e599] text-[#00e599] bg-[#00e599]/10"
+                        : done
+                        ? "border-[#00e599]/60 text-[#00e599] bg-[#00e599]/5"
+                        : "border-white/15 text-white/40"
+                    }`}
+                  >
+                    {done ? <Check size={13} strokeWidth={2.5} /> : item.number}
+                  </span>
+
+                  <div className="min-w-0">
+                    <p
+                      className={`text-xs font-bold tracking-wide uppercase truncate ${
+                        active ? "text-white" : done ? "text-white/80" : "text-white/40"
+                      }`}
+                    >
+                      {item.title}
+                    </p>
+                    <p className="arabic text-xs sm:text-[13px] text-white/50 truncate leading-tight mt-0.5 font-medium tracking-normal">
+                      {item.ar}
+                    </p>
+                  </div>
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="p-5 sm:p-8">
+      {/* ── Form Step Content Body ── */}
+      <div className="p-6 sm:p-10 lg:p-12">
+        {/* STEP 0: PERSONAL INFORMATION */}
         {step === 0 && (
-          <section>
-            <StepHeading title="Let’s get to know you." subtitle="Personal information" ar="بياناتك الأساسية — اكتب بيانات صحيحة عشان نقدر نراجع طلبك." />
-            <div className="grid gap-5 sm:grid-cols-2">
+          <section aria-labelledby="step-0-title">
+            <StepHeading
+              stepNumber="01"
+              subtitle="PERSONAL IDENTITY"
+              title="Let's get to know you."
+              ar="بياناتك الأساسية — اكتب بيانات صحيحة لضمان التواصل معك بخصوص المقابلة."
+            />
+
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Field label="Full name" required>
-                  <input className={controlClass} autoComplete="name" value={values.fullName} onChange={(e) => setValue("fullName", e.target.value)} placeholder="Your full name as registered at university" />
+                <Field label="Full Name" arabicLabel="الاسم بالكامل" required>
+                  <input
+                    className={inputClass}
+                    autoComplete="name"
+                    value={values.fullName}
+                    onChange={(e) => setValue("fullName", e.target.value)}
+                    placeholder="Your full name as registered at university"
+                  />
                   <ErrorText>{errors.fullName}</ErrorText>
                 </Field>
               </div>
-              <Field label="National ID" required hint="14 digits. This is sensitive information and is only for authorized recruitment review.">
-                <input className={controlClass} inputMode="numeric" autoComplete="off" maxLength={14} value={values.nationalId} onChange={(e) => setValue("nationalId", e.target.value.replace(/\D/g, "").slice(0, 14))} placeholder="14-digit national ID" />
+
+              <Field
+                label="National ID"
+                arabicLabel="الرقم القومي"
+                required
+                hint="14 digits. Verified structurally and masked on review screens. Stored securely."
+              >
+                <input
+                  className={inputClass}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={14}
+                  value={values.nationalId}
+                  onChange={(e) =>
+                    setValue("nationalId", e.target.value.replace(/\D/g, "").slice(0, 14))
+                  }
+                  placeholder="14-digit national ID (e.g. 302...)"
+                />
                 <ErrorText>{errors.nationalId}</ErrorText>
               </Field>
-              <Field label="Academic ID" required>
-                <input className={controlClass} autoComplete="off" value={values.academicId} onChange={(e) => setValue("academicId", e.target.value)} placeholder="University student ID" />
+
+              <Field label="Academic ID" arabicLabel="رقم الجلوس / الكود الجامعي" required>
+                <input
+                  className={inputClass}
+                  autoComplete="off"
+                  value={values.academicId}
+                  onChange={(e) => setValue("academicId", e.target.value)}
+                  placeholder="University student ID / code"
+                />
                 <ErrorText>{errors.academicId}</ErrorText>
               </Field>
-              <Field label="Phone number" required>
-                <input className={controlClass} type="tel" autoComplete="tel" value={values.phone} onChange={(e) => setValue("phone", e.target.value)} placeholder="+20 ..." />
+
+              <Field label="Phone Number" arabicLabel="رقم الهاتف" required>
+                <input
+                  className={inputClass}
+                  type="tel"
+                  autoComplete="tel"
+                  value={values.phone}
+                  onChange={(e) => setValue("phone", e.target.value)}
+                  placeholder="+20 1..."
+                />
                 <ErrorText>{errors.phone}</ErrorText>
               </Field>
-              <Field label="WhatsApp number" required hint="Use the same number or enter a different one.">
-                <input className={controlClass} type="tel" autoComplete="tel" disabled={values.whatsappSame} value={values.whatsappSame ? values.phone : values.whatsapp} onChange={(e) => setValue("whatsapp", e.target.value)} placeholder="+20 ..." />
-                <span className="mt-3 flex items-center gap-2 text-xs text-white/60">
-                  <input type="checkbox" className="accent-emerald-400" checked={values.whatsappSame} onChange={(e) => setValue("whatsappSame", e.target.checked)} />
-                  WhatsApp is the same as my phone
-                </span>
+
+              <Field
+                label="WhatsApp Number"
+                arabicLabel="رقم الواتساب"
+                required
+                hint="We will contact you via WhatsApp with interview schedules and updates."
+              >
+                <input
+                  className={inputClass}
+                  type="tel"
+                  autoComplete="tel"
+                  disabled={values.whatsappSame}
+                  value={values.whatsappSame ? values.phone : values.whatsapp}
+                  onChange={(e) => setValue("whatsapp", e.target.value)}
+                  placeholder="+20 1..."
+                />
+                <label className="mt-2.5 flex items-center gap-2.5 text-xs text-white/60 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-[#00e599] h-3.5 w-3.5 rounded-none"
+                    checked={values.whatsappSame}
+                    onChange={(e) => setValue("whatsappSame", e.target.checked)}
+                  />
+                  <span>WhatsApp number is the same as phone</span>
+                </label>
                 <ErrorText>{errors.whatsapp}</ErrorText>
               </Field>
-              <Field label="University email" required>
-                <input className={controlClass} type="email" autoComplete="email" value={values.universityEmail} onChange={(e) => setValue("universityEmail", e.target.value)} placeholder="name@university.edu" />
+
+              <Field
+                label="University Email"
+                arabicLabel="البريد الجامعي"
+                required
+                hint="Format: <student_id>@batechu.com (digits only before @batechu.com)."
+              >
+                <input
+                  className={inputClass}
+                  type="email"
+                  autoComplete="email"
+                  value={values.universityEmail}
+                  onChange={(e) => setValue("universityEmail", e.target.value)}
+                  placeholder="123456@batechu.com"
+                />
                 <ErrorText>{errors.universityEmail}</ErrorText>
               </Field>
-              <Field label="Google / Gmail email" hint="Optional if it is the same as your university email.">
-                <input className={controlClass} type="email" value={values.googleEmail} onChange={(e) => setValue("googleEmail", e.target.value)} placeholder="name@gmail.com" />
+
+              <Field
+                label="Personal / Google Email"
+                arabicLabel="البريد الشخصي"
+                hint="Alternative email in case of university inbox delivery issues."
+              >
+                <input
+                  className={inputClass}
+                  type="email"
+                  value={values.googleEmail}
+                  onChange={(e) => setValue("googleEmail", e.target.value)}
+                  placeholder="name@gmail.com"
+                />
                 <ErrorText>{errors.googleEmail}</ErrorText>
               </Field>
             </div>
-          </section>
-        )}
 
-        {step === 1 && (
-          <section>
-            <StepHeading title="Your academic background." subtitle="Academic information" ar="معلومات الدراسة بتساعدنا نفهم ظروفك ونرتب المقابلات بشكل مناسب." />
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Academic year" required>
-                <select className={selectClass} value={values.year} onChange={(e) => setValue("year", e.target.value)}>
-                  <option value="" className="bg-[#0d1011]">Choose your year</option>
-                  <option value="first" className="bg-[#0d1011]">First year</option>
-                  <option value="second" className="bg-[#0d1011]">Second year</option>
-                  <option value="third" className="bg-[#0d1011]">Third year</option>
-                  <option value="fourth" className="bg-[#0d1011]">Fourth year</option>
-                  <option value="other" className="bg-[#0d1011]">Other / not listed</option>
-                </select>
-                <ErrorText>{errors.year}</ErrorText>
-              </Field>
-              <Field label="Department" required hint="Write your official department name.">
-                <input className={controlClass} value={values.department} onChange={(e) => setValue("department", e.target.value)} placeholder="e.g. Information Technology" />
-                <ErrorText>{errors.department}</ErrorText>
-              </Field>
-              <div className="sm:col-span-2 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-                <p className="text-sm font-medium">What happens after submission?</p>
-                <p className="arabic mt-2 text-sm leading-7 text-white/55" dir="rtl">الطلب هيفضل Pending لحد ما الـ Owner أو Admin مخوّل يراجع بياناتك. مش مطلوب منك ترفع صورة دلوقتي.</p>
+            {/* Privacy Shield Info Card */}
+            <div className="mt-8 border border-white/10 bg-[#050708] p-4 sm:p-5 flex items-start gap-3.5">
+              <Shield size={18} className="shrink-0 text-[#00e599] mt-0.5" />
+              <div className="text-xs text-white/50 leading-relaxed font-sans">
+                <strong className="text-white font-medium block mb-0.5">
+                  Privacy & Data Safeguards
+                </strong>
+                All entered data is protected and kept private. It is used strictly for recruitment coordination and is accessible only by authorized IT Club management.
               </div>
             </div>
           </section>
         )}
 
+        {/* STEP 1: ACADEMIC BACKGROUND */}
+        {step === 1 && (
+          <section aria-labelledby="step-1-title">
+            <StepHeading
+              stepNumber="02"
+              subtitle="ACADEMIC BACKGROUND"
+              title="Your studies at BATU."
+              ar="معلومات الدراسة بتساعدنا نفهم ظروفك ونرتب المقابلات وأوقات الأنشطة بشكل ملائم."
+            />
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field label="Academic Year" arabicLabel="الفرقة الدراسية" required>
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={values.year}
+                    onChange={(e) => setValue("year", e.target.value)}
+                  >
+                    <option value="" className="bg-[#050708]">
+                      Select your academic year
+                    </option>
+                    <option value="first" className="bg-[#050708]">
+                      First Year — الفرقة الأولى
+                    </option>
+                    <option value="second" className="bg-[#050708]">
+                      Second Year — الفرقة الثانية
+                    </option>
+                    <option value="third" className="bg-[#050708]">
+                      Third Year — الفرقة الثالثة
+                    </option>
+                    <option value="fourth" className="bg-[#050708]">
+                      Fourth Year — الفرقة الرابعة
+                    </option>
+                    <option value="other" className="bg-[#050708]">
+                      Other / Not listed — أخرى
+                    </option>
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
+                  />
+                </div>
+                <ErrorText>{errors.year}</ErrorText>
+              </Field>
+
+              <Field
+                label="Department / Program"
+                arabicLabel="القسم / التخصص"
+                required
+                hint="Write your official university department."
+              >
+                <input
+                  className={inputClass}
+                  value={values.department}
+                  onChange={(e) => setValue("department", e.target.value)}
+                  placeholder="e.g. Information Technology / Mechatronics"
+                />
+                <ErrorText>{errors.department}</ErrorText>
+              </Field>
+
+              {/* Recruitment Stage Explainer Card */}
+              <div className="sm:col-span-2 border border-white/10 bg-[#050708] p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 bg-[#00e599]" />
+                  <p className="font-mono text-xs font-bold tracking-widest uppercase text-[#00e599]">
+                    SELECTION PROCESS CLARIFICATION
+                  </p>
+                </div>
+                <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
+                  Upon completing this form, your application status becomes{" "}
+                  <span className="text-[#00e599] font-mono font-bold">PENDING REVIEW</span>.
+                  Our committee leads will review all candidate profiles. Shortlisted applicants will receive formal invitation slots for the in-person interview day scheduled on{" "}
+                  <span className="text-white font-bold">October 17, 2026</span>.
+                </p>
+                <p className="arabic text-xs sm:text-sm text-white/50 mt-2 leading-[1.8] font-medium tracking-normal" dir="rtl">
+                  بعد إرسال الطلب، بيكون طلبك في مرحلة المراجعة. لو تم ترشيحك، هتوصلك دعوة رسمية لحضور يوم المقابلات في الجامعة يوم 17 أكتوبر 2026.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* STEP 2: EXPERIENCE & SKILLS */}
         {step === 2 && (
-          <section>
-            <StepHeading title="Every journey has a starting point." subtitle="Experience & skills" ar="مش بنقيّمك على إنك تعرف كل حاجة. اختار مستواك الحقيقي عشان نعرف نوجّهك صح." />
-            <fieldset>
-              <legend className="mb-3 text-sm font-medium text-white/90">Which option describes you best? <span className="text-emerald-400">*</span></legend>
-              <div className="grid gap-3 sm:grid-cols-2">
+          <section aria-labelledby="step-2-title">
+            <StepHeading
+              stepNumber="03"
+              subtitle="EXPERIENCE & SKILLS"
+              title="Where are you starting from?"
+              ar="مش بنقيّمك على إنك تعرف كل حاجة. اختار مستواك الحقيقي عشان نعرف نوجّهك صح ونساعدك تطوّر من نفسك."
+            />
+
+            <div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-white/70">
+                    WHICH OPTION BEST DESCRIBES YOUR CURRENT LEVEL?
+                    <span className="ml-1 text-[#00e599] font-mono font-bold">*</span>
+                  </span>
+                  <span className="arabic text-xs sm:text-[13px] text-white/45 font-medium tracking-normal">
+                    (مستواك الحالي)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-3.5 sm:grid-cols-2">
                 {[
-                  { value: "new", title: "I’m completely new", ar: "لسه ببدأ من الصفر", desc: "I’m curious and ready to learn." },
-                  { value: "beginner", title: "I know a little IT", ar: "عندي أساسيات بسيطة", desc: "I’ve started learning and practicing." },
-                  { value: "computer_skills", title: "I’m good with computer tools", ar: "بعرف أستخدم برامج وأدوات", desc: "Software, productivity, design or other tools." },
-                  { value: "experienced", title: "I have experience", ar: "عندي خبرة أو مشاريع", desc: "I’ve built, designed, researched or organized something." },
-                ].map((option) => (
-                  <button key={option.value} type="button" onClick={() => setValue("experienceLevel", option.value)} className={`rounded-2xl border p-4 text-left transition ${values.experienceLevel === option.value ? "border-emerald-400/60 bg-emerald-400/[0.08]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
-                    <span className="flex items-start justify-between gap-3">
-                      <span className="text-sm font-semibold">{option.title}</span>
-                      <span className={`mt-0.5 size-4 rounded-full border ${values.experienceLevel === option.value ? "border-emerald-300 bg-emerald-300 ring-4 ring-emerald-300/10" : "border-white/25"}`} />
-                    </span>
-                    <span className="arabic mt-2 block text-xs text-white/65" dir="rtl">{option.ar}</span>
-                    <span className="mt-2 block text-xs leading-5 text-white/40">{option.desc}</span>
-                  </button>
-                ))}
+                  {
+                    value: "new",
+                    tag: "LEVEL 01",
+                    title: "I'm completely new",
+                    ar: "لسه ببدأ من الصفر",
+                    desc: "Curious, motivated, and eager to learn everything from the beginning.",
+                  },
+                  {
+                    value: "beginner",
+                    tag: "LEVEL 02",
+                    title: "I have IT basics",
+                    ar: "عندي أساسيات بسيطة",
+                    desc: "Started learning concepts, programming, or computer fundamentals.",
+                  },
+                  {
+                    value: "computer_skills",
+                    tag: "LEVEL 03",
+                    title: "Proficient with digital tools",
+                    ar: "بعرف أستخدم برامج وأدوات رقمية",
+                    desc: "Design, video, productivity software, systems, or technical tools.",
+                  },
+                  {
+                    value: "experienced",
+                    tag: "LEVEL 04",
+                    title: "I have hands-on experience",
+                    ar: "عندي خبرة أو مشاريع سابقة",
+                    desc: "Built software, created media, organized events, or led research.",
+                  },
+                ].map((option) => {
+                  const selected = values.experienceLevel === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setValue("experienceLevel", option.value)}
+                      className={`relative p-5 text-left border transition-all duration-200 select-none ${
+                        selected
+                          ? "border-[#00e599] bg-[#00e599]/[0.06] shadow-[0_0_20px_rgba(0,229,153,0.1)]"
+                          : "border-white/10 bg-[#050708] hover:border-white/25 hover:bg-white/[0.02]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span
+                          className={`font-mono text-[10px] tracking-widest font-bold uppercase ${
+                            selected ? "text-[#00e599]" : "text-white/40"
+                          }`}
+                        >
+                          {option.tag}
+                        </span>
+
+                        <div
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                            selected
+                              ? "border-[#00e599] bg-[#00e599]"
+                              : "border-white/30"
+                          }`}
+                        >
+                          {selected && <div className="w-1.5 h-1.5 rounded-full bg-[#050708]" />}
+                        </div>
+                      </div>
+
+                      <p className="text-sm font-bold text-white">{option.title}</p>
+                      <p className="arabic text-xs sm:text-sm text-white/70 mt-1 font-medium tracking-normal leading-normal" dir="rtl">
+                        {option.ar}
+                      </p>
+                      <p className="text-xs text-white/40 mt-2 leading-relaxed">{option.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
               <ErrorText>{errors.experienceLevel}</ErrorText>
-            </fieldset>
+            </div>
+
+            {/* Conditional Skills Inputs */}
             {values.experienceLevel && values.experienceLevel !== "new" && (
-              <div className="mt-6 grid gap-5">
-                <Field label="What skills do you have so far?" required hint="Beginner-level skills are completely fine.">
-                  <textarea className={textareaClass} value={values.skills} onChange={(e) => setValue("skills", e.target.value)} placeholder="e.g. HTML basics, Canva, Python basics, communication, video editing..." />
+              <div className="mt-8 space-y-6 pt-6 border-t border-white/10">
+                <Field
+                  label="Skills and tools you currently use"
+                  arabicLabel="المهارات والأدوات الحالية"
+                  required
+                  hint="Beginner-level skills are totally welcome (e.g. C++, Python, Figma, Canva, Excel, Hardware, Video Editing...)."
+                >
+                  <textarea
+                    className={textareaClass}
+                    value={values.skills}
+                    onChange={(e) => setValue("skills", e.target.value)}
+                    placeholder="List the tools, programming languages, or practical skills you have..."
+                  />
                   <ErrorText>{errors.skills}</ErrorText>
                 </Field>
-                <Field label="Projects, courses or tools you have tried" hint="Optional. You can include a link if you have one.">
-                  <textarea className={textareaClass} value={values.experienceDetails} onChange={(e) => setValue("experienceDetails", e.target.value)} placeholder="Tell us about anything you have tried or built." />
+
+                <Field
+                  label="Projects, courses, or portfolio links"
+                  arabicLabel="مشاريع أو دورات تدريبية سابقة"
+                  hint="Optional. Share GitHub, Behance, Drive, or describe any practical work you attempted."
+                >
+                  <textarea
+                    className={textareaClass}
+                    value={values.experienceDetails}
+                    onChange={(e) => setValue("experienceDetails", e.target.value)}
+                    placeholder="Describe any coursework, projects, workshops, or paste relevant links..."
+                  />
                 </Field>
               </div>
             )}
-            <div className="mt-5">
-              <Field label="Previous volunteering or student activities" hint="Optional. If this is your first experience, you can leave it empty.">
-                <textarea className={textareaClass} value={values.volunteerExperience} onChange={(e) => setValue("volunteerExperience", e.target.value)} placeholder="Any clubs, events, volunteering or teamwork experience..." />
+
+            {/* Volunteering Input (always visible) */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <Field
+                label="Previous student activities or volunteering"
+                arabicLabel="أنشطة طلابية أو أعمال تطوعية"
+                hint="Optional. If this is your first student activity, that's completely fine — leave it empty."
+              >
+                <textarea
+                  className={textareaClass}
+                  value={values.volunteerExperience}
+                  onChange={(e) => setValue("volunteerExperience", e.target.value)}
+                  placeholder="Any previous university clubs, charity initiatives, organizing teams, or collaborative work..."
+                />
               </Field>
             </div>
           </section>
         )}
 
+        {/* STEP 3: TRACK PREFERENCES & MOTIVATION */}
         {step === 3 && (
-          <section>
-            <StepHeading title="Find the track that fits your curiosity." subtitle="Track preferences & motivation" ar="اختار المجال اللي متحمس تتعلمه. مش لازم تكون خبير في اللجنة اللي هتختارها." />
-            <fieldset>
-              <legend className="mb-3 text-sm font-medium text-white/90">First preference <span className="text-emerald-400">*</span></legend>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tracks.map((track) => (
-                  <button key={track.id} type="button" onClick={() => { setValue("primaryTrack", track.id); if (values.secondaryTrack === track.id) setValue("secondaryTrack", ""); }} className={`rounded-2xl border p-4 text-left transition ${values.primaryTrack === track.id ? "border-white/25 bg-white/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
-                    <span className="mb-3 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold" style={{ color: track.color }}>{track.title}</span>
-                      <span className={`flex size-5 items-center justify-center rounded-full border ${values.primaryTrack === track.id ? "border-emerald-300 bg-emerald-300 text-black" : "border-white/20"}`}>{values.primaryTrack === track.id ? <Check size={12} /> : null}</span>
-                    </span>
-                    <span className="arabic block text-xs text-white/70" dir="rtl">{track.ar}</span>
-                    <span className="mt-2 block text-xs leading-5 text-white/45">{track.description}</span>
-                  </button>
-                ))}
+          <section aria-labelledby="step-3-title">
+            <StepHeading
+              stepNumber="04"
+              subtitle="COMMITTEE PREFERENCE"
+              title="Find the track that fits your passion."
+              ar="اختار المجال اللي متحمس تشارك وتتعلم فيه. مش مطلوب تكون محترف في التراك عشان تقدم."
+            />
+
+            {/* 6 Track Selection Cards */}
+            <div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-white/70">
+                    FIRST TRACK PREFERENCE
+                    <span className="ml-1 text-[#00e599] font-mono font-bold">*</span>
+                  </span>
+                  <span className="arabic text-xs sm:text-[13px] text-white/45 font-medium tracking-normal">
+                    (الرغبة الأولى)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                {tracks.map((track) => {
+                  const selected = values.primaryTrack === track.id;
+                  return (
+                    <button
+                      key={track.id}
+                      type="button"
+                      onClick={() => {
+                        setValue("primaryTrack", track.id);
+                        if (values.secondaryTrack === track.id) {
+                          setValue("secondaryTrack", "");
+                        }
+                      }}
+                      className={`relative p-5 text-left border transition-all duration-200 select-none ${
+                        selected
+                          ? "border-opacity-100 bg-white/[0.04]"
+                          : "border-white/10 bg-[#050708] hover:border-white/25 hover:bg-white/[0.02]"
+                      }`}
+                      style={{
+                        borderColor: selected ? track.color : undefined,
+                        boxShadow: selected ? `0 0 20px ${track.color}25` : undefined,
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span
+                          className="font-mono text-[10px] tracking-widest font-bold uppercase"
+                          style={{ color: track.color }}
+                        >
+                          {track.tag}
+                        </span>
+
+                        <div
+                          className="w-5 h-5 rounded-full border flex items-center justify-center transition-colors"
+                          style={{
+                            borderColor: selected ? track.color : "rgba(255,255,255,0.2)",
+                            backgroundColor: selected ? track.color : "transparent",
+                          }}
+                        >
+                          {selected && <Check size={12} className="text-[#050708] stroke-[3]" />}
+                        </div>
+                      </div>
+
+                      <h3 className="text-base font-bold text-white mb-0.5">{track.title}</h3>
+                      <p
+                        className="arabic text-xs sm:text-sm font-semibold mb-2 tracking-normal leading-normal"
+                        style={{ color: `${track.color}EE` }}
+                        dir="rtl"
+                      >
+                        {track.ar}
+                      </p>
+                      <p className="text-xs text-white/45 leading-relaxed">{track.description}</p>
+                    </button>
+                  );
+                })}
               </div>
               <ErrorText>{errors.primaryTrack}</ErrorText>
-            </fieldset>
-            <div className="mt-5">
-              <Field label="Second preference" hint="Optional. Choose a different track if you are open to another committee.">
-                <select className={selectClass} value={values.secondaryTrack} onChange={(e) => setValue("secondaryTrack", e.target.value)}>
-                  <option value="" className="bg-[#0d1011]">No second preference</option>
-                  {tracks.filter((track) => track.id !== values.primaryTrack).map((track) => <option key={track.id} value={track.id} className="bg-[#0d1011]">{track.title} — {track.ar}</option>)}
-                </select>
+            </div>
+
+            {/* Secondary Track Dropdown */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <Field
+                label="Second Track Preference"
+                arabicLabel="الرغبة الثانية"
+                hint="Optional. Choose a secondary track if you are open to joining another committee."
+              >
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={values.secondaryTrack}
+                    onChange={(e) => setValue("secondaryTrack", e.target.value)}
+                  >
+                    <option value="" className="bg-[#050708]">
+                      No second preference (لا يوجد رغبة ثانية)
+                    </option>
+                    {tracks
+                      .filter((track) => track.id !== values.primaryTrack)
+                      .map((track) => (
+                        <option key={track.id} value={track.id} className="bg-[#050708]">
+                          {track.title} — {track.ar}
+                        </option>
+                      ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
+                  />
+                </div>
                 <ErrorText>{errors.secondaryTrack}</ErrorText>
               </Field>
             </div>
-            <div className="mt-5 grid gap-5">
-              <Field label="Why do you want to join IT Club?" required hint="Tell us what genuinely interests you. Minimum 20 characters.">
-                <textarea className={textareaClass} value={values.motivation} onChange={(e) => setValue("motivation", e.target.value)} placeholder="What made you want to apply?" />
+
+            {/* Motivation & Learning Goals */}
+            <div className="mt-8 space-y-6 pt-6 border-t border-white/10">
+              <Field
+                label="Why do you want to join IT Club?"
+                arabicLabel="لماذا تريد الانضمام للنادي؟"
+                required
+                hint="Tell us what genuinely interests you. Minimum 20 characters."
+              >
+                <textarea
+                  className={textareaClass}
+                  value={values.motivation}
+                  onChange={(e) => setValue("motivation", e.target.value)}
+                  placeholder="Share what drew you to IT Club, your passion, and what you want to experience..."
+                />
                 <ErrorText>{errors.motivation}</ErrorText>
               </Field>
-              <Field label="What do you want to learn or improve?" required>
-                <textarea className={textareaClass} value={values.learningGoal} onChange={(e) => setValue("learningGoal", e.target.value)} placeholder="What would you like to be able to do by the end of your journey?" />
+
+              <Field
+                label="What do you want to learn or achieve?"
+                arabicLabel="ما هي أهدافك التعليمية؟"
+                required
+                hint="What skills or outcomes would you like to achieve by the end of this recruitment season?"
+              >
+                <textarea
+                  className={textareaClass}
+                  value={values.learningGoal}
+                  onChange={(e) => setValue("learningGoal", e.target.value)}
+                  placeholder="Describe the technical or interpersonal abilities you wish to master..."
+                />
                 <ErrorText>{errors.learningGoal}</ErrorText>
               </Field>
-              <Field label="How would you like to contribute?" hint="Optional. Ideas, interests or ways you would like to help.">
-                <textarea className={textareaClass} value={values.contribution} onChange={(e) => setValue("contribution", e.target.value)} placeholder="Anything you would like to bring to the club..." />
-              </Field>
-              <Field label="Availability" hint="Optional — helps us plan activities and interviews.">
-                <select className={selectClass} value={values.availability} onChange={(e) => setValue("availability", e.target.value)}>
-                  <option value="" className="bg-[#0d1011]">Select availability</option>
-                  <option value="weekdays" className="bg-[#0d1011]">Mostly weekdays</option>
-                  <option value="weekends" className="bg-[#0d1011]">Mostly weekends</option>
-                  <option value="flexible" className="bg-[#0d1011]">Flexible</option>
-                </select>
-              </Field>
-              <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-                <input type="checkbox" className="mt-1 accent-emerald-400" checked={values.consent} onChange={(e) => setValue("consent", e.target.checked)} />
-                <span className="text-xs leading-6 text-white/60">I confirm that the information I entered is accurate, and I understand that my application will remain pending until it is reviewed by authorized IT Club staff. <span className="text-emerald-400">*</span></span>
-              </label>
-              <ErrorText>{errors.consent}</ErrorText>
-            </div>
-          </section>
-        )}
 
-        {step === 4 && (
-          <section>
-            <StepHeading title="Review before you send." subtitle="Final review" ar="راجع بياناتك براحتك. تقدر ترجع لأي خطوة وتعدّلها قبل الإرسال." />
-            <div className="space-y-4">
-              <ReviewSection title="Personal information" onEdit={() => setStep(0)} items={[
-                ["Full name", values.fullName],
-                ["National ID", values.nationalId ? `••••••••••${values.nationalId.slice(-4)}` : ""],
-                ["Academic ID", values.academicId],
-                ["Phone", values.phone],
-                ["WhatsApp", values.whatsappSame ? values.phone : values.whatsapp],
-                ["University email", values.universityEmail],
-                ["Google email", values.googleEmail || "Not provided"],
-              ]} />
-              <ReviewSection title="Academic information" onEdit={() => setStep(1)} items={[
-                ["Year", values.year],
-                ["Department", values.department],
-              ]} />
-              <ReviewSection title="Experience & skills" onEdit={() => setStep(2)} items={[
-                ["Current level", ({ new: "Completely new", beginner: "Beginner in IT", computer_skills: "Computer tools", experienced: "Experienced" } as Record<string, string>)[values.experienceLevel] || ""],
-                ["Skills", values.skills || "Not provided"],
-                ["Experience", values.experienceDetails || "Not provided"],
-                ["Volunteering", values.volunteerExperience || "Not provided"],
-              ]} />
-              <ReviewSection title="Track preferences" onEdit={() => setStep(3)} items={[
-                ["First preference", tracks.find((track) => track.id === values.primaryTrack)?.title || ""],
-                ["Second preference", tracks.find((track) => track.id === values.secondaryTrack)?.title || "Not provided"],
-                ["Motivation", values.motivation],
-                ["Learning goal", values.learningGoal],
-                ["Contribution", values.contribution || "Not provided"],
-              ]} />
-              <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
-                <LockKeyhole size={18} className="mt-0.5 shrink-0 text-emerald-300" />
-                <p className="text-xs leading-6 text-white/60">Your application will be submitted as <strong className="text-white">Pending Review</strong>. Submission does not mean acceptance. Your interview QR is generated only after an authorized reviewer schedules your interview.</p>
+              <Field
+                label="How would you like to contribute?"
+                arabicLabel="كيف تود أن تساهم؟"
+                hint="Optional. Any specific ideas, initiatives, or enthusiasm you bring to the team."
+              >
+                <textarea
+                  className={textareaClass}
+                  value={values.contribution}
+                  onChange={(e) => setValue("contribution", e.target.value)}
+                  placeholder="Any thoughts on how you can add value to your committee..."
+                />
+              </Field>
+
+              <Field
+                label="Weekly Availability"
+                arabicLabel="أوقات التفرغ"
+                hint="Optional — assists our committee leads in scheduling onboarding sessions and tasks."
+              >
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={values.availability}
+                    onChange={(e) => setValue("availability", e.target.value)}
+                  >
+                    <option value="" className="bg-[#050708]">
+                      Select your general availability
+                    </option>
+                    <option value="weekdays" className="bg-[#050708]">
+                      Mostly weekdays (أيام الأسبوع الدراسية)
+                    </option>
+                    <option value="weekends" className="bg-[#050708]">
+                      Mostly weekends (عطلة نهاية الأسبوع)
+                    </option>
+                    <option value="flexible" className="bg-[#050708]">
+                      Flexible / Adaptable (مرن ومتاح)
+                    </option>
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
+                  />
+                </div>
+              </Field>
+
+              {/* Legal & Authenticity Consent Checkbox */}
+              <div className="border border-white/10 bg-[#050708] p-5">
+                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-[#00e599] h-4 w-4 rounded-none mt-0.5 shrink-0"
+                    checked={values.consent}
+                    onChange={(e) => setValue("consent", e.target.checked)}
+                  />
+                  <div className="text-xs text-white/70 leading-relaxed font-sans">
+                    I confirm that all entered details are accurate and true. I understand that submitting this application places my profile into <strong className="text-[#00e599]">PENDING REVIEW</strong> for the official recruitment cycle and interview day on <strong className="text-white">October 17, 2026</strong>.
+                    <span className="text-[#00e599] font-mono font-bold ml-1">*</span>
+                  </div>
+                </label>
+                <ErrorText>{errors.consent}</ErrorText>
               </div>
             </div>
           </section>
         )}
 
+        {/* STEP 4: REVIEW & CONFIRM */}
+        {step === 4 && (
+          <section aria-labelledby="step-4-title">
+            <StepHeading
+              stepNumber="05"
+              subtitle="FINAL REVIEW"
+              title="Review before submitting."
+              ar="راجع بياناتك بدقة قبل الإرسال النهائي. تقدر ترجع لأي قسم وتعدله بضغطة واحدة."
+            />
+
+            <div className="space-y-6">
+              {/* Category 1: Personal Identity */}
+              <ReviewSection
+                category="01 · PERSONAL IDENTITY"
+                title="Personal Information"
+                onEdit={() => setStep(0)}
+                items={[
+                  ["Full Name", values.fullName],
+                  [
+                    "National ID",
+                    values.nationalId
+                      ? maskNationalId(values.nationalId)
+                      : "Not entered",
+                  ],
+                  ["Academic ID", values.academicId],
+                  ["Phone Number", values.phone],
+                  [
+                    "WhatsApp Number",
+                    values.whatsappSame ? `${values.phone} (Same as phone)` : values.whatsapp,
+                  ],
+                  ["University Email", values.universityEmail],
+                  ["Google / Personal Email", values.googleEmail || "Not provided"],
+                ]}
+              />
+
+              {/* Category 2: Academic Background */}
+              <ReviewSection
+                category="02 · ACADEMIC BACKGROUND"
+                title="Academic Information"
+                onEdit={() => setStep(1)}
+                items={[
+                  [
+                    "Academic Year",
+                    (
+                      {
+                        first: "First Year (الفرقة الأولى)",
+                        second: "Second Year (الفرقة الثانية)",
+                        third: "Third Year (الفرقة الثالثة)",
+                        fourth: "Fourth Year (الفرقة الرابعة)",
+                        other: "Other / Not listed",
+                      } as Record<string, string>
+                    )[values.year] || values.year,
+                  ],
+                  ["Department / Major", values.department],
+                ]}
+              />
+
+              {/* Category 3: Experience & Skills */}
+              <ReviewSection
+                category="03 · EXPERIENCE & SKILLS"
+                title="Experience Profile"
+                onEdit={() => setStep(2)}
+                items={[
+                  [
+                    "Current Level",
+                    (
+                      {
+                        new: "Level 01 — Completely new (من الصفر)",
+                        beginner: "Level 02 — Basic IT knowledge (أساسيات)",
+                        computer_skills: "Level 03 — Digital & computer tools (أدوات وبرامج)",
+                        experienced: "Level 04 — Hands-on experience (خبرة ومشاريع)",
+                      } as Record<string, string>
+                    )[values.experienceLevel] || values.experienceLevel,
+                  ],
+                  ["Skills & Tools", values.skills || "Not provided (Beginner track)"],
+                  ["Projects / Courses", values.experienceDetails || "Not provided"],
+                  ["Volunteering Experience", values.volunteerExperience || "Not provided"],
+                ]}
+              />
+
+              {/* Category 4: Committee Preferences */}
+              <ReviewSection
+                category="04 · COMMITTEE PREFERENCES"
+                title="Track & Goals"
+                onEdit={() => setStep(3)}
+                items={[
+                  [
+                    "First Preference",
+                    tracks.find((t) => t.id === values.primaryTrack)?.title
+                      ? `${tracks.find((t) => t.id === values.primaryTrack)?.title} (${
+                          tracks.find((t) => t.id === values.primaryTrack)?.ar
+                        })`
+                      : "Not selected",
+                  ],
+                  [
+                    "Second Preference",
+                    tracks.find((t) => t.id === values.secondaryTrack)?.title
+                      ? `${tracks.find((t) => t.id === values.secondaryTrack)?.title} (${
+                          tracks.find((t) => t.id === values.secondaryTrack)?.ar
+                        })`
+                      : "No second preference",
+                  ],
+                  ["Motivation", values.motivation],
+                  ["Learning Goal", values.learningGoal],
+                  ["Contribution", values.contribution || "Not provided"],
+                  [
+                    "Availability",
+                    (
+                      {
+                        weekdays: "Mostly weekdays",
+                        weekends: "Mostly weekends",
+                        flexible: "Flexible / Adaptable",
+                      } as Record<string, string>
+                    )[values.availability] || "Not specified",
+                  ],
+                ]}
+              />
+
+              {/* Submission Notice Banner */}
+              <div className="border border-[#00e599]/30 bg-[#00e599]/[0.04] p-5 flex items-start gap-3.5">
+                <LockKeyhole size={18} className="text-[#00e599] shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed text-white/70">
+                  Submitting this application registers your profile as{" "}
+                  <strong className="text-white font-bold">Pending Review</strong>.
+                  Submission does not guarantee acceptance. Official in-person interviews will be conducted on{" "}
+                  <span className="text-[#00e599] font-bold">October 17, 2026</span> for selected applicants.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Global Submission Error Banner */}
         {submitError ? (
-          <div role="alert" className="mt-6 rounded-xl border border-red-400/25 bg-red-400/[0.06] p-4 text-sm text-red-200">{submitError}</div>
+          <div
+            role="alert"
+            className="mt-8 border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-mono text-rose-200 flex items-start gap-3"
+          >
+            <AlertCircle size={16} className="shrink-0 text-rose-400 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider">Submission Error</p>
+              <p className="mt-1 leading-relaxed">{submitError}</p>
+            </div>
+          </div>
         ) : null}
 
-        <div className="mt-8 flex flex-col-reverse gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <button type="button" onClick={previousStep} disabled={step === 0 || submitting} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-5 py-3.5 text-sm font-medium text-white/70 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30">
-            <ArrowLeft size={16} /> Back
+        {/* ── Action Buttons Footer Bar ── */}
+        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
+          <button
+            type="button"
+            onClick={previousStep}
+            disabled={step === 0 || submitting}
+            className="inline-flex h-12 items-center justify-center gap-2.5 border border-white/15 bg-white/[0.02] px-6 text-xs font-mono font-bold tracking-[0.16em] uppercase text-white/70 hover:border-white/30 hover:bg-white/[0.05] hover:text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+          >
+            <ArrowLeft size={15} />
+            BACK
           </button>
+
           {step < steps.length - 1 ? (
-            <button type="button" onClick={nextStep} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
-              Continue <ArrowRight size={16} />
+            <button
+              type="button"
+              onClick={nextStep}
+              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[#00e599] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[#050708] hover:bg-white hover:shadow-[0_0_24px_rgba(255,255,255,0.3)] transition-all duration-300 select-none"
+            >
+              CONTINUE <ArrowRight size={15} />
             </button>
           ) : (
-            <button type="button" onClick={submitApplication} disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-wait disabled:opacity-60">
-              {submitting ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-              {submitting ? "Submitting application..." : "Submit application"}
+            <button
+              type="button"
+              onClick={submitApplication}
+              disabled={submitting}
+              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[#00e599] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[#050708] hover:bg-white transition-all duration-300 disabled:cursor-wait disabled:opacity-60 select-none shadow-[0_0_24px_rgba(0,229,153,0.3)]"
+            >
+              {submitting ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin" />
+                  <span>SUBMITTING APPLICATION...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={16} />
+                  <span>SUBMIT APPLICATION</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -514,36 +1384,51 @@ export default function RegisterFlow() {
   );
 }
 
-function StepHeading({ title, subtitle, ar }: { title: string; subtitle: string; ar: string }) {
+// ────────────────────────────────────────────────────────────
+// Review Section Card Helper
+// ────────────────────────────────────────────────────────────
+function ReviewSection({
+  category,
+  title,
+  items,
+  onEdit,
+}: {
+  category: string;
+  title: string;
+  items: [string, string][];
+  onEdit: () => void;
+}) {
   return (
-    <div className="mb-7">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">{subtitle}</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-      <p className="arabic mt-3 text-sm leading-7 text-white/50" dir="rtl">{ar}</p>
-    </div>
-  );
-}
+    <div className="border border-white/10 bg-[#050708] p-5 sm:p-6">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/5">
+        <div>
+          <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#00e599]">
+            {category}
+          </span>
+          <h3 className="text-sm font-bold text-white tracking-wide mt-0.5">{title}</h3>
+        </div>
 
-function ErrorText({ children }: { children?: React.ReactNode }) {
-  if (!children) return null;
-  return <span role="alert" className="mt-2 block text-xs text-rose-300">{children}</span>;
-}
-
-function ReviewSection({ title, items, onEdit }: { title: string; items: [string, string][]; onEdit: () => void }) {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <button type="button" onClick={onEdit} className="text-xs font-medium text-emerald-300 hover:text-emerald-200">Edit</button>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="font-mono text-[10px] font-bold tracking-widest uppercase text-[#00e599] hover:text-white transition-colors border border-[#00e599]/30 hover:border-white px-3 py-1 bg-[#00e599]/5 hover:bg-white/10"
+        >
+          EDIT
+        </button>
       </div>
-      <dl className="grid gap-3 sm:grid-cols-2">
+
+      <dl className="grid gap-4 sm:grid-cols-2">
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0">
-            <dt className="text-[11px] text-white/40">{label}</dt>
-            <dd className="mt-1 break-words text-sm text-white/80">{value || "Not provided"}</dd>
+            <dt className="font-mono text-[10px] tracking-wider uppercase text-white/40">
+              {label}
+            </dt>
+            <dd className="mt-1 text-xs sm:text-sm text-white/85 leading-relaxed break-words font-medium">
+              {value || <span className="text-white/30 italic font-sans">Not provided</span>}
+            </dd>
           </div>
         ))}
       </dl>
-    </section>
+    </div>
   );
 }

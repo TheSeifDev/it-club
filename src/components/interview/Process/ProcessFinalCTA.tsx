@@ -53,7 +53,7 @@ export default function ProcessFinalCTA() {
           {/* Body copy */}
           <p className="text-sm text-[#8f9ea0] leading-[1.8] mb-8 max-w-sm">
             Join a community of passionate students, learn new skills, and make
-            a real impact. We can't wait to see your application!
+            a real impact. We can&apos;t wait to see your application!
           </p>
 
           {/* Buttons */}

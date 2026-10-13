@@ -5,6 +5,7 @@ import {
   updateApplicationStatus,
   saveReviewerNotes,
 } from "../../../../../lib/admin/queries.ts";
+import { sendAcceptanceInvitation } from "../../../../../lib/email/notification-service.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -131,9 +132,59 @@ export async function PATCH(
       );
     }
 
+    let invitationDelivery: { status: string; message: string } | undefined;
+
+    // Trigger acceptance invitation ONLY when transitioned to ACCEPTED
+    if (
+      result.application?.status === "ACCEPTED" &&
+      result.previousStatus !== "ACCEPTED"
+    ) {
+      try {
+        const invRes = await sendAcceptanceInvitation({
+          applicationId: result.application.id,
+          applicationReference: result.application.application_reference,
+          recipientEmail: result.application.university_email,
+          fullName: result.application.full_name,
+          primaryTrack: result.application.primary_track,
+        });
+
+        if (invRes.status === "sent") {
+          invitationDelivery = {
+            status: "sent",
+            message: "Acceptance invitation email dispatched with activation link.",
+          };
+        } else if (invRes.status === "already_sent") {
+          invitationDelivery = {
+            status: "already_sent",
+            message: "Acceptance invitation was previously sent.",
+          };
+        } else if (invRes.status === "unconfigured") {
+          invitationDelivery = {
+            status: "unconfigured",
+            message: "Email provider unconfigured. Invitation queued.",
+          };
+        } else {
+          invitationDelivery = {
+            status: "failed",
+            message: "Invitation delivery queued or delayed.",
+          };
+        }
+      } catch (invErr: unknown) {
+        console.error(
+          "Acceptance invitation dispatch failed:",
+          invErr instanceof Error ? invErr.message : invErr
+        );
+        invitationDelivery = {
+          status: "failed",
+          message: "Invitation delivery encountered an unexpected error.",
+        };
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       application: result.application,
+      invitationDelivery,
       message: `Application status updated to ${result.application?.status}.`,
     });
   } catch (err: unknown) {

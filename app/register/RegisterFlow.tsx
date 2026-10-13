@@ -20,6 +20,8 @@ import {
   AlertCircle,
   Calendar,
   ChevronDown,
+  Mail,
+  Clock,
 } from "lucide-react";
 
 import {
@@ -230,6 +232,7 @@ export default function RegisterFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [applicationReference, setApplicationReference] = useState("");
+  const [emailDelivery, setEmailDelivery] = useState<{ status: string; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const setValue = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
@@ -382,6 +385,9 @@ export default function RegisterFlow() {
         return;
       }
       setApplicationReference(result.reference);
+      if (result.emailDelivery) {
+        setEmailDelivery(result.emailDelivery);
+      }
       window.scrollTo({ top: 120, behavior: "smooth" });
     } catch {
       setSubmitError("Connection problem. Check your internet connection and try again. Your entered data is preserved.");
@@ -463,6 +469,45 @@ export default function RegisterFlow() {
             <p className="mt-3 text-xs text-white/40 leading-relaxed font-mono">
               Save this reference code. You may need it to verify your status or during on-campus interview check-in.
             </p>
+          </div>
+
+          {/* Email Confirmation Status Card */}
+          <div className="mt-6 mx-auto max-w-xl">
+            {emailDelivery?.status === "sent" ? (
+              <div className="border border-[#00e599]/30 bg-[#00e599]/5 p-4 sm:p-5 flex items-start gap-3.5">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[#00e599]/30 bg-[#00e599]/10 text-[#00e599]">
+                  <Mail size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[#00e599] font-bold">
+                      CONFIRMATION RECEIPT DISPATCHED
+                    </p>
+                    <span className="text-[10px] text-[#00e599]/50 font-mono">· Sent</span>
+                  </div>
+                  <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                    An official registration receipt containing your reference code and submission details has been sent to your university email.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="border border-white/10 bg-white/[0.02] p-4 sm:p-5 flex items-start gap-3.5">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/15 bg-white/[0.03] text-white/50">
+                  <Clock size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-white/60 font-bold">
+                      CONFIRMATION RECEIPT QUEUED
+                    </p>
+                    <span className="text-[10px] text-white/30 font-mono">· Secured</span>
+                  </div>
+                  <p className="text-xs text-white/55 mt-1 leading-relaxed">
+                    Your application is securely stored and registered. Email receipt delivery is queued or delayed—please save your reference code above.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status & Next Steps Timeline Card */}

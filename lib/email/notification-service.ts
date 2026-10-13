@@ -1,0 +1,560 @@
+import { Resend } from "resend";
+import { getServiceRoleClient } from "../auth/service-role.ts";
+import { getEmailConfig, isEmailConfigured } from "./config.ts";
+import { renderRegistrationReceiptEmail } from "./templates/registration-receipt.ts";
+import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitation.ts";
+
+export interface SendRegistrationReceiptInput {
+  applicationId: string;
+  applicationReference: string;
+  recipientEmail: string;
+  fullName: string;
+  academicId: string;
+  academicYear: string;
+  department: string;
+  primaryTrack: string;
+  secondaryTrack?: string | null;
+}
+
+export interface SendAcceptanceInvitationInput {
+  applicationId: string;
+  applicationReference: string;
+  recipientEmail: string;
+  fullName: string;
+  primaryTrack: string;
+}
+
+export interface NotificationSendResult {
+  success: boolean;
+  status: "sent" | "already_sent" | "unconfigured" | "failed";
+  notificationId?: string;
+  providerMessageId?: string;
+  safeReason?: string;
+}
+
+export interface ApplicationNotificationRecord {
+  id: string;
+  application_id: string;
+  notification_type: string;
+  idempotency_key: string;
+  recipient_email: string;
+  delivery_status: "PENDING" | "SENT" | "FAILED";
+  attempt_count: number;
+  provider_message_id: string | null;
+  safe_error_category: string | null;
+  error_message: string | null;
+  created_at: string;
+  attempted_at: string | null;
+  completed_at: string | null;
+}
+
+/**
+ * Attempts delivery of a registration receipt to the student.
+ * Guaranteed idempotency: will never send duplicate emails for the same application.
+ * Never throws — failures are recorded safely in the database and returned gracefully.
+ */
+export async function sendRegistrationReceipt(
+  input: SendRegistrationReceiptInput
+): Promise<NotificationSendResult> {
+  const serviceClient = getServiceRoleClient();
+  const idempotencyKey = `reg_receipt_${input.applicationId}`;
+  const now = new Date().toISOString();
+
+  let notificationId: string | undefined;
+  let attemptCount = 1;
+
+  try {
+    // 1. Idempotency Check: lookup existing notification record
+    const { data: existing, error: lookupErr } = await serviceClient
+      .from("application_notifications")
+      .select("id, delivery_status, attempt_count, provider_message_id")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (lookupErr) {
+      console.error(
+        `[notification-service] Failed to query notification status for ${input.applicationReference}:`,
+        lookupErr.message
+      );
+    }
+
+    if (existing) {
+      notificationId = existing.id;
+      attemptCount = (existing.attempt_count || 0) + 1;
+
+      // If already sent, return immediately without re-sending
+      if (existing.delivery_status === "SENT") {
+        return {
+          success: true,
+          status: "already_sent",
+          notificationId: existing.id,
+          providerMessageId: existing.provider_message_id || undefined,
+        };
+      }
+
+      // Update attempt count and timestamp
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          attempt_count: attemptCount,
+          attempted_at: now,
+          delivery_status: "PENDING",
+        })
+        .eq("id", existing.id);
+    } else {
+      // Insert initial tracking record
+      const { data: inserted, error: insertErr } = await serviceClient
+        .from("application_notifications")
+        .insert({
+          application_id: input.applicationId,
+          notification_type: "REGISTRATION_RECEIPT",
+          idempotency_key: idempotencyKey,
+          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          delivery_status: "PENDING",
+          attempt_count: 1,
+          attempted_at: now,
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) {
+        // If concurrent insert occurred, handle duplicate gracefully
+        if (insertErr.code === "23505") {
+          return {
+            success: true,
+            status: "already_sent",
+            safeReason: "CONCURRENT_NOTIFICATION_ATTEMPT",
+          };
+        }
+        console.error(
+          `[notification-service] Failed to create notification log for ${input.applicationReference}:`,
+          insertErr.message
+        );
+      } else if (inserted) {
+        notificationId = inserted.id;
+      }
+    }
+
+    // 2. Provider Configuration Check
+    if (!isEmailConfigured()) {
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_NOT_CONFIGURED",
+            error_message: "Resend API key is not configured in environment.",
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "unconfigured",
+        notificationId,
+        safeReason: "PROVIDER_NOT_CONFIGURED",
+      };
+    }
+
+    // 3. Render Email Template
+    const config = getEmailConfig();
+    const { subject, html, text } = renderRegistrationReceiptEmail({
+      fullName: input.fullName,
+      referenceCode: input.applicationReference,
+      primaryTrack: input.primaryTrack,
+      secondaryTrack: input.secondaryTrack,
+      academicYear: input.academicYear,
+      department: input.department,
+      appBaseUrl: config.appBaseUrl,
+    });
+
+    // 4. Dispatch Email via Resend
+    const resend = new Resend(config.apiKey);
+    const { data: resData, error: sendErr } = await resend.emails.send({
+      from: config.from,
+      to: [input.recipientEmail.trim().toLowerCase()],
+      subject,
+      html,
+      text,
+    });
+
+    if (sendErr) {
+      console.error(
+        `[notification-service] Resend dispatch failed for ${input.applicationReference}:`,
+        sendErr.message
+      );
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_ERROR",
+            error_message: sendErr.message,
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "failed",
+        notificationId,
+        safeReason: "PROVIDER_ERROR",
+      };
+    }
+
+    // 5. Success Confirmation
+    const providerMessageId = resData?.id;
+    if (notificationId) {
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          delivery_status: "SENT",
+          provider_message_id: providerMessageId,
+          completed_at: new Date().toISOString(),
+          error_message: null,
+          safe_error_category: null,
+        })
+        .eq("id", notificationId);
+    }
+
+    return {
+      success: true,
+      status: "sent",
+      notificationId,
+      providerMessageId,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(
+      `[notification-service] Unexpected notification dispatch failure for ${input.applicationReference}:`,
+      errorMsg
+    );
+
+    if (notificationId) {
+      try {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "UNEXPECTED_ERROR",
+            error_message: errorMsg,
+          })
+          .eq("id", notificationId);
+      } catch {
+        // Suppress secondary logging error
+      }
+    }
+
+    return {
+      success: false,
+      status: "failed",
+      notificationId,
+      safeReason: "UNEXPECTED_ERROR",
+    };
+  }
+}
+
+/**
+ * Retrieves the latest notification record for an application.
+ * Accessible for server-side monitoring or staff dashboards.
+ */
+export async function getNotificationForApplication(
+  applicationId: string,
+  type?: string
+): Promise<ApplicationNotificationRecord | null> {
+  const serviceClient = getServiceRoleClient();
+  let query = serviceClient
+    .from("application_notifications")
+    .select("*")
+    .eq("application_id", applicationId);
+
+  if (type) {
+    query = query.eq("notification_type", type);
+  }
+
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as ApplicationNotificationRecord;
+}
+
+/**
+ * Sends an acceptance invitation email with a secure time-limited account activation link.
+ * Strictly idempotent: will not send duplicate invitations for the same application lifecycle event.
+ * Never throws — failures are recorded in public.application_notifications.
+ */
+export async function sendAcceptanceInvitation(
+  input: SendAcceptanceInvitationInput
+): Promise<NotificationSendResult> {
+  const serviceClient = getServiceRoleClient();
+  const idempotencyKey = `acceptance_invitation_${input.applicationId}`;
+  const now = new Date().toISOString();
+
+  let notificationId: string | undefined;
+  let attemptCount = 1;
+
+  try {
+    // 1. Idempotency Check
+    const { data: existing, error: lookupErr } = await serviceClient
+      .from("application_notifications")
+      .select("id, delivery_status, attempt_count, provider_message_id")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (lookupErr) {
+      console.error(
+        `[notification-service] Failed to query acceptance invitation for ${input.applicationReference}:`,
+        lookupErr.message
+      );
+    }
+
+    if (existing) {
+      notificationId = existing.id;
+      attemptCount = (existing.attempt_count || 0) + 1;
+
+      if (existing.delivery_status === "SENT") {
+        return {
+          success: true,
+          status: "already_sent",
+          notificationId: existing.id,
+          providerMessageId: existing.provider_message_id || undefined,
+        };
+      }
+
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          attempt_count: attemptCount,
+          attempted_at: now,
+          delivery_status: "PENDING",
+        })
+        .eq("id", existing.id);
+    } else {
+      const { data: inserted, error: insertErr } = await serviceClient
+        .from("application_notifications")
+        .insert({
+          application_id: input.applicationId,
+          notification_type: "ACCEPTANCE_INVITATION",
+          idempotency_key: idempotencyKey,
+          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          delivery_status: "PENDING",
+          attempt_count: 1,
+          attempted_at: now,
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) {
+        if (insertErr.code === "23505") {
+          return {
+            success: true,
+            status: "already_sent",
+            safeReason: "CONCURRENT_INVITATION_ATTEMPT",
+          };
+        }
+        console.error(
+          `[notification-service] Failed to create invitation log for ${input.applicationReference}:`,
+          insertErr.message
+        );
+      } else if (inserted) {
+        notificationId = inserted.id;
+      }
+    }
+
+    // 2. Generate Secure Activation Link via Supabase Auth Admin
+    const config = getEmailConfig();
+    const cleanEmail = input.recipientEmail.trim().toLowerCase();
+    const redirectUrl = `${config.appBaseUrl}/auth/confirm?next=/student/activate`;
+
+    let actionLink: string | null = null;
+    let hashedToken: string | null = null;
+    let verificationType = "invite";
+
+    const linkRes = await serviceClient.auth.admin.generateLink({
+      type: "invite",
+      email: cleanEmail,
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+
+    if (linkRes.error) {
+      if (
+        linkRes.error.message.includes("already been registered") ||
+        linkRes.error.code === "email_exists"
+      ) {
+        // If user already exists, verify they aren't linked to a different application
+        const { data: conflictingAccount } = await serviceClient
+          .from("student_accounts")
+          .select("application_id")
+          .eq("university_email", cleanEmail)
+          .maybeSingle();
+
+        if (conflictingAccount && conflictingAccount.application_id !== input.applicationId) {
+          const errMsg = "Auth account already linked to another recruitment application.";
+          if (notificationId) {
+            await serviceClient
+              .from("application_notifications")
+              .update({
+                delivery_status: "FAILED",
+                safe_error_category: "ACCOUNT_CONFLICT",
+                error_message: errMsg,
+              })
+              .eq("id", notificationId);
+          }
+          return {
+            success: false,
+            status: "failed",
+            notificationId,
+            safeReason: "ACCOUNT_CONFLICT",
+          };
+        }
+
+        // Account is unlinked or already belongs to this application: generate recovery link
+        verificationType = "recovery";
+        const recoveryRes = await serviceClient.auth.admin.generateLink({
+          type: "recovery",
+          email: cleanEmail,
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
+
+        if (recoveryRes.error) {
+          throw new Error(`Failed to generate recovery link: ${recoveryRes.error.message}`);
+        }
+
+        actionLink = recoveryRes.data.properties.action_link;
+        hashedToken = recoveryRes.data.properties.hashed_token;
+      } else {
+        throw new Error(`Failed to generate invitation link: ${linkRes.error.message}`);
+      }
+    } else {
+      actionLink = linkRes.data.properties.action_link;
+      hashedToken = linkRes.data.properties.hashed_token;
+      verificationType = linkRes.data.properties.verification_type || "invite";
+    }
+
+    const activationUrl = hashedToken
+      ? `${config.appBaseUrl}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=${encodeURIComponent(verificationType)}&next=${encodeURIComponent("/student/activate")}`
+      : actionLink;
+
+    if (!activationUrl) {
+      throw new Error("Unable to construct valid activation URL.");
+    }
+
+    // 3. Provider Configuration Check
+    if (!isEmailConfigured()) {
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_NOT_CONFIGURED",
+            error_message: "Resend API key is not configured in environment.",
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "unconfigured",
+        notificationId,
+        safeReason: "PROVIDER_NOT_CONFIGURED",
+      };
+    }
+
+    // 4. Render Acceptance Email
+    const { subject, html, text } = renderAcceptanceInvitationEmail({
+      fullName: input.fullName,
+      referenceCode: input.applicationReference,
+      primaryTrack: input.primaryTrack,
+      activationUrl,
+      appBaseUrl: config.appBaseUrl,
+    });
+
+    // 5. Dispatch via Resend
+    const resend = new Resend(config.apiKey);
+    const { data: resData, error: sendErr } = await resend.emails.send({
+      from: config.from,
+      to: [cleanEmail],
+      subject,
+      html,
+      text,
+    });
+
+    if (sendErr) {
+      console.error(
+        `[notification-service] Resend dispatch failed for invitation to ${input.applicationReference}:`,
+        sendErr.message
+      );
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_ERROR",
+            error_message: sendErr.message,
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "failed",
+        notificationId,
+        safeReason: "PROVIDER_ERROR",
+      };
+    }
+
+    // 6. Success
+    const providerMessageId = resData?.id;
+    if (notificationId) {
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          delivery_status: "SENT",
+          provider_message_id: providerMessageId,
+          completed_at: new Date().toISOString(),
+          error_message: null,
+          safe_error_category: null,
+        })
+        .eq("id", notificationId);
+    }
+
+    return {
+      success: true,
+      status: "sent",
+      notificationId,
+      providerMessageId,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(
+      `[notification-service] Unexpected invitation dispatch failure for ${input.applicationReference}:`,
+      errorMsg
+    );
+
+    if (notificationId) {
+      try {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "UNEXPECTED_ERROR",
+            error_message: errorMsg,
+          })
+          .eq("id", notificationId);
+      } catch {
+        // Suppress secondary logging error
+      }
+    }
+
+    return {
+      success: false,
+      status: "failed",
+      notificationId,
+      safeReason: "UNEXPECTED_ERROR",
+    };
+  }
+}
+

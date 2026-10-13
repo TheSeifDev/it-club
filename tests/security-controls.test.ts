@@ -89,7 +89,7 @@ describe("Security Controls — Rate Limiting & Abuse Prevention", () => {
   });
 
   it("permits requests within quota and rejects requests exceeding the limit with Retry-After", async () => {
-    const testKey = hashRateLimitKey("test-ip", "192.0.2.1");
+    const testKey = hashRateLimitKey("test-ip", `192.0.2.${Math.floor(1 + Math.random() * 250)}`);
     const limitConfig = { maxRequests: 3, windowSeconds: 60 };
 
     // Requests 1, 2, 3 should be permitted

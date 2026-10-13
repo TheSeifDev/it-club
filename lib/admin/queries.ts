@@ -204,6 +204,7 @@ export interface UpdateStatusResult {
   code?: "INVALID_STATUS" | "NOT_FOUND" | "CONFLICT" | "INVALID_TRANSITION" | "DATABASE_ERROR";
   error?: string;
   application?: ApplicationDetail;
+  previousStatus?: ApplicationStatus;
 }
 
 /**
@@ -303,6 +304,7 @@ export async function updateApplicationStatus(input: {
 
   return {
     success: true,
+    previousStatus: currentStatus,
     application: {
       ...updated,
       national_id_masked: maskNationalId(updated.national_id),

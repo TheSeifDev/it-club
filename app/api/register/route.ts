@@ -7,6 +7,7 @@ import {
   extractClientIp,
   hashRateLimitKey,
 } from "../../../lib/security/rate-limiter.ts";
+import { sendRegistrationReceipt } from "../../../lib/email/notification-service.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -191,8 +192,9 @@ export async function POST(request: Request) {
 
   // Safe parameterized insertion: only explicit, validated fields are included.
   // Status and consent timestamps are server-controlled.
+  let insertedApp: { id: string } | null = null;
   try {
-    const { error } = await supabase.from("applications").insert({
+    const insertQuery = supabase.from("applications").insert({
       application_reference: reference,
       full_name: data.fullName,
       national_id: data.nationalId,
@@ -216,6 +218,15 @@ export async function POST(request: Request) {
       status: "PENDING_REVIEW",
       consented_at: new Date().toISOString(),
     });
+
+    const result = serviceRoleKey
+      ? await insertQuery.select("id").maybeSingle()
+      : await insertQuery;
+
+    const error = result.error;
+    if ("data" in result && result.data) {
+      insertedApp = result.data as { id: string };
+    }
 
     if (error) {
       if (error.code === "23505") {
@@ -296,8 +307,78 @@ export async function POST(request: Request) {
     );
   }
 
+  // 8. Transactional Confirmation Receipt Dispatch
+  // Persisted application is preserved regardless of email provider outcome.
+  let emailDelivery = {
+    status: "pending",
+    message: "Confirmation receipt delivery pending.",
+  };
+
+  let applicationId: string | undefined = insertedApp?.id;
+  if (!applicationId && serviceRoleKey) {
+    try {
+      const { data: foundApp } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("application_reference", reference)
+        .maybeSingle();
+      if (foundApp) {
+        applicationId = (foundApp as { id: string }).id;
+      }
+    } catch {
+      // Suppress secondary lookup error
+    }
+  }
+
+  if (applicationId) {
+    try {
+      const notifyRes = await sendRegistrationReceipt({
+        applicationId,
+        applicationReference: reference,
+        recipientEmail: data.universityEmail,
+        fullName: data.fullName,
+        academicId: data.academicId,
+        academicYear: data.academicYear,
+        department: data.department,
+        primaryTrack: data.primaryTrack,
+        secondaryTrack: data.secondaryTrack,
+      });
+
+      if (notifyRes.status === "sent" || notifyRes.status === "already_sent") {
+        emailDelivery = {
+          status: "sent",
+          message: "Confirmation receipt sent to student email.",
+        };
+      } else if (notifyRes.status === "unconfigured") {
+        emailDelivery = {
+          status: "unconfigured",
+          message: "Email provider is not configured. Delivery is queued.",
+        };
+      } else {
+        emailDelivery = {
+          status: "failed",
+          message: "Confirmation receipt delivery delayed or failed.",
+        };
+      }
+    } catch (notifyErr: unknown) {
+      console.error(
+        `[${requestId}] Notification dispatch unexpected error:`,
+        notifyErr instanceof Error ? notifyErr.message : "Unknown error"
+      );
+      emailDelivery = {
+        status: "failed",
+        message: "Confirmation receipt delivery delayed.",
+      };
+    }
+  }
+
   return NextResponse.json(
-    { ok: true, reference, status: "PENDING_REVIEW" },
+    {
+      ok: true,
+      reference,
+      status: "PENDING_REVIEW",
+      emailDelivery,
+    },
     { status: 201 }
   );
 }

@@ -101,7 +101,8 @@ export default function ApplicantDetailClient({ application: initialApp, current
       if (decisionNote.trim()) {
         setNotesText(decisionNote.trim());
       }
-      setFeedbackSuccess(`Decision recorded: Status updated to ${STATUS_METADATA[actionTargetStatus].label}.`);
+      const deliverySuffix = json.invitationDelivery?.message ? ` (${json.invitationDelivery.message})` : "";
+      setFeedbackSuccess(`Decision recorded: Status updated to ${STATUS_METADATA[actionTargetStatus].label}.${deliverySuffix}`);
       setActionTargetStatus(null);
       setDecisionNote("");
       router.refresh();

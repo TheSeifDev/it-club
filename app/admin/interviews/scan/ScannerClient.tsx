@@ -16,9 +16,19 @@ import {
   Sparkles,
   Clock,
   Send,
+  Info,
+  Lock,
+  Power,
+  ShieldAlert,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
-import { parseClientQrPayload } from "../../../../lib/interviews/qr-client.ts";
+import { parseClientQrPayload, isValidQrTokenFormat } from "../../../../lib/interviews/qr-client.ts";
+import {
+  classifyCameraError,
+  diagnoseCameraEnvironment,
+  type CameraErrorInfo,
+  type CameraEnvironmentDiagnostic,
+} from "../../../../lib/interviews/camera-diagnostics.ts";
 import { TRACK_METADATA } from "../../../../lib/admin/transitions.ts";
 import type { CommitteeTrack } from "../../../../lib/admin/types.ts";
 
@@ -29,12 +39,16 @@ export interface ScannerClientProps {
 export type ScanMode = "camera" | "manual";
 
 export type CameraStatus =
-  | "initializing"
+  | "idle"
+  | "checking_environment"
   | "requesting_permission"
-  | "ready"
+  | "scanning"
+  | "paused"
   | "permission_denied"
   | "no_cameras"
-  | "paused"
+  | "not_readable"
+  | "overconstrained"
+  | "insecure_context"
   | "error";
 
 export type ResultType =
@@ -113,7 +127,7 @@ function playFeedbackSound(type: "success" | "duplicate" | "error") {
       osc.stop(ctx.currentTime + 0.35);
     }
   } catch {
-    // Gracefully ignore audio errors if blocked
+    // Gracefully ignore audio errors if blocked by browser policy
   }
 }
 
@@ -124,7 +138,7 @@ function triggerHaptic(type: "success" | "duplicate" | "error") {
       else if (type === "duplicate") navigator.vibrate([60, 40, 60]);
       else navigator.vibrate([120, 50, 120]);
     } catch {
-      // ignore
+      // Gracefully ignore vibrate errors
     }
   }
 }
@@ -134,9 +148,12 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
   const [mode, setMode] = useState<ScanMode>("camera");
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // Environment diagnostics
+  const [envDiagnostic, setEnvDiagnostic] = useState<CameraEnvironmentDiagnostic | null>(null);
+
   // Camera states
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("initializing");
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("idle");
+  const [cameraErrorInfo, setCameraErrorInfo] = useState<CameraErrorInfo | null>(null);
   const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>("");
 
@@ -144,6 +161,8 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const isProcessingRef = useRef(false);
   const hasResultRef = useRef(false);
+  const isStartingRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Check-in results
   const [result, setResult] = useState<ScanResultData | null>(null);
@@ -160,6 +179,35 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const containerId = "itc-qr-reader-container";
 
+  // Check environment diagnostics once on mount without starting camera
+  useEffect(() => {
+    isMountedRef.current = true;
+    diagnoseCameraEnvironment().then((diag) => {
+      if (isMountedRef.current) {
+        setEnvDiagnostic(diag);
+        if (!diag.isSecureContext) {
+          setCameraStatus("insecure_context");
+          setCameraErrorInfo(
+            classifyCameraError(
+              new Error("Insecure context: Camera scanning requires HTTPS or localhost.")
+            )
+          );
+        } else if (!diag.hasGetUserMedia) {
+          setCameraStatus("error");
+          setCameraErrorInfo(
+            classifyCameraError(
+              new Error("Unsupported browser: navigator.mediaDevices.getUserMedia is unavailable.")
+            )
+          );
+        }
+      }
+    });
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Stop camera tracks cleanly
   const stopCamera = useCallback(async () => {
     if (html5QrCodeRef.current) {
@@ -169,7 +217,8 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
         }
         html5QrCodeRef.current.clear();
       } catch (err) {
-        console.warn("[scanner] Cleanup stop camera:", err);
+        // Non-fatal cleanup warning
+        console.warn("[scanner] Camera stream release warning:", err);
       }
       html5QrCodeRef.current = null;
     }
@@ -220,7 +269,11 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           setSessionLogs((prev) => [
             {
               id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-              timestamp: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+              timestamp: new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
               reference: candidate.applicationReference,
               name: candidate.fullName,
               track: candidate.primaryTrack,
@@ -253,7 +306,11 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           setSessionLogs((prev) => [
             {
               id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-              timestamp: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+              timestamp: new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
               reference: candidate?.applicationReference || "UNKNOWN",
               name: candidate?.fullName || "Candidate",
               track: candidate?.primaryTrack || "N/A",
@@ -344,118 +401,187 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     [staffEmail, soundEnabled]
   );
 
-  // Start Camera
+  // Explicit Start Camera with comprehensive diagnostics and error classification
   const startCamera = useCallback(
     async (cameraId?: string) => {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined" || !isMountedRef.current) return;
+      if (isStartingRef.current) return;
 
-      // Ensure container element exists
+      isStartingRef.current = true;
+      setCameraStatus("requesting_permission");
+      setCameraErrorInfo(null);
+
+      // Pre-flight check: ensure container exists
       const containerEl = document.getElementById(containerId);
       if (!containerEl) {
+        isStartingRef.current = false;
         setCameraStatus("error");
-        setCameraError("Camera viewfinder container not ready.");
+        setCameraErrorInfo(
+          classifyCameraError(new Error("Viewfinder DOM container not mounted."))
+        );
         return;
       }
 
-      setCameraStatus("requesting_permission");
-      setCameraError(null);
+      // Pre-flight check: secure context
+      const diag = await diagnoseCameraEnvironment();
+      if (!diag.isSecureContext) {
+        isStartingRef.current = false;
+        setCameraStatus("insecure_context");
+        setCameraErrorInfo(classifyCameraError(new Error("Insecure context")));
+        return;
+      }
+
+      if (!diag.hasGetUserMedia) {
+        isStartingRef.current = false;
+        setCameraStatus("error");
+        setCameraErrorInfo(
+          classifyCameraError(
+            new Error("Camera APIs not supported by this browser.")
+          )
+        );
+        return;
+      }
 
       try {
         await stopCamera();
 
-        // Enumerate video devices
+        // Enumerate video devices safely
         let cameras: Array<{ id: string; label: string }> = [];
         try {
           cameras = await Html5Qrcode.getCameras();
-          setAvailableCameras(cameras);
+          if (isMountedRef.current) {
+            setAvailableCameras(cameras);
+          }
         } catch {
-          // If getCameras fails or permissions prompt needed first
+          // If getCameras fails or permissions prompt needed first, continue to start
+        }
+
+        if (!isMountedRef.current) {
+          isStartingRef.current = false;
+          return;
         }
 
         const scanner = new Html5Qrcode(containerId);
         html5QrCodeRef.current = scanner;
 
-        // Choose camera config: specific deviceId or mobile environment (back) camera
+        // Config priority:
+        // 1. Explicit cameraId selected by staff
+        // 2. Mobile rear camera { facingMode: "environment" }
+        // 3. Fallback to first enumerated camera id
         const cameraConfig = cameraId
           ? { deviceId: { exact: cameraId } }
-          : cameras.length > 0
-          ? cameras[0].id
           : { facingMode: "environment" };
 
-        await scanner.start(
-          cameraConfig,
-          {
-            fps: 12,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-              const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-              const size = Math.floor(minDim * 0.72);
-              return { width: size, height: size };
-            },
-            aspectRatio: 1.0,
+        const scannerConfig = {
+          fps: 12,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+            // Responsive mobile-friendly scan window size
+            const size = Math.floor(minDim * 0.72);
+            return { width: Math.max(size, 200), height: Math.max(size, 200) };
           },
-          (decodedText) => {
-            // Success QR frame callback
-            if (!isProcessingRef.current && !hasResultRef.current) {
-              processCheckIn(decodedText);
-            }
-          },
-          () => {
-            // Frame scan failure (continuous polling — silent)
+          aspectRatio: 1.0,
+        };
+
+        const onScanSuccess = (decodedText: string) => {
+          if (!isProcessingRef.current && !hasResultRef.current) {
+            processCheckIn(decodedText);
           }
-        );
+        };
 
-        setCameraStatus("ready");
-      } catch (err: unknown) {
-        console.error("[scanner] Camera start error:", err);
-        const errMsg = err instanceof Error ? err.message : String(err);
+        const onScanFailure = () => {
+          // Continuous video frame polling — silent per frame
+        };
 
-        if (
-          errMsg.includes("NotAllowedError") ||
-          errMsg.includes("Permission denied") ||
-          errMsg.includes("denied")
-        ) {
-          setCameraStatus("permission_denied");
-          setCameraError("Camera permission was denied. Please allow camera access in browser settings.");
-        } else if (
-          errMsg.includes("NotFoundError") ||
-          errMsg.includes("DevicesNotFoundError") ||
-          errMsg.includes("no camera")
-        ) {
-          setCameraStatus("no_cameras");
-          setCameraError("No camera device was found on this system.");
-        } else {
-          setCameraStatus("error");
-          setCameraError(`Camera initialization failed: ${errMsg}`);
+        try {
+          await scanner.start(cameraConfig, scannerConfig, onScanSuccess, onScanFailure);
+        } catch (initialErr: unknown) {
+          // If environment constraint failed (OverconstrainedError) on devices without back camera,
+          // automatically retry with unconstrained fallback or front camera
+          const classified = classifyCameraError(initialErr);
+          if (classified.code === "overconstrained" || !cameraId) {
+            console.info("[scanner] Retrying with generic camera constraints...");
+            await scanner.start(
+              cameras.length > 0 ? cameras[0].id : { facingMode: "user" },
+              scannerConfig,
+              onScanSuccess,
+              onScanFailure
+            );
+          } else {
+            throw initialErr;
+          }
         }
+
+        if (isMountedRef.current) {
+          setCameraStatus("scanning");
+          // Re-enumerate cameras now that permission has been granted so labels appear
+          try {
+            const refreshedCameras = await Html5Qrcode.getCameras();
+            if (isMountedRef.current && refreshedCameras.length > 0) {
+              setAvailableCameras(refreshedCameras);
+            }
+          } catch {
+            // Ignore background re-enumeration errors
+          }
+        }
+      } catch (err: unknown) {
+        if (!isMountedRef.current) return;
+
+        const info = classifyCameraError(err);
+        setCameraErrorInfo(info);
+
+        if (info.isExpectedDenial) {
+          // Non-alarming diagnostic logging for normal permission rejection
+          console.info(
+            "[scanner] Camera permission denied by user or browser policy:",
+            info.message
+          );
+          setCameraStatus("permission_denied");
+        } else if (info.code === "not_found") {
+          console.warn("[scanner] No camera hardware found:", info.message);
+          setCameraStatus("no_cameras");
+        } else if (info.code === "not_readable") {
+          console.warn("[scanner] Camera hardware locked or in use:", info.message);
+          setCameraStatus("not_readable");
+        } else if (info.code === "insecure_context") {
+          console.warn("[scanner] Insecure context:", info.message);
+          setCameraStatus("insecure_context");
+        } else {
+          // Real unexpected failure: retain error logging without leaking tokens or applicant data
+          console.error("[scanner] Unexpected camera initialization failure:", info.message);
+          setCameraStatus("error");
+        }
+      } finally {
+        isStartingRef.current = false;
       }
     },
     [processCheckIn, stopCamera]
   );
 
-  // Initialize or stop scanner based on mode
-  useEffect(() => {
-    let isCancelled = false;
+  // Switch to manual mode cleanly releases camera stream
+  const handleSwitchMode = useCallback(
+    async (nextMode: ScanMode) => {
+      if (nextMode === mode) return;
+      if (mode === "camera") {
+        await stopCamera();
+        setCameraStatus("idle");
+      }
+      setMode(nextMode);
+      setManualInputError(null);
+    },
+    [mode, stopCamera]
+  );
 
-    if (mode === "camera") {
-      // Small timeout to guarantee DOM element is mounted
-      const timer = setTimeout(() => {
-        if (!isCancelled) {
-          startCamera(selectedCameraId || undefined);
-        }
-      }, 150);
-      return () => {
-        isCancelled = true;
-        clearTimeout(timer);
-        stopCamera();
-      };
-    } else {
-      stopCamera();
-    }
-  }, [mode, selectedCameraId, startCamera, stopCamera]);
+  // Explicit camera shutdown
+  const handleStopCamera = useCallback(async () => {
+    await stopCamera();
+    setCameraStatus("idle");
+  }, [stopCamera]);
 
-  // Clean unmount
+  // Clean unmount guaranteed
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       stopCamera();
     };
   }, [stopCamera]);
@@ -469,7 +595,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     setManualInputError(null);
   }, []);
 
-  // Keyboard shortcut: Press Space or Enter to scan next candidate when result is showing
+  // Keyboard shortcut: Press Space, Enter, or Escape to dismiss result and scan next
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (result && (e.key === "Enter" || e.key === " " || e.key === "Escape")) {
@@ -494,6 +620,11 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     const parsed = parseClientQrPayload(trimmed);
     if (!parsed) {
       setManualInputError("Unable to extract valid token from input.");
+      return;
+    }
+
+    if (!isValidQrTokenFormat(parsed)) {
+      setManualInputError("Token format is invalid or too short.");
       return;
     }
 
@@ -527,40 +658,36 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Top Controls & Status Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10 bg-[#080a0c] p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10 bg-[#080a0c] p-3 sm:p-4">
         {/* Mode Selector Tabs */}
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              resumeScanning();
-              setMode("camera");
-            }}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border ${
+            id="tab-camera-mode"
+            onClick={() => handleSwitchMode("camera")}
+            className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border min-h-[44px] ${
               mode === "camera"
                 ? "bg-[#00e599]/10 text-[#00e599] border-[#00e599]"
                 : "border-white/10 text-white/60 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Camera size={14} />
+            <Camera size={15} />
             <span>CAMERA SCANNER</span>
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              resumeScanning();
-              setMode("manual");
-            }}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border ${
+            id="tab-manual-mode"
+            onClick={() => handleSwitchMode("manual")}
+            className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border min-h-[44px] ${
               mode === "manual"
                 ? "bg-[#00e599]/10 text-[#00e599] border-[#00e599]"
                 : "border-white/10 text-white/60 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Keyboard size={14} />
+            <Keyboard size={15} />
             <span>MANUAL ENTRY</span>
           </button>
         </div>
@@ -569,13 +696,18 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
         <div className="flex items-center gap-3">
           {mode === "camera" && availableCameras.length > 1 && (
             <select
+              id="camera-device-select"
               value={selectedCameraId}
               onChange={(e) => {
                 setSelectedCameraId(e.target.value);
-                startCamera(e.target.value);
+                if (cameraStatus === "scanning") {
+                  startCamera(e.target.value);
+                }
               }}
-              className="bg-[#050708] border border-white/10 text-xs font-mono text-white/80 px-2.5 py-1.5 focus:border-[#00e599] focus:outline-none"
+              className="bg-[#050708] border border-white/10 text-xs font-mono text-white/80 px-2.5 py-2 min-h-[44px] focus:border-[#00e599] focus:outline-none"
+              title="Select camera sensor"
             >
+              <option value="">Default (Rear Camera)</option>
               {availableCameras.map((cam, idx) => (
                 <option key={cam.id} value={cam.id}>
                   {cam.label || `Camera ${idx + 1}`}
@@ -588,9 +720,13 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
             type="button"
             onClick={() => setSoundEnabled(!soundEnabled)}
             title={soundEnabled ? "Mute audio beeps" : "Enable audio beeps"}
-            className="p-2 border border-white/10 bg-white/[0.02] text-white/60 hover:text-white hover:border-white/20 transition-colors"
+            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/10 bg-white/[0.02] text-white/60 hover:text-white hover:border-white/20 transition-colors cursor-pointer"
           >
-            {soundEnabled ? <Volume2 size={15} className="text-[#00e599]" /> : <VolumeX size={15} />}
+            {soundEnabled ? (
+              <Volume2 size={16} className="text-[#00e599]" />
+            ) : (
+              <VolumeX size={16} />
+            )}
           </button>
         </div>
       </div>
@@ -606,24 +742,26 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
             {/* Viewfinder / Input container */}
             {mode === "camera" ? (
               <div className="space-y-4">
-                {/* Status Indicator */}
-                <div className="flex items-center justify-between">
+                {/* Status Indicator Bar */}
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-2.5 h-2.5 rounded-full ${
                         isProcessing
                           ? "bg-[#18c8ed] animate-ping"
-                          : cameraStatus === "ready"
+                          : cameraStatus === "scanning"
                           ? "bg-[#00e599] animate-pulse"
                           : cameraStatus === "permission_denied" || cameraStatus === "error"
                           ? "bg-rose-500"
-                          : "bg-amber-400"
+                          : cameraStatus === "no_cameras" || cameraStatus === "not_readable"
+                          ? "bg-amber-400"
+                          : "bg-white/40"
                       }`}
                     />
                     <span className="font-mono text-xs uppercase tracking-wider text-white/80">
                       {isProcessing
                         ? "VERIFYING CANDIDATE WITH SERVER..."
-                        : cameraStatus === "ready"
+                        : cameraStatus === "scanning"
                         ? "READY · ALIGN QR CODE"
                         : cameraStatus === "requesting_permission"
                         ? "REQUESTING CAMERA ACCESS..."
@@ -631,38 +769,53 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                         ? "PERMISSION DENIED"
                         : cameraStatus === "no_cameras"
                         ? "NO CAMERA FOUND"
-                        : "CAMERA INITIALIZING..."}
+                        : cameraStatus === "not_readable"
+                        ? "CAMERA HARDWARE BUSY"
+                        : cameraStatus === "insecure_context"
+                        ? "INSECURE CONTEXT (HTTPS REQUIRED)"
+                        : "CAMERA READY TO START"}
                     </span>
                   </div>
 
-                  {cameraStatus === "ready" && (
-                    <button
-                      type="button"
-                      onClick={() => startCamera(selectedCameraId || undefined)}
-                      title="Restart camera stream"
-                      className="text-white/40 hover:text-white text-xs font-mono flex items-center gap-1 transition-colors"
-                    >
-                      <RefreshCw size={12} />
-                      <span>RELOAD</span>
-                    </button>
+                  {cameraStatus === "scanning" && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startCamera(selectedCameraId || undefined)}
+                        title="Restart camera stream"
+                        className="text-white/50 hover:text-white text-xs font-mono flex items-center gap-1 transition-colors px-2 py-1 border border-white/10 hover:border-white/20"
+                      >
+                        <RefreshCw size={12} />
+                        <span className="hidden sm:inline">RELOAD</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleStopCamera}
+                        title="Stop camera video stream"
+                        className="text-rose-400/80 hover:text-rose-400 text-xs font-mono flex items-center gap-1 transition-colors px-2 py-1 border border-rose-500/20 hover:border-rose-500/40"
+                      >
+                        <Power size={12} />
+                        <span className="hidden sm:inline">STOP</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 {/* Optical Viewfinder Box */}
-                <div className="relative aspect-square max-w-md mx-auto bg-[#050708] border border-white/10 overflow-hidden flex items-center justify-center">
+                <div className="relative aspect-square max-w-md w-full mx-auto bg-[#050708] border border-white/10 overflow-hidden flex items-center justify-center">
                   {/* html5-qrcode video mount element */}
                   <div
                     id={containerId}
                     className={`w-full h-full object-cover transition-opacity duration-300 ${
-                      cameraStatus === "ready" ? "opacity-100" : "opacity-0 pointer-events-none"
+                      cameraStatus === "scanning" ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`}
                   />
 
-                  {/* Overlaid Viewfinder Targets (visible when camera is ready & no result) */}
-                  {cameraStatus === "ready" && !result && (
+                  {/* Overlaid Viewfinder Targets (visible when camera is actively scanning & no result) */}
+                  {cameraStatus === "scanning" && !result && (
                     <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6">
                       {/* 4 Corner Targeting Reticles */}
-                      <div className="relative w-64 h-64 border border-white/10">
+                      <div className="relative w-56 sm:w-64 h-56 sm:h-64 border border-white/10">
                         {/* Top-Left */}
                         <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-[#00e599]" />
                         {/* Top-Right */}
@@ -681,39 +834,166 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                         </div>
                       </div>
 
-                      <p className="font-mono text-[11px] text-white/50 tracking-wider uppercase mt-4 bg-[#080a0c]/80 px-3 py-1 border border-white/5">
+                      <p className="font-mono text-[11px] text-white/60 tracking-wider uppercase mt-4 bg-[#080a0c]/85 px-3 py-1 border border-white/10">
                         CENTER INTERVIEW QR IN FRAME
                       </p>
                     </div>
                   )}
 
-                  {/* Camera Permission Denied Screen */}
-                  {cameraStatus === "permission_denied" && (
+                  {/* State 1: IDLE / READY TO START SCREEN (No automatic permission request on mount!) */}
+                  {cameraStatus === "idle" && (
                     <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]">
-                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400">
-                        <CameraOff size={24} />
+                      <div className="w-14 h-14 flex items-center justify-center border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599]">
+                        <Camera size={28} />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5 max-w-xs">
                         <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
-                          CAMERA ACCESS WAS DENIED
+                          OPTICAL SCANNER READY
                         </h3>
-                        <p className="text-xs text-white/60 max-w-xs leading-relaxed">
-                          {cameraError ||
-                            "Your browser or device blocked camera permission. Enable camera access in site settings, or switch to manual token entry."}
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          Click below to start your camera and begin scanning candidate interview QR codes.
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-xs">
+                        <button
+                          type="button"
+                          id="btn-start-camera"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#00e599] text-[#050708] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#00ffaa] transition-colors cursor-pointer min-h-[44px]"
+                        >
+                          <Camera size={14} />
+                          <span>START CAMERA</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          id="btn-switch-manual-from-idle"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 border border-white/10 bg-white/5 text-white/80 hover:text-white hover:bg-white/10 font-mono text-xs uppercase transition-colors cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={14} />
+                          <span>MANUAL ENTRY</span>
+                        </button>
+                      </div>
+
+                      {/* Environmental Diagnostic Pills */}
+                      {envDiagnostic && (
+                        <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-white/40">
+                          <span className="border border-white/10 px-2 py-0.5 bg-white/[0.02]">
+                            CONTEXT: {envDiagnostic.isSecureContext ? "HTTPS/SECURE" : "INSECURE"}
+                          </span>
+                          <span className="border border-white/10 px-2 py-0.5 bg-white/[0.02]">
+                            WEBRTC: {envDiagnostic.hasGetUserMedia ? "SUPPORTED" : "UNAVAILABLE"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* State 2: REQUESTING PERMISSION / INITIALIZING */}
+                  {cameraStatus === "requesting_permission" && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-3 bg-[#080a0c] p-6">
+                      <RefreshCw size={28} className="text-[#00e599] animate-spin" />
+                      <div className="space-y-1">
+                        <p className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                          INITIALIZING OPTICAL SENSOR...
+                        </p>
+                        <p className="text-[11px] text-white/50 max-w-xs">
+                          Please accept the camera permission prompt in your browser if requested.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 3: PERMISSION DENIED (Comprehensive Instructions + Try Again + Manual Entry) */}
+                  {cameraStatus === "permission_denied" && (
+                    <div
+                      id="scanner-permission-denied-panel"
+                      className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <CameraOff size={24} />
+                      </div>
+
+                      <div className="space-y-1.5 max-w-sm">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA PERMISSION DENIED
+                        </h3>
+                        <p className="text-xs text-white/70 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "Browser or operating-system camera permission was denied."}
+                        </p>
+                      </div>
+
+                      {/* Step-by-Step Instructions */}
+                      <div className="w-full max-w-sm bg-[#050708] border border-white/10 p-3 text-left space-y-2">
+                        <span className="text-[10px] font-mono text-[#00e599] uppercase font-bold flex items-center gap-1.5">
+                          <Lock size={12} />
+                          <span>HOW TO ENABLE CAMERA ACCESS:</span>
+                        </span>
+                        <ol className="text-[11px] font-mono text-white/60 space-y-1.5 list-decimal list-inside leading-relaxed">
+                          <li>Click the camera or lock icon in your browser address bar.</li>
+                          <li>Change camera permission from &quot;Block&quot; to &quot;Allow&quot;.</li>
+                          <li>Click &quot;Try Again&quot; below or reload this page.</li>
+                        </ol>
+                      </div>
+
+                      {/* Two Obvious Primary Actions: Try Again + Manual Entry */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
+                        <button
+                          type="button"
+                          id="btn-retry-camera"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          <RefreshCw size={13} />
+                          <span>TRY AGAIN</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          id="btn-permission-use-manual"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={13} />
+                          <span>ENTER TOKEN MANUALLY</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 4: NO CAMERA FOUND */}
+                  {cameraStatus === "no_cameras" && (
+                    <div
+                      id="scanner-no-cameras-panel"
+                      className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-amber-500/40 bg-amber-500/10 text-amber-400 shrink-0">
+                        <CameraOff size={24} />
+                      </div>
+                      <div className="space-y-1 max-w-xs">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          NO CAMERA DEVICE FOUND
+                        </h3>
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "No optical video camera was detected on this device. Use manual token entry to proceed."}
+                        </p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-xs">
                         <button
                           type="button"
                           onClick={() => startCamera(selectedCameraId || undefined)}
-                          className="px-4 py-2 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer"
+                          className="w-full sm:w-auto px-4 py-2.5 border border-white/20 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
                         >
-                          TRY AGAIN
+                          RETRY DETECTION
                         </button>
                         <button
                           type="button"
-                          onClick={() => setMode("manual")}
-                          className="px-4 py-2 border border-white/10 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
                         >
                           USE MANUAL ENTRY
                         </button>
@@ -721,57 +1001,36 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                     </div>
                   )}
 
-                  {/* Camera Unavailable Screen */}
-                  {cameraStatus === "no_cameras" && (
-                    <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]">
-                      <div className="w-12 h-12 flex items-center justify-center border border-amber-500/40 bg-amber-500/10 text-amber-400">
-                        <CameraOff size={24} />
+                  {/* State 5: CAMERA HARDWARE BUSY (NotReadableError) */}
+                  {cameraStatus === "not_readable" && (
+                    <div
+                      id="scanner-camera-busy-panel"
+                      className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-amber-500/40 bg-amber-500/10 text-amber-400 shrink-0">
+                        <AlertTriangle size={24} />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 max-w-xs">
                         <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
-                          NO CAMERA DEVICE DETECTED
+                          CAMERA IN USE BY ANOTHER APP
                         </h3>
-                        <p className="text-xs text-white/60 max-w-xs leading-relaxed">
-                          {cameraError ||
-                            "No optical video camera was found connected to this system. Use the manual token entry fallback below."}
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "The camera is currently locked by another application or browser tab."}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setMode("manual")}
-                        className="px-4 py-2 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer"
-                      >
-                        SWITCH TO MANUAL ENTRY
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Camera Error Screen */}
-                  {cameraStatus === "error" && (
-                    <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]">
-                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400">
-                        <CameraOff size={24} />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
-                          CAMERA STREAM ERROR
-                        </h3>
-                        <p className="text-xs text-white/60 max-w-xs leading-relaxed">
-                          {cameraError || "Unable to start video stream. Try reloading or using manual entry."}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-xs">
                         <button
                           type="button"
                           onClick={() => startCamera(selectedCameraId || undefined)}
-                          className="px-4 py-2 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer"
+                          className="w-full sm:w-auto px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
                         >
-                          RELOAD CAMERA
+                          TRY AGAIN
                         </button>
                         <button
                           type="button"
-                          onClick={() => setMode("manual")}
-                          className="px-4 py-2 border border-white/10 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto px-4 py-2.5 border border-white/10 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
                         >
                           MANUAL ENTRY
                         </button>
@@ -779,13 +1038,66 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                     </div>
                   )}
 
-                  {/* Camera Initializing Screen */}
-                  {cameraStatus === "initializing" && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-3 bg-[#080a0c]">
-                      <RefreshCw size={24} className="text-[#00e599] animate-spin" />
-                      <p className="font-mono text-xs text-white/60 uppercase tracking-wider">
-                        INITIALIZING OPTICAL SENSOR...
-                      </p>
+                  {/* State 6: INSECURE CONTEXT */}
+                  {cameraStatus === "insecure_context" && (
+                    <div
+                      id="scanner-insecure-context-panel"
+                      className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <ShieldAlert size={24} />
+                      </div>
+                      <div className="space-y-1 max-w-xs">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          SECURE CONTEXT REQUIRED
+                        </h3>
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          Browser camera scanning requires a secure connection (HTTPS or localhost).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchMode("manual")}
+                        className="px-5 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                      >
+                        CONTINUE WITH MANUAL ENTRY
+                      </button>
+                    </div>
+                  )}
+
+                  {/* State 7: GENERAL CAMERA ERROR */}
+                  {cameraStatus === "error" && (
+                    <div
+                      id="scanner-general-error-panel"
+                      className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <CameraOff size={24} />
+                      </div>
+                      <div className="space-y-1 max-w-xs">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA STREAM ERROR
+                        </h3>
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          {cameraErrorInfo?.message || "Unable to initialize optical video sensor."}
+                        </p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-xs">
+                        <button
+                          type="button"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          TRY AGAIN
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto px-4 py-2.5 border border-white/10 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          MANUAL ENTRY
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -813,8 +1125,8 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                     MANUAL TOKEN ENTRY FALLBACK
                   </h3>
                   <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                    Type or paste the candidate&apos;s interview QR token or full JSON payload. The server
-                    will validate eligibility and record attendance.
+                    Type or paste the candidate&apos;s interview QR token, protocol JSON, or check-in link.
+                    The server will validate candidate eligibility and securely record attendance.
                   </p>
                 </div>
 
@@ -834,23 +1146,27 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                         setManualToken(e.target.value);
                         setManualInputError(null);
                       }}
-                      placeholder='itc_qr_... OR {"protocol":"itc-interview-v1","token":"..."}'
-                      className="w-full bg-[#050708] border border-white/15 px-3 py-2.5 font-mono text-xs text-white placeholder-white/30 focus:border-[#00e599] focus:outline-none transition-colors"
+                      placeholder='itc_qr_... OR {"protocol":"itc-interview-v1","token":"..."} OR https://...?token=...'
+                      className="w-full bg-[#050708] border border-white/15 px-3 py-2.5 font-mono text-base sm:text-xs text-white placeholder-white/30 focus:border-[#00e599] focus:outline-none transition-colors"
                       disabled={isProcessing}
                     />
                     {manualInputError && (
-                      <p className="text-xs font-mono text-rose-400 mt-1.5 flex items-center gap-1.5">
+                      <p
+                        id="manual-input-error-msg"
+                        className="text-xs font-mono text-rose-400 mt-1.5 flex items-center gap-1.5"
+                      >
                         <AlertTriangle size={13} />
                         <span>{manualInputError}</span>
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="submit"
+                      id="btn-manual-submit"
                       disabled={isProcessing || !manualToken.trim()}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00e599] text-[#050708] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#00ffaa] disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00e599] text-[#050708] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#00ffaa] disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer min-h-[44px]"
                     >
                       {isProcessing ? (
                         <>
@@ -867,9 +1183,12 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
                     <button
                       type="button"
-                      onClick={() => setManualToken("")}
+                      onClick={() => {
+                        setManualToken("");
+                        setManualInputError(null);
+                      }}
                       disabled={isProcessing || !manualToken}
-                      className="px-3 py-2.5 border border-white/10 text-white/60 hover:text-white hover:border-white/20 font-mono text-xs uppercase disabled:opacity-30 transition-colors"
+                      className="px-4 py-2.5 border border-white/10 text-white/60 hover:text-white hover:border-white/20 font-mono text-xs uppercase disabled:opacity-30 transition-colors cursor-pointer min-h-[44px]"
                     >
                       CLEAR
                     </button>
@@ -879,10 +1198,11 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
             )}
           </div>
 
-          {/* Result Card: Renders right below or as primary modal */}
+          {/* Result Card: Renders below the viewfinder without covering navigation */}
           {result && (
             <div
-              className={`border p-6 transition-all animate-fadeIn ${
+              id="scanner-result-card"
+              className={`border p-5 sm:p-6 transition-all animate-fadeIn ${
                 result.type === "success"
                   ? "border-[#00e599]/60 bg-[#00e599]/[0.05]"
                   : result.type === "already_checked_in"
@@ -894,7 +1214,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
               <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4 mb-5">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 flex items-center justify-center border ${
+                    className={`w-10 h-10 flex items-center justify-center border shrink-0 ${
                       result.type === "success"
                         ? "border-[#00e599]/60 bg-[#00e599]/20 text-[#00e599]"
                         : result.type === "already_checked_in"
@@ -929,10 +1249,11 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
                 <button
                   type="button"
+                  id="btn-close-result-card"
                   onClick={resumeScanning}
-                  className="text-white/40 hover:text-white font-mono text-xs uppercase px-2.5 py-1 border border-white/10 hover:border-white/20 transition-colors"
+                  className="text-white/40 hover:text-white font-mono text-xs uppercase px-2.5 py-1.5 border border-white/10 hover:border-white/20 transition-colors min-h-[36px]"
                 >
-                  ESC / CLOSE
+                  CLOSE
                 </button>
               </div>
 
@@ -1021,8 +1342,9 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
+                  id="btn-scan-next-candidate"
                   onClick={resumeScanning}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-2 px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[44px] ${
                     result.type === "success"
                       ? "bg-[#00e599] text-[#050708] hover:bg-[#00ffaa]"
                       : result.type === "already_checked_in"
@@ -1087,7 +1409,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
             {sessionLogs.length === 0 ? (
               <div className="py-8 text-center text-white/30 font-mono text-xs space-y-1">
                 <p>No scans recorded in this session yet.</p>
-                <p className="text-[10px]">Align a candidate QR to begin.</p>
+                <p className="text-[10px]">Start camera or submit a token to begin.</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -1131,8 +1453,9 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
           {/* Committee Guidelines & Checklist */}
           <div className="border border-white/10 bg-[#080a0c] p-4 space-y-2 text-xs font-mono text-white/60">
-            <span className="text-[10px] text-[#00e599] uppercase font-bold tracking-wider block">
-              CHECK-IN INSTRUCTIONS FOR STAFF
+            <span className="text-[10px] text-[#00e599] uppercase font-bold tracking-wider block flex items-center gap-1.5">
+              <Info size={12} />
+              <span>STAFF CHECK-IN GUIDELINES</span>
             </span>
             <ul className="space-y-1.5 text-[11px] leading-relaxed list-disc list-inside text-white/50">
               <li>Candidates show their QR on mobile screen or printed attendance card.</li>

@@ -16,6 +16,8 @@ export default async function ApplicationsPage(props: {
     search?: string;
     status?: string;
     track?: string;
+    trackScope?: string;
+    date?: string;
     year?: string;
     sortBy?: string;
     sortOrder?: string;
@@ -27,15 +29,17 @@ export default async function ApplicationsPage(props: {
 
   const params = await props.searchParams;
 
-  const filters = {
+  const filters: ApplicationFilters = {
     search: params.search || undefined,
     status: (params.status as ApplicationStatus) || undefined,
     track: (params.track as CommitteeTrack) || undefined,
+    trackScope: (params.trackScope as ApplicationFilters["trackScope"]) || undefined,
+    date: params.date || undefined,
     year: (params.year as AcademicYear) || undefined,
     sortBy: (params.sortBy as ApplicationFilters["sortBy"]) || "created_at",
     sortOrder: (params.sortOrder as "asc" | "desc") || "desc",
     page: params.page ? parseInt(params.page, 10) : 1,
-    pageSize: params.pageSize ? parseInt(params.pageSize, 10) : 10,
+    pageSize: params.pageSize ? parseInt(params.pageSize, 10) : 20,
   };
 
   const data = await listApplications(filters);

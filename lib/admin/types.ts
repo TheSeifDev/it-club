@@ -69,18 +69,38 @@ export interface ApplicationDetail {
   updated_at: string;
 }
 
+export interface TrackDistributionMetrics {
+  byPrimary: Record<CommitteeTrack, number>;
+  bySecondary: Record<CommitteeTrack, number>;
+  byCombined: Record<CommitteeTrack, number>;
+  totalPrimary: number;
+  totalSecondary: number;
+  totalSelections: number;
+}
+
 export interface DashboardMetrics {
   total: number;
   byStatus: Record<ApplicationStatus, number>;
   byTrack: Record<CommitteeTrack, number>;
+  trackMetrics: TrackDistributionMetrics;
   recentCount24h: number;
+  submissionsByDay: Array<{
+    date: string;
+    count: number;
+  }>;
+  pipeline: Array<{
+    status: ApplicationStatus;
+    count: number;
+  }>;
 }
 
 export interface ApplicationFilters {
   search?: string;
   status?: ApplicationStatus | "ALL";
   track?: CommitteeTrack | "ALL";
+  trackScope?: "primary" | "secondary" | "either";
   year?: AcademicYear | "ALL";
+  date?: string;
   sortBy?: "created_at" | "full_name" | "status" | "primary_track";
   sortOrder?: "asc" | "desc";
   page?: number;

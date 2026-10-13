@@ -19,8 +19,8 @@ export function sanitizeRedirectPath(rawPath: string | null | undefined, default
     return defaultFallback;
   }
 
-  // Ensure path is on permitted application administrative routes
-  const allowedPrefixes = ["/admin"];
+  // Ensure path is on permitted internal authentication or administrative routes.
+  const allowedPrefixes = ["/admin", "/login", "/student/login"];
   const isAllowed = allowedPrefixes.some(
     (prefix) => trimmed === prefix || trimmed.startsWith(`${prefix}/`) || trimmed.startsWith(`${prefix}?`)
   );

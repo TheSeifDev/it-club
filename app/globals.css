@@ -86,6 +86,29 @@ body {
   letter-spacing: normal;
 }
 
+.admin-shell,
+.student-portal {
+  font-family: var(--font-montserrat), var(--font-alexandria), sans-serif;
+}
+
+.admin-shell .font-mono,
+.student-portal .font-mono {
+  font-family: var(--font-montserrat), var(--font-alexandria), sans-serif;
+}
+
+.admin-shell [dir="rtl"],
+.admin-shell .arabic,
+.student-portal [dir="rtl"],
+.student-portal .arabic {
+  font-family: var(--font-alexandria), var(--font-montserrat), sans-serif;
+}
+
+@media (min-width: 1024px) {
+  .admin-shell:has([data-sidebar-compact="true"]) main {
+    padding-left: 6.5rem;
+  }
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,

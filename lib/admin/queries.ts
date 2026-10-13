@@ -10,6 +10,7 @@ import type {
 } from "./types.ts";
 import {
   COMMITTEE_TRACKS,
+  VALID_STATUSES,
   isApplicationStatus,
   isValidStatusTransition,
   maskNationalId,
@@ -24,7 +25,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const serviceClient = getServiceRoleClient();
   const { data, error } = await serviceClient
     .from("applications")
-    .select("status, primary_track, created_at");
+    .select("status, primary_track, secondary_track, created_at");
 
   if (error) {
     throw new Error(`Failed to load recruitment metrics: ${error.message}`);
@@ -42,7 +43,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     WAITLISTED: 0,
   };
 
-  const byTrack: Record<CommitteeTrack, number> = {
+  const byPrimary: Record<CommitteeTrack, number> = {
     hr: 0,
     pr: 0,
     sm: 0,
@@ -51,26 +52,84 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     rnd: 0,
   };
 
+  const bySecondary: Record<CommitteeTrack, number> = {
+    hr: 0,
+    pr: 0,
+    sm: 0,
+    oc: 0,
+    it: 0,
+    rnd: 0,
+  };
+
+  const byCombined: Record<CommitteeTrack, number> = {
+    hr: 0,
+    pr: 0,
+    sm: 0,
+    oc: 0,
+    it: 0,
+    rnd: 0,
+  };
+
+  let totalPrimary = 0;
+  let totalSecondary = 0;
   let recentCount24h = 0;
   const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
+  const submissionsByDate = new Map<string, number>();
 
   for (const row of data || []) {
     if (row.status && row.status in byStatus) {
       byStatus[row.status as ApplicationStatus] += 1;
     }
-    if (row.primary_track && row.primary_track in byTrack) {
-      byTrack[row.primary_track as CommitteeTrack] += 1;
+    if (row.primary_track && row.primary_track in byPrimary) {
+      const pt = row.primary_track as CommitteeTrack;
+      byPrimary[pt] += 1;
+      byCombined[pt] += 1;
+      totalPrimary += 1;
+    }
+    if (row.secondary_track && row.secondary_track in bySecondary) {
+      const st = row.secondary_track as CommitteeTrack;
+      bySecondary[st] += 1;
+      byCombined[st] += 1;
+      totalSecondary += 1;
     }
     if (row.created_at && new Date(row.created_at).getTime() >= cutoff24h) {
       recentCount24h += 1;
     }
+    if (row.created_at) {
+      const day = new Date(row.created_at).toISOString().slice(0, 10);
+      submissionsByDate.set(day, (submissionsByDate.get(day) || 0) + 1);
+    }
   }
+
+  const today = new Date();
+  const submissionsByDay = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (13 - index));
+    const key = date.toISOString().slice(0, 10);
+    return {
+      date: key,
+      count: submissionsByDate.get(key) || 0,
+    };
+  });
 
   return {
     total: data?.length || 0,
     byStatus,
-    byTrack,
+    byTrack: byPrimary,
+    trackMetrics: {
+      byPrimary,
+      bySecondary,
+      byCombined,
+      totalPrimary,
+      totalSecondary,
+      totalSelections: totalPrimary + totalSecondary,
+    },
     recentCount24h,
+    submissionsByDay,
+    pipeline: VALID_STATUSES.map((status) => ({
+      status,
+      count: byStatus[status],
+    })),
   };
 }
 
@@ -99,9 +158,24 @@ export async function listApplications(
     query = query.eq("status", filters.status);
   }
 
-  // Track Filter
+  // Track Filter with primary / secondary / either preference scope
   if (filters.track && filters.track !== "ALL" && COMMITTEE_TRACKS.includes(filters.track as CommitteeTrack)) {
-    query = query.eq("primary_track", filters.track);
+    const scope = filters.trackScope || "primary";
+    if (scope === "secondary") {
+      query = query.eq("secondary_track", filters.track);
+    } else if (scope === "either") {
+      query = query.or(`primary_track.eq.${filters.track},secondary_track.eq.${filters.track}`);
+    } else {
+      query = query.eq("primary_track", filters.track);
+    }
+  }
+
+  // Submission Date Filter (YYYY-MM-DD from timeline click)
+  if (filters.date && /^\d{4}-\d{2}-\d{2}$/.test(filters.date.trim())) {
+    const cleanDate = filters.date.trim();
+    const startOfDay = `${cleanDate}T00:00:00.000Z`;
+    const endOfDay = `${cleanDate}T23:59:59.999Z`;
+    query = query.gte("created_at", startOfDay).lte("created_at", endOfDay);
   }
 
   // Academic Year Filter

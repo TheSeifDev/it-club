@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -9,13 +9,19 @@ import {
   isEmailConfigured,
 } from "../lib/email/config.ts";
 import {
+  setMockTransporter,
+  resetMailerTransporter,
+  sendMail,
+  isValidEmailAddress,
+} from "../lib/email/mailer.ts";
+import {
   sendRegistrationReceipt,
   getNotificationForApplication,
 } from "../lib/email/notification-service.ts";
 import { POST } from "../app/api/register/route.ts";
 import { resetMemoryRateLimits } from "../lib/security/rate-limiter.ts";
 
-describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
+describe("Direct Gmail SMTP & Transactional Registration Confirmation Emails", () => {
   const supabaseUrl =
     process.env.SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -27,6 +33,11 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
 
   beforeEach(() => {
     resetMemoryRateLimits();
+    resetMailerTransporter();
+  });
+
+  afterEach(() => {
+    resetMailerTransporter();
   });
 
   // 1. Template Safety & HTML Escaping (XSS Defense)
@@ -46,7 +57,9 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
 
       // Verify dangerous tags are escaped
       assert.ok(!rendered.html.includes("<script>"));
-      assert.ok(rendered.html.includes("&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;"));
+      assert.ok(
+        rendered.html.includes("&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;")
+      );
       assert.ok(!rendered.html.includes("<img src=x"));
       assert.ok(!rendered.html.includes("<iframe"));
       assert.ok(rendered.html.includes("&lt;iframe"));
@@ -114,54 +127,207 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
     });
   });
 
-  // 2. Configuration & Missing Provider Behavior
-  describe("2. Provider Configuration & Failure Fallback", () => {
-    it("diagnoses missing email provider without crashing or claiming false success", () => {
-      // With empty or absent key
-      const originalKey = process.env.RESEND_API_KEY;
+  // 2. Gmail SMTP Configuration & Credential Validation
+  describe("2. Gmail SMTP Configuration & Credential Safety", () => {
+    it("correctly parses Gmail SMTP configuration and sets TLS security for ports 465 and 587", () => {
+      const origUser = process.env.GMAIL_USER;
+      const origPass = process.env.GMAIL_APP_PASSWORD;
+      const origPort = process.env.SMTP_PORT;
+
       try {
-        delete process.env.RESEND_API_KEY;
+        process.env.GMAIL_USER = "recruitment@gmail.com";
+        process.env.GMAIL_APP_PASSWORD = "abcd efgh ijkl mnop";
+        process.env.SMTP_PORT = "465";
+
+        const config465 = getEmailConfig();
+        assert.equal(config465.gmailUser, "recruitment@gmail.com");
+        assert.equal(config465.smtpHost, "smtp.gmail.com");
+        assert.equal(config465.smtpPort, 465);
+        assert.equal(config465.secure, true);
+        assert.equal(isEmailConfigured(), true);
+
+        // Port 587 (STARTTLS)
+        process.env.SMTP_PORT = "587";
+        const config587 = getEmailConfig();
+        assert.equal(config587.smtpPort, 587);
+        assert.equal(config587.secure, false);
+      } finally {
+        if (origUser) process.env.GMAIL_USER = origUser;
+        else delete process.env.GMAIL_USER;
+        if (origPass) process.env.GMAIL_APP_PASSWORD = origPass;
+        else delete process.env.GMAIL_APP_PASSWORD;
+        if (origPort) process.env.SMTP_PORT = origPort;
+        else delete process.env.SMTP_PORT;
+      }
+    });
+
+    it("diagnoses missing Gmail credentials safely without crashing or claiming false success", () => {
+      const origUser = process.env.GMAIL_USER;
+      const origPass = process.env.GMAIL_APP_PASSWORD;
+
+      try {
+        delete process.env.GMAIL_USER;
+        delete process.env.GMAIL_APP_PASSWORD;
+
         assert.equal(isEmailConfigured(), false);
         const config = getEmailConfig();
-        assert.equal(config.apiKey, undefined);
+        assert.equal(config.gmailUser, undefined);
+        assert.equal(config.gmailAppPassword, undefined);
         assert.ok(config.from.length > 0);
         assert.ok(config.appBaseUrl.length > 0);
       } finally {
-        if (originalKey) process.env.RESEND_API_KEY = originalKey;
+        if (origUser) process.env.GMAIL_USER = origUser;
+        if (origPass) process.env.GMAIL_APP_PASSWORD = origPass;
       }
     });
 
-    it("returns unconfigured status when attempting dispatch without RESEND_API_KEY", async () => {
-      if (!serviceKey) return;
+    it("validates email recipient format before attempting SMTP delivery", async () => {
+      assert.equal(isValidEmailAddress("valid.student@batechu.com"), true);
+      assert.equal(isValidEmailAddress("invalid-email"), false);
+      assert.equal(isValidEmailAddress(""), false);
 
-      const originalKey = process.env.RESEND_API_KEY;
-      try {
-        delete process.env.RESEND_API_KEY;
+      const invalidResult = await sendMail({
+        to: "not-an-email",
+        subject: "Test",
+        html: "<p>Test</p>",
+        text: "Test",
+      });
 
-        const dummyAppId = "00000000-0000-4000-8000-000000000099";
-        const result = await sendRegistrationReceipt({
-          applicationId: dummyAppId,
-          applicationReference: "ITC-TESTUNCONFIG",
-          recipientEmail: "unconfigured.test@batechu.com",
-          fullName: "Test Unconfigured",
-          academicId: "BATU-9999",
-          academicYear: "first",
-          department: "IT",
-          primaryTrack: "it",
-        });
-
-        // Must not claim email was sent
-        assert.equal(result.success, false);
-        assert.equal(result.status, "unconfigured");
-        assert.equal(result.safeReason, "PROVIDER_NOT_CONFIGURED");
-      } finally {
-        if (originalKey) process.env.RESEND_API_KEY = originalKey;
-      }
+      assert.equal(invalidResult.success, false);
+      assert.equal(invalidResult.safeCategory, "INVALID_RECIPIENT");
     });
   });
 
-  // 3. Database Integrity & Idempotency Rules
-  describe("3. Notification Idempotency & Database Tracking", () => {
+  // 3. Mocked Nodemailer SMTP Transporter Scenarios
+  describe("3. Mocked Gmail SMTP Scenarios (Success, Auth Failure, Connection Error)", () => {
+    it("reports safe failure and never claims success when SMTP authentication fails (code 535 / EAUTH)", async () => {
+      const authError = new Error("Invalid login: 535 5.7.8 Username and Password not accepted");
+      Object.assign(authError, { code: "EAUTH", responseCode: 535 });
+
+      setMockTransporter({
+        sendMail: async () => {
+          throw authError;
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const dummyAppId = "00000000-0000-4000-8000-000000000088";
+      const result = await sendRegistrationReceipt({
+        applicationId: dummyAppId,
+        applicationReference: "ITC-AUTHERR1",
+        recipientEmail: "20248888@batechu.com",
+        fullName: "Test Auth Failure",
+        academicId: "BATU-8888",
+        academicYear: "first",
+        department: "IT",
+        primaryTrack: "it",
+      });
+
+      assert.equal(result.success, false);
+      assert.equal(result.status, "failed");
+      assert.equal(result.safeReason, "AUTHENTICATION_FAILED");
+    });
+
+    it("successfully records SENT delivery status and messageId when SMTP accepts the message", async () => {
+      const syntheticMessageId = "<msg_test_acceptance_9999@gmail.com>";
+
+      setMockTransporter({
+        sendMail: async (mailOpts: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+          messageId: syntheticMessageId,
+          accepted: [mailOpts.to],
+          rejected: [],
+          response: "250 2.0.0 OK message queued",
+        }),
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      if (!serviceKey) return;
+
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const testEmail = `2024${randomSuffix}@batechu.com`;
+      const refCode = `ITC-SMP${randomSuffix}`;
+
+      // Insert synthetic application to receive notification tracking
+      const serviceClient = createClient(supabaseUrl, serviceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+      const { data: newApp } = await serviceClient
+        .from("applications")
+        .insert({
+          application_reference: refCode,
+          full_name: `SMTP Accepted ${randomSuffix}`,
+          national_id: `304082501${randomSuffix}7`,
+          academic_id: `BATU-SMP-${randomSuffix}`,
+          phone: "+201000000008",
+          whatsapp: "+201000000008",
+          university_email: testEmail,
+          academic_year: "first",
+          department: "Information Technology",
+          experience_level: "beginner",
+          primary_track: "it",
+          motivation: "Motivation exceeding twenty characters for testing.",
+          learning_goal: "Learning goal exceeding twenty characters for testing.",
+          status: "PENDING_REVIEW",
+          consented_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      if (!newApp) return;
+
+      const result = await sendRegistrationReceipt({
+        applicationId: newApp.id,
+        applicationReference: refCode,
+        recipientEmail: testEmail,
+        fullName: `SMTP Accepted ${randomSuffix}`,
+        academicId: `BATU-SMP-${randomSuffix}`,
+        academicYear: "first",
+        department: "Information Technology",
+        primaryTrack: "it",
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.status, "sent");
+      assert.equal(result.providerMessageId, syntheticMessageId);
+
+      // Verify persisted notification record
+      const notification = await getNotificationForApplication(newApp.id);
+      assert.ok(notification);
+      assert.equal(notification.delivery_status, "SENT");
+      assert.equal(notification.provider_message_id, syntheticMessageId);
+
+      // Cleanup synthetic test app
+      await serviceClient.from("application_notifications").delete().eq("application_id", newApp.id);
+      await serviceClient.from("applications").delete().eq("id", newApp.id);
+    });
+
+    it("handles connection failure with bounded retry and reports CONNECTION_FAILED", async () => {
+      let callCount = 0;
+      const connError = new Error("connect ECONNREFUSED 142.250.180.108:465");
+      Object.assign(connError, { code: "ECONNREFUSED" });
+
+      setMockTransporter({
+        sendMail: async () => {
+          callCount++;
+          throw connError;
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const mailRes = await sendMail({
+        to: "20241234@batechu.com",
+        subject: "Network Failure Test",
+        html: "<p>Test</p>",
+        text: "Test",
+      });
+
+      assert.equal(mailRes.success, false);
+      assert.equal(mailRes.safeCategory, "CONNECTION_FAILED");
+      // Must not retry indefinitely (exactly 2 attempts: initial + 1 retry)
+      assert.equal(callCount, 2);
+    });
+  });
+
+  // 4. Database Integrity & Idempotency Rules
+  describe("4. Notification Idempotency & Database Tracking", () => {
     it("prevents duplicate notification sends using unique idempotency key", async () => {
       if (!serviceKey) return;
 
@@ -169,7 +335,6 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
         auth: { persistSession: false, autoRefreshToken: false },
       });
 
-      // Find an existing application to test notification idempotency
       const { data: app } = await serviceClient
         .from("applications")
         .select("id, application_reference, full_name, university_email, academic_id, academic_year, department, primary_track")
@@ -246,12 +411,15 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
           recipient_email: "attacker@batechu.com",
         });
 
-      assert.ok(insertErr, "Public anonymous role must not insert into application_notifications");
+      assert.ok(
+        insertErr,
+        "Public anonymous role must not insert into application_notifications"
+      );
     });
   });
 
-  // 4. End-to-End Registration Pipeline with Email Notification
-  describe("4. Registration Pipeline Integration", () => {
+  // 5. End-to-End Registration Pipeline with Email Notification
+  describe("5. Registration Pipeline Integration & Failed Delivery Non-Rollback", () => {
     it("does not attempt email when registration validation fails", async () => {
       const invalidReq = new Request("http://localhost:3000/api/register", {
         method: "POST",
@@ -268,20 +436,28 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
       assert.equal(res.status, 400);
       const json = await res.json();
       assert.equal(json.code, "VALIDATION_FAILED");
-      // No emailDelivery field on failure
       assert.equal(json.emailDelivery, undefined);
     });
 
-    it("saves valid application before receipt, returning 201 with delivery metadata", async () => {
+    it("saves valid application before receipt, preserving application even if SMTP delivery fails", async () => {
       if (!serviceKey) return;
+
+      // Force SMTP auth error to verify registration is NOT rolled back
+      const authError = new Error("Invalid credentials: 535 Username and Password not accepted");
+      Object.assign(authError, { code: "EAUTH", responseCode: 535 });
+      setMockTransporter({
+        sendMail: async () => {
+          throw authError;
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
       const randomSuffix = Math.floor(1000 + Math.random() * 9000);
       const testEmail = `2024${randomSuffix}@batechu.com`;
       const testAcademicId = `BATU-2024-${randomSuffix}`;
-      const testNationalId = `304082501${String(randomSuffix).padStart(4, "0")}1`; // Synthetic 14 digits (Cairo 01)
+      const testNationalId = `304082501${String(randomSuffix).padStart(4, "0")}1`;
 
       const payload = {
-        fullName: `Test Student ${randomSuffix}`,
+        fullName: `Preserve App ${randomSuffix}`,
         nationalId: testNationalId,
         academicId: testAcademicId,
         phone: "+201012345678",
@@ -316,15 +492,11 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
       assert.match(json.reference, /^ITC-[A-Z0-9]{8}$/);
       assert.equal(json.status, "PENDING_REVIEW");
 
-      // Verify emailDelivery metadata is returned cleanly without leaking secrets
+      // Verify email delivery failed gracefully without rolling back application
       assert.ok(json.emailDelivery);
-      assert.ok(typeof json.emailDelivery.status === "string");
-      assert.ok(typeof json.emailDelivery.message === "string");
-      assert.ok(
-        ["sent", "unconfigured", "failed", "pending"].includes(json.emailDelivery.status)
-      );
+      assert.equal(json.emailDelivery.status, "failed");
 
-      // Verify database persistence in applications table
+      // Verify application STILL EXISTS in database
       const serviceClient = createClient(supabaseUrl, serviceKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
@@ -337,12 +509,15 @@ describe("Phase 3A: Transactional Registration Confirmation Emails", () => {
       assert.ok(savedApp);
       assert.equal(savedApp.status, "PENDING_REVIEW");
 
-      // Verify tracking record in application_notifications
+      // Verify tracking record is marked FAILED with AUTHENTICATION_FAILED
       const notification = await getNotificationForApplication(savedApp.id);
       assert.ok(notification);
-      assert.equal(notification.application_id, savedApp.id);
-      assert.equal(notification.recipient_email, testEmail);
-      assert.ok(["PENDING", "SENT", "FAILED"].includes(notification.delivery_status));
+      assert.equal(notification.delivery_status, "FAILED");
+      assert.equal(notification.safe_error_category, "AUTHENTICATION_FAILED");
+
+      // Cleanup
+      await serviceClient.from("application_notifications").delete().eq("application_id", savedApp.id);
+      await serviceClient.from("applications").delete().eq("id", savedApp.id);
     });
   });
 });

@@ -1,23 +1,35 @@
 /**
- * Server-only configuration for transactional recruitment emails.
- * Never expose RESEND_API_KEY or provider secrets to browser bundles.
+ * Server-only configuration for direct Gmail SMTP email dispatch.
+ * Never expose GMAIL_APP_PASSWORD, credentials, or secrets to browser bundles.
  */
 
 export interface EmailConfig {
-  apiKey: string | undefined;
+  gmailUser: string | undefined;
+  gmailAppPassword: string | undefined;
+  smtpHost: string;
+  smtpPort: number;
+  secure: boolean;
   from: string;
   appBaseUrl: string;
 }
 
 export function getEmailConfig(): EmailConfig {
-  const apiKey = process.env.RESEND_API_KEY?.trim() || undefined;
-  
-  // Default sender: in development/testing without a verified domain,
-  // onboarding@resend.dev can send to the account owner's email.
-  // In production, configure EMAIL_FROM with your verified domain (e.g. recruitment@itclub.org).
-  const from =
-    process.env.EMAIL_FROM?.trim() ||
-    "IT Club Recruitment <onboarding@resend.dev>";
+  const gmailUser = process.env.GMAIL_USER?.trim() || undefined;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.trim() || undefined;
+
+  const smtpHost = process.env.SMTP_HOST?.trim() || "smtp.gmail.com";
+  const rawPort = parseInt(process.env.SMTP_PORT?.trim() || "465", 10);
+  const smtpPort = Number.isInteger(rawPort) && rawPort > 0 ? rawPort : 465;
+  // Port 465 uses SSL/TLS (secure: true); port 587 uses STARTTLS (secure: false)
+  const secure = smtpPort === 465;
+
+  // Use configured EMAIL_FROM or default to legitimate Gmail sender alias
+  let from = process.env.EMAIL_FROM?.trim();
+  if (!from) {
+    from = gmailUser
+      ? `IT Club Recruitment <${gmailUser}>`
+      : "IT Club Recruitment <noreply@gmail.com>";
+  }
 
   // Ensure production emails link to the actual public application URL
   let appBaseUrl =
@@ -25,17 +37,28 @@ export function getEmailConfig(): EmailConfig {
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     "https://it-club-recruitment.vercel.app";
 
-  // Remove trailing slashes for clean URL concatenation
   appBaseUrl = appBaseUrl.replace(/\/+$/, "");
 
   return {
-    apiKey,
+    gmailUser,
+    gmailAppPassword,
+    smtpHost,
+    smtpPort,
+    secure,
     from,
     appBaseUrl,
   };
 }
 
+/**
+ * Validates the presence of required credentials without leaking values.
+ */
 export function isEmailConfigured(): boolean {
   const config = getEmailConfig();
-  return Boolean(config.apiKey && config.apiKey.length > 5);
+  return Boolean(
+    config.gmailUser &&
+      config.gmailUser.includes("@") &&
+      config.gmailAppPassword &&
+      config.gmailAppPassword.replace(/\s+/g, "").length >= 8
+  );
 }

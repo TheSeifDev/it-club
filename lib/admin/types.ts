@@ -61,6 +61,9 @@ export interface ApplicationDetail {
   reviewer_notes: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  interview_date?: string | null;
+  interview_time?: string | null;
+  interview_location?: string | null;
   consented_at: string;
   created_at: string;
   updated_at: string;

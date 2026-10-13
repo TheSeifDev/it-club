@@ -42,12 +42,11 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
       return null;
     }
 
-    // Verify the linked application is in ACCEPTED status
+    // Verify the linked application exists and belongs to the authenticated applicant
     const { data: app, error: appErr } = await serviceClient
       .from("applications")
       .select("*")
       .eq("id", account.application_id)
-      .eq("status", "ACCEPTED")
       .maybeSingle();
 
     if (appErr || !app) {
@@ -71,3 +70,14 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
     return null;
   }
 }
+
+/**
+ * Validates whether an application status is eligible for interview QR code and credential issuance.
+ * Only ACCEPTED and INTERVIEW_SCHEDULED are approved for QR issuance.
+ * PENDING_REVIEW, UNDER_REVIEW, NEEDS_CORRECTION, SHORTLISTED, REJECTED, and WAITLISTED are ineligible.
+ */
+export function isQrEligibleStatus(status: string | null | undefined): boolean {
+  if (!status) return false;
+  return status === "ACCEPTED" || status === "INTERVIEW_SCHEDULED";
+}
+

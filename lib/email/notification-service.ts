@@ -1,6 +1,6 @@
-import { Resend } from "resend";
 import { getServiceRoleClient } from "../auth/service-role.ts";
-import { getEmailConfig, isEmailConfigured } from "./config.ts";
+import { getEmailConfig } from "./config.ts";
+import { sendMail, isEmailProviderActive } from "./mailer.ts";
 import { renderRegistrationReceiptEmail } from "./templates/registration-receipt.ts";
 import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitation.ts";
 
@@ -136,14 +136,15 @@ export async function sendRegistrationReceipt(
     }
 
     // 2. Provider Configuration Check
-    if (!isEmailConfigured()) {
+    if (!isEmailProviderActive()) {
       if (notificationId) {
         await serviceClient
           .from("application_notifications")
           .update({
             delivery_status: "FAILED",
             safe_error_category: "PROVIDER_NOT_CONFIGURED",
-            error_message: "Resend API key is not configured in environment.",
+            error_message:
+              "Gmail SMTP credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured.",
           })
           .eq("id", notificationId);
       }
@@ -167,28 +168,30 @@ export async function sendRegistrationReceipt(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 4. Dispatch Email via Resend
-    const resend = new Resend(config.apiKey);
-    const { data: resData, error: sendErr } = await resend.emails.send({
+    // 4. Dispatch Email via Gmail SMTP
+    const mailResult = await sendMail({
       from: config.from,
-      to: [input.recipientEmail.trim().toLowerCase()],
+      to: input.recipientEmail.trim().toLowerCase(),
       subject,
       html,
       text,
     });
 
-    if (sendErr) {
+    if (!mailResult.success) {
+      const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
+      const safeMsg =
+        mailResult.errorMessage || "Gmail SMTP delivery failed.";
+
       console.error(
-        `[notification-service] Resend dispatch failed for ${input.applicationReference}:`,
-        sendErr.message
+        `[notification-service] Gmail SMTP dispatch failed for ${input.applicationReference}: ${safeReason}`
       );
       if (notificationId) {
         await serviceClient
           .from("application_notifications")
           .update({
             delivery_status: "FAILED",
-            safe_error_category: "PROVIDER_ERROR",
-            error_message: sendErr.message,
+            safe_error_category: safeReason,
+            error_message: safeMsg,
           })
           .eq("id", notificationId);
       }
@@ -196,12 +199,12 @@ export async function sendRegistrationReceipt(
         success: false,
         status: "failed",
         notificationId,
-        safeReason: "PROVIDER_ERROR",
+        safeReason,
       };
     }
 
     // 5. Success Confirmation
-    const providerMessageId = resData?.id;
+    const providerMessageId = mailResult.messageId;
     if (notificationId) {
       await serviceClient
         .from("application_notifications")
@@ -445,14 +448,15 @@ export async function sendAcceptanceInvitation(
     }
 
     // 3. Provider Configuration Check
-    if (!isEmailConfigured()) {
+    if (!isEmailProviderActive()) {
       if (notificationId) {
         await serviceClient
           .from("application_notifications")
           .update({
             delivery_status: "FAILED",
             safe_error_category: "PROVIDER_NOT_CONFIGURED",
-            error_message: "Resend API key is not configured in environment.",
+            error_message:
+              "Gmail SMTP credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured.",
           })
           .eq("id", notificationId);
       }
@@ -473,28 +477,30 @@ export async function sendAcceptanceInvitation(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 5. Dispatch via Resend
-    const resend = new Resend(config.apiKey);
-    const { data: resData, error: sendErr } = await resend.emails.send({
+    // 5. Dispatch via Gmail SMTP
+    const mailResult = await sendMail({
       from: config.from,
-      to: [cleanEmail],
+      to: cleanEmail,
       subject,
       html,
       text,
     });
 
-    if (sendErr) {
+    if (!mailResult.success) {
+      const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
+      const safeMsg =
+        mailResult.errorMessage || "Gmail SMTP delivery failed.";
+
       console.error(
-        `[notification-service] Resend dispatch failed for invitation to ${input.applicationReference}:`,
-        sendErr.message
+        `[notification-service] Gmail SMTP dispatch failed for invitation to ${input.applicationReference}: ${safeReason}`
       );
       if (notificationId) {
         await serviceClient
           .from("application_notifications")
           .update({
             delivery_status: "FAILED",
-            safe_error_category: "PROVIDER_ERROR",
-            error_message: sendErr.message,
+            safe_error_category: safeReason,
+            error_message: safeMsg,
           })
           .eq("id", notificationId);
       }
@@ -502,12 +508,12 @@ export async function sendAcceptanceInvitation(
         success: false,
         status: "failed",
         notificationId,
-        safeReason: "PROVIDER_ERROR",
+        safeReason,
       };
     }
 
     // 6. Success
-    const providerMessageId = resData?.id;
+    const providerMessageId = mailResult.messageId;
     if (notificationId) {
       await serviceClient
         .from("application_notifications")

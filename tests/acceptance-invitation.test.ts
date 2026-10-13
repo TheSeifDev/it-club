@@ -150,7 +150,7 @@ describe("Phase 3B: Acceptance Invitation & Student Account Activation", () => {
       assert.equal(notification.application_id, newApp.id);
       assert.equal(notification.recipient_email, testEmail);
 
-      // If Resend is unconfigured, must NOT claim false success
+      // If email provider is unconfigured, must NOT claim false success
       if (!isEmailConfigured()) {
         assert.equal(invResult.status, "unconfigured");
         assert.equal(invResult.safeReason, "PROVIDER_NOT_CONFIGURED");

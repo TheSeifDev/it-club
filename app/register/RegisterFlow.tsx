@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -230,6 +230,7 @@ export default function RegisterFlow() {
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [submitError, setSubmitError] = useState("");
   const [applicationReference, setApplicationReference] = useState("");
   const [emailDelivery, setEmailDelivery] = useState<{ status: string; message: string } | null>(null);
@@ -337,6 +338,9 @@ export default function RegisterFlow() {
       return;
     }
 
+    if (isSubmittingRef.current || submitting) return;
+    isSubmittingRef.current = true;
+
     setSubmitting(true);
     setSubmitError("");
     try {
@@ -392,6 +396,7 @@ export default function RegisterFlow() {
     } catch {
       setSubmitError("Connection problem. Check your internet connection and try again. Your entered data is preserved.");
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   }

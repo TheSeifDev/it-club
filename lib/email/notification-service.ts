@@ -27,10 +27,15 @@ export interface SendAcceptanceInvitationInput {
 
 export interface NotificationSendResult {
   success: boolean;
-  status: "sent" | "already_sent" | "unconfigured" | "failed";
+  status: "sent" | "already_sent" | "unconfigured" | "failed" | "pending";
   notificationId?: string;
   providerMessageId?: string;
   safeReason?: string;
+}
+
+export interface SendReceiptOptions {
+  dispatchMode?: "sync" | "queue";
+  timeoutMs?: number;
 }
 
 export interface ApplicationNotificationRecord {
@@ -55,7 +60,8 @@ export interface ApplicationNotificationRecord {
  * Never throws — failures are recorded safely in the database and returned gracefully.
  */
 export async function sendRegistrationReceipt(
-  input: SendRegistrationReceiptInput
+  input: SendRegistrationReceiptInput,
+  options?: SendReceiptOptions
 ): Promise<NotificationSendResult> {
   const serviceClient = getServiceRoleClient();
   const idempotencyKey = `reg_receipt_${input.applicationId}`;
@@ -103,7 +109,7 @@ export async function sendRegistrationReceipt(
         })
         .eq("id", existing.id);
     } else {
-      // Insert initial tracking record
+      // Insert initial tracking record in PENDING state (Outbox pattern)
       const { data: inserted, error: insertErr } = await serviceClient
         .from("application_notifications")
         .insert({
@@ -136,7 +142,22 @@ export async function sendRegistrationReceipt(
       }
     }
 
-    // 2. Provider Configuration Check
+    // 2. Check if outbox queue mode is active (non-blocking delivery for burst readiness)
+    const isQueueMode =
+      options?.dispatchMode === "queue" ||
+      process.env.EMAIL_DELIVERY_MODE === "outbox" ||
+      process.env.BURST_MODE === "true";
+
+    if (isQueueMode) {
+      return {
+        success: true,
+        status: "pending",
+        notificationId,
+        safeReason: "QUEUED_FOR_OUTBOX_DELIVERY",
+      };
+    }
+
+    // 3. Provider Configuration Check
     if (!isEmailProviderActive()) {
       if (notificationId) {
         await serviceClient
@@ -157,7 +178,7 @@ export async function sendRegistrationReceipt(
       };
     }
 
-    // 3. Render Email Template
+    // 4. Render Email Template
     const config = getEmailConfig();
     const { subject, html, text } = renderRegistrationReceiptEmail({
       fullName: input.fullName,
@@ -169,16 +190,49 @@ export async function sendRegistrationReceipt(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 4. Dispatch Email via Gmail SMTP
-    const mailResult = await sendMail({
-      from: config.from,
-      to: input.recipientEmail.trim().toLowerCase(),
-      subject,
-      html,
-      text,
-    });
+    // 5. Dispatch Email via Gmail SMTP with bounded timeout
+    const timeoutMs =
+      options?.timeoutMs ?? (Number(process.env.EMAIL_DISPATCH_TIMEOUT_MS) || 4000);
+    const timeoutPromise = new Promise<{
+      success: false;
+      safeCategory: "CONNECTION_FAILED";
+      errorMessage: string;
+    }>((resolve) =>
+      setTimeout(
+        () =>
+          resolve({
+            success: false,
+            safeCategory: "CONNECTION_FAILED",
+            errorMessage: "SMTP dispatch timed out.",
+          }),
+        timeoutMs
+      )
+    );
+
+    const mailResult = await Promise.race([
+      sendMail({
+        from: config.from,
+        to: input.recipientEmail.trim().toLowerCase(),
+        subject,
+        html,
+        text,
+      }),
+      timeoutPromise,
+    ]);
 
     if (!mailResult.success) {
+      // If dispatch timed out, keep in PENDING status so outbox worker can retry
+      if (mailResult.errorMessage === "SMTP dispatch timed out.") {
+        console.warn(
+          `[notification-service] Gmail SMTP dispatch timed out for ${input.applicationReference}. Kept in PENDING outbox state.`
+        );
+        return {
+          success: true,
+          status: "pending",
+          notificationId,
+          safeReason: "DISPATCH_TIMED_OUT_QUEUED",
+        };
+      }
       const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
       const safeMsg =
         mailResult.errorMessage || "Gmail SMTP delivery failed.";
@@ -621,5 +675,97 @@ export async function sendAcceptanceInvitation(
       safeReason: "UNEXPECTED_ERROR",
     };
   }
+}
+
+export interface ProcessNotificationsResult {
+  processed: number;
+  sent: number;
+  failed: number;
+  errors: string[];
+}
+
+/**
+ * Outbox processor worker function.
+ * Batches and sequentially processes pending notifications from public.application_notifications.
+ * Paces requests to strictly adhere to Gmail SMTP daily quotas (500-2,000/day) and avoid connection exhaustion.
+ */
+export async function processPendingNotifications(
+  options: { batchSize?: number; delayBetweenMs?: number } = {}
+): Promise<ProcessNotificationsResult> {
+  const batchSize = Math.min(100, Math.max(1, options.batchSize || 25));
+  const delayBetweenMs = Math.max(0, options.delayBetweenMs ?? 250);
+  const serviceClient = getServiceRoleClient();
+
+  const { data: pending, error } = await serviceClient
+    .from("application_notifications")
+    .select("id, application_id, notification_type, recipient_email, attempt_count")
+    .eq("delivery_status", "PENDING")
+    .lt("attempt_count", 5)
+    .order("created_at", { ascending: true })
+    .limit(batchSize);
+
+  if (error || !pending || pending.length === 0) {
+    return { processed: 0, sent: 0, failed: 0, errors: error ? [error.message] : [] };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (const notif of pending) {
+    try {
+      const { data: app, error: appErr } = await serviceClient
+        .from("applications")
+        .select(
+          "application_reference, full_name, academic_id, academic_year, department, primary_track, secondary_track"
+        )
+        .eq("id", notif.application_id)
+        .maybeSingle();
+
+      if (appErr || !app) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "APPLICATION_NOT_FOUND",
+            error_message: "Associated application record could not be found.",
+          })
+          .eq("id", notif.id);
+        failed++;
+        continue;
+      }
+
+      const res = await sendRegistrationReceipt(
+        {
+          applicationId: notif.application_id,
+          applicationReference: app.application_reference,
+          recipientEmail: notif.recipient_email,
+          fullName: app.full_name,
+          academicId: app.academic_id,
+          academicYear: app.academic_year,
+          department: app.department,
+          primaryTrack: app.primary_track,
+          secondaryTrack: app.secondary_track,
+        },
+        { dispatchMode: "sync", timeoutMs: 8000 }
+      );
+
+      if (res.status === "sent" || res.status === "already_sent") {
+        sent++;
+      } else {
+        failed++;
+        if (res.safeReason) errors.push(res.safeReason);
+      }
+
+      if (delayBetweenMs > 0) {
+        await new Promise((r) => setTimeout(r, delayBetweenMs));
+      }
+    } catch (procErr) {
+      failed++;
+      errors.push(procErr instanceof Error ? procErr.message : "Process error");
+    }
+  }
+
+  return { processed: pending.length, sent, failed, errors };
 }
 

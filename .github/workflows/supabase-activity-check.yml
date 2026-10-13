@@ -1,0 +1,50 @@
+name: Supabase Activity Health Check
+
+# ==============================================================================
+# External preventive health check intended to reduce the risk of Supabase
+# automatic pausing caused by inactivity on Free tier projects.
+#
+# Schedule: Runs approximately every 8 hours at 00:17, 08:17, and 16:17 UTC.
+# Guardrails:
+# - Strictly invokes public read-only RPC: public.health_ping()
+# - Performs 0 INSERT, 0 UPDATE, 0 DELETE, 0 DDL operations
+# - Creates 0 heartbeat tables or log rows (uses GitHub Actions run history)
+# - Reads 0 application, student, or audit records
+# - Uses ONLY anonymous/publishable key (SUPABASE_SERVICE_ROLE_KEY is forbidden)
+# - Bounded timeout (5000ms) with failure detection
+# ==============================================================================
+
+on:
+  schedule:
+    # 00:17 UTC, 08:17 UTC, and 16:17 UTC daily
+    - cron: '17 0,8,16 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-activity-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    name: Supabase Read-Only Ping
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Execute read-only Supabase health ping
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || vars.SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+        run: |
+          node --experimental-strip-types scripts/supabase-health-check.ts

@@ -194,3 +194,23 @@ select:-webkit-autofill:focus {
     padding-right: 2.5rem;
   }
 }
+
+/* Interview QR Scanner Reticle & Laser Sweep Animation */
+@keyframes laser-sweep {
+  0% {
+    top: 6%;
+    opacity: 0.3;
+  }
+  50% {
+    top: 88%;
+    opacity: 1;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.3;
+  }
+}
+
+.animate-laser-sweep {
+  animation: laser-sweep 2.2s ease-in-out infinite;
+}

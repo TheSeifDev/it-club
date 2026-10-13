@@ -1,4 +1,5 @@
 import { getServiceRoleClient } from "./service-role.ts";
+import { recordAuditEvent } from "../audit/service.ts";
 
 export interface BootstrapStatus {
   initialized: boolean;
@@ -93,6 +94,15 @@ export async function bootstrapFirstOwner(target: {
       message: `Failed to insert staff member record: ${insertErr.message}`,
     };
   }
+
+  await recordAuditEvent({
+    actor: { id: authUserId, email: target.email || null, role: "owner" },
+    action: "OWNER_BOOTSTRAP",
+    entityType: "staff_member",
+    entityId: authUserId,
+    entityReference: target.email || authUserId,
+    outcome: "SUCCESS",
+  });
 
   return {
     success: true,

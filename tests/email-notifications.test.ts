@@ -425,7 +425,7 @@ describe("Direct Gmail SMTP & Transactional Registration Confirmation Emails", (
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-forwarded-for": "198.18.200.1",
+          "x-forwarded-for": `198.18.200.${Math.floor(100 + Math.random() * 800)}`,
         },
         body: JSON.stringify({
           fullName: "A", // too short

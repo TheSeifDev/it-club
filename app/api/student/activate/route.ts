@@ -3,6 +3,7 @@ import { cookies } from "next/headers.js";
 import type { User } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "../../../../utils/supabase/server.ts";
 import { getServiceRoleClient } from "../../../../lib/auth/service-role.ts";
+import { recordAuditEvent } from "../../../../lib/audit/service.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -218,6 +219,23 @@ export async function POST(request: Request) {
   if (appUpdateErr) {
     console.error("[activate] Failed to update application user_id:", appUpdateErr.message);
   }
+
+  // Record audit log for completed student activation
+  await recordAuditEvent({
+    actor: {
+      id: user.id,
+      email: user.email.toLowerCase(),
+      role: "student",
+    },
+    action: "STUDENT_ACCOUNT_ACTIVATED",
+    entityType: "student_account",
+    entityId: user.id,
+    entityReference: reference,
+    outcome: "SUCCESS",
+    metadata: {
+      applicationId: app.id,
+    },
+  });
 
   return NextResponse.json({
     ok: true,

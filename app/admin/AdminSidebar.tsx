@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  QrCode,
+  ClipboardList,
   Menu,
   X,
   Sparkles,
@@ -15,12 +17,18 @@ import type { CommitteeTrack } from "../../lib/admin/types";
 
 const TRACKS: CommitteeTrack[] = ["it", "rnd", "oc", "sm", "pr", "hr"];
 
-export default function AdminSidebar() {
+export interface AdminSidebarProps {
+  userRole?: string;
+}
+
+export default function AdminSidebar({ userRole }: AdminSidebarProps = {}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isOverview = pathname === "/admin";
   const isApplications = pathname.startsWith("/admin/applications");
+  const isScanner = pathname.startsWith("/admin/interviews/scan");
+  const isAuditLogs = pathname.startsWith("/admin/audit-logs");
 
   return (
     <>
@@ -73,6 +81,39 @@ export default function AdminSidebar() {
             <Users size={15} />
             <span>APPLICATIONS</span>
           </Link>
+
+          <Link
+            href="/admin/interviews/scan"
+            onClick={() => setMobileOpen(false)}
+            className={`flex items-center gap-2.5 px-3 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors ${
+              isScanner
+                ? "bg-[#00e599]/10 text-[#00e599] border-l-2 border-[#00e599]"
+                : "text-white/60 hover:text-white hover:bg-white/[0.03]"
+            }`}
+          >
+            <QrCode size={15} />
+            <span>INTERVIEW SCANNER</span>
+          </Link>
+
+          {(!userRole || userRole === "owner") && (
+            <Link
+              href="/admin/audit-logs"
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center justify-between px-3 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider transition-colors ${
+                isAuditLogs
+                  ? "bg-[#9b7cff]/10 text-[#9b7cff] border-l-2 border-[#9b7cff]"
+                  : "text-white/60 hover:text-white hover:bg-white/[0.03]"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <ClipboardList size={15} />
+                <span>AUDIT LOGS</span>
+              </div>
+              <span className="font-mono text-[9px] px-1.5 py-0.5 border border-[#9b7cff]/30 text-[#9b7cff] bg-[#9b7cff]/10">
+                OWNER
+              </span>
+            </Link>
+          )}
         </div>
 
         {/* Committee Quick Filters */}

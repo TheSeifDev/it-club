@@ -24,7 +24,7 @@ const validSyntheticPayload = {
   consent: true,
 };
 
-let ipSeq = 1;
+let ipSeq = Math.floor(1000 + Math.random() * 9000);
 function createRequest(body: unknown, options: { contentType?: string; ip?: string; contentLength?: string } = {}): Request {
   const headers = new Headers();
   headers.set("content-type", options.contentType ?? "application/json");

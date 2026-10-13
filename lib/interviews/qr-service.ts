@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import QRCode from "qrcode";
 import { getServiceRoleClient } from "../auth/service-role.ts";
 import { isQrEligibleStatus } from "../auth/student.ts";
+import { recordAuditEvent } from "../audit/service.ts";
 
 export interface QrTokenResult {
   eligible: boolean;
@@ -163,6 +164,15 @@ export async function getOrCreateInterviewQrToken(
     };
   }
 
+  await recordAuditEvent({
+    actor: { role: "system" },
+    action: "INTERVIEW_QR_ISSUED",
+    entityType: "interview_qr",
+    entityId: applicationId,
+    metadata: { status: "ACTIVE" },
+    outcome: "SUCCESS",
+  });
+
   return {
     eligible: true,
     token: inserted.token,
@@ -254,19 +264,12 @@ export async function verifyAndCheckInInterviewQr(
     };
   }
 
-  if (tokenRow.status === "CHECKED_IN") {
-    return {
-      success: false,
-      code: "ALREADY_CHECKED_IN",
-      error: "Candidate has already checked in for this interview.",
-      checkedInAt: tokenRow.checked_in_at || undefined,
-    };
-  }
-
   // 3. Fetch linked application
   const { data: app, error: appErr } = await serviceClient
     .from("applications")
-    .select("id, application_reference, full_name, academic_id, primary_track, academic_year, department, status")
+    .select(
+      "id, application_reference, full_name, academic_id, primary_track, academic_year, department, status"
+    )
     .eq("id", tokenRow.application_id)
     .single();
 
@@ -275,6 +278,41 @@ export async function verifyAndCheckInInterviewQr(
       success: false,
       code: "INVALID_TOKEN",
       error: "Linked application record could not be found.",
+    };
+  }
+
+  if (tokenRow.status === "CHECKED_IN") {
+    await recordAuditEvent({
+      actor: { id: staffUserId, role: "admin" },
+      action: "INTERVIEW_CHECK_IN_DUPLICATE",
+      entityType: "interview_qr",
+      entityId: tokenRow.id,
+      entityReference: app.application_reference,
+      previousStatus: "CHECKED_IN",
+      metadata: {
+        candidateName: app.full_name,
+        track: app.primary_track,
+        originalCheckInAt: tokenRow.checked_in_at,
+      },
+      outcome: "FAILURE",
+      errorCategory: "ALREADY_CHECKED_IN",
+    });
+
+    return {
+      success: false,
+      code: "ALREADY_CHECKED_IN",
+      error: "Candidate has already checked in for this interview.",
+      checkedInAt: tokenRow.checked_in_at || undefined,
+      candidate: {
+        applicationReference: app.application_reference,
+        fullName: app.full_name,
+        academicId: app.academic_id,
+        primaryTrack: app.primary_track,
+        academicYear: app.academic_year,
+        department: app.department,
+        status: app.status,
+        checkedInAt: tokenRow.checked_in_at || "",
+      },
     };
   }
 
@@ -307,6 +345,22 @@ export async function verifyAndCheckInInterviewQr(
       error: "Failed to record check-in timestamp.",
     };
   }
+
+  await recordAuditEvent({
+    actor: { id: staffUserId, role: "admin" },
+    action: "INTERVIEW_CHECK_IN_SUCCESS",
+    entityType: "interview_qr",
+    entityId: tokenRow.id,
+    entityReference: app.application_reference,
+    previousStatus: "ACTIVE",
+    newStatus: "CHECKED_IN",
+    metadata: {
+      candidateName: app.full_name,
+      track: app.primary_track,
+      academicYear: app.academic_year,
+    },
+    outcome: "SUCCESS",
+  });
 
   return {
     success: true,
@@ -348,6 +402,15 @@ export async function revokeInterviewQrToken(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  await recordAuditEvent({
+    actor: { role: "admin" },
+    action: "INTERVIEW_QR_REVOKED",
+    entityType: "interview_qr",
+    entityId: applicationId,
+    metadata: { reason: reason || "Revoked by administrative action" },
+    outcome: "SUCCESS",
+  });
 
   return { success: true };
 }

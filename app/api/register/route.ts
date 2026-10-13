@@ -8,6 +8,7 @@ import {
   hashRateLimitKey,
 } from "../../../lib/security/rate-limiter.ts";
 import { sendRegistrationReceipt } from "../../../lib/email/notification-service.ts";
+import { recordAuditEvent } from "../../../lib/audit/service.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -329,6 +330,29 @@ export async function POST(request: Request) {
       // Suppress secondary lookup error
     }
   }
+
+  // Record audit log for new application submission
+  await recordAuditEvent({
+    actor: {
+      role: "applicant",
+      email: data.universityEmail,
+    },
+    action: "APPLICATION_SUBMITTED",
+    entityType: "application",
+    entityId: applicationId,
+    entityReference: reference,
+    newStatus: "PENDING_REVIEW",
+    metadata: {
+      fullName: data.fullName,
+      academicId: data.academicId,
+      primaryTrack: data.primaryTrack,
+      department: data.department,
+      academicYear: data.academicYear,
+    },
+    requestId,
+    outcome: "SUCCESS",
+    ipAddress: clientIp,
+  });
 
   if (applicationId) {
     try {

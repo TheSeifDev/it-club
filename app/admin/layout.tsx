@@ -76,7 +76,7 @@ export default async function AdminLayout({
       {/* Main Administrative Layout with Sidebar */}
       <div className="flex-1 tracks-content-container py-8 sm:py-10">
         <div className="flex flex-col md:flex-row items-start gap-8">
-          <AdminSidebar />
+          <AdminSidebar userRole={role} />
           <main className="flex-1 w-full min-w-0">
             {children}
           </main>

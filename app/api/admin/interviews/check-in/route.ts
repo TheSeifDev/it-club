@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         error: result.error,
         code: result.code,
         checkedInAt: result.checkedInAt,
+        candidate: result.candidate,
       },
       { status: httpStatus }
     );

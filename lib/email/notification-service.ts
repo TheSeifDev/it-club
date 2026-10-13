@@ -3,6 +3,7 @@ import { getEmailConfig } from "./config.ts";
 import { sendMail, isEmailProviderActive } from "./mailer.ts";
 import { renderRegistrationReceiptEmail } from "./templates/registration-receipt.ts";
 import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitation.ts";
+import { recordAuditEvent } from "../audit/service.ts";
 
 export interface SendRegistrationReceiptInput {
   applicationId: string;
@@ -195,6 +196,21 @@ export async function sendRegistrationReceipt(
           })
           .eq("id", notificationId);
       }
+
+      await recordAuditEvent({
+        actor: { role: "system" },
+        action: "NOTIFICATION_FAILED",
+        entityType: "notification",
+        entityId: input.applicationId,
+        entityReference: input.applicationReference,
+        metadata: {
+          notificationType: "REGISTRATION_RECEIPT",
+          recipient: input.recipientEmail.trim().toLowerCase(),
+        },
+        outcome: "FAILURE",
+        errorCategory: safeReason,
+      });
+
       return {
         success: false,
         status: "failed",
@@ -217,6 +233,20 @@ export async function sendRegistrationReceipt(
         })
         .eq("id", notificationId);
     }
+
+    await recordAuditEvent({
+      actor: { role: "system" },
+      action: "NOTIFICATION_DELIVERED",
+      entityType: "notification",
+      entityId: input.applicationId,
+      entityReference: input.applicationReference,
+      metadata: {
+        notificationType: "REGISTRATION_RECEIPT",
+        recipient: input.recipientEmail.trim().toLowerCase(),
+        providerMessageId,
+      },
+      outcome: "SUCCESS",
+    });
 
     return {
       success: true,
@@ -504,6 +534,21 @@ export async function sendAcceptanceInvitation(
           })
           .eq("id", notificationId);
       }
+
+      await recordAuditEvent({
+        actor: { role: "system" },
+        action: "NOTIFICATION_FAILED",
+        entityType: "notification",
+        entityId: input.applicationId,
+        entityReference: input.applicationReference,
+        metadata: {
+          notificationType: "ACCEPTANCE_INVITATION",
+          recipient: cleanEmail,
+        },
+        outcome: "FAILURE",
+        errorCategory: safeReason,
+      });
+
       return {
         success: false,
         status: "failed",
@@ -526,6 +571,20 @@ export async function sendAcceptanceInvitation(
         })
         .eq("id", notificationId);
     }
+
+    await recordAuditEvent({
+      actor: { role: "system" },
+      action: "NOTIFICATION_DELIVERED",
+      entityType: "notification",
+      entityId: input.applicationId,
+      entityReference: input.applicationReference,
+      metadata: {
+        notificationType: "ACCEPTANCE_INVITATION",
+        recipient: cleanEmail,
+        providerMessageId,
+      },
+      outcome: "SUCCESS",
+    });
 
     return {
       success: true,

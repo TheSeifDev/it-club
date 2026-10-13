@@ -6,6 +6,8 @@ import {
   saveReviewerNotes,
 } from "../../../../../lib/admin/queries.ts";
 import { sendAcceptanceInvitation } from "../../../../../lib/email/notification-service.ts";
+import { recordAuditEvent } from "../../../../../lib/audit/service.ts";
+import type { AuditActorRole } from "../../../../../lib/audit/types.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,6 +98,21 @@ export async function PATCH(
       );
     }
 
+    await recordAuditEvent({
+      actor: {
+        id: auth.user!.id,
+        email: auth.user!.email,
+        role: auth.role as AuditActorRole,
+      },
+      action: "APPLICATION_REVIEW_NOTE_UPDATED",
+      entityType: "application",
+      entityId: id,
+      metadata: {
+        noteLength: body.notes.length,
+      },
+      outcome: "SUCCESS",
+    });
+
     return NextResponse.json({ ok: true, message: "Reviewer notes saved successfully." });
   }
 
@@ -126,11 +143,45 @@ export async function PATCH(
           ? 400
           : 500;
 
+      await recordAuditEvent({
+        actor: {
+          id: auth.user!.id,
+          email: auth.user!.email,
+          role: auth.role as AuditActorRole,
+        },
+        action: "APPLICATION_STATUS_UPDATED",
+        entityType: "application",
+        entityId: id,
+        newStatus: body.nextStatus,
+        outcome: "FAILURE",
+        errorCategory: result.code,
+      });
+
       return NextResponse.json(
         { error: result.error, code: result.code },
         { status: statusCode }
       );
     }
+
+    // Record successful status change
+    await recordAuditEvent({
+      actor: {
+        id: auth.user!.id,
+        email: auth.user!.email,
+        role: auth.role as AuditActorRole,
+      },
+      action: "APPLICATION_STATUS_UPDATED",
+      entityType: "application",
+      entityId: result.application!.id,
+      entityReference: result.application!.application_reference,
+      previousStatus: result.previousStatus,
+      newStatus: result.application!.status,
+      metadata: {
+        hasReviewerNotes: Boolean(body.reviewerNotes?.trim()),
+        track: result.application!.primary_track,
+      },
+      outcome: "SUCCESS",
+    });
 
     let invitationDelivery: { status: string; message: string } | undefined;
 

@@ -435,7 +435,13 @@ export const MemberDetailDialog = ({
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-3"
                 }`}
-              >
+
+
+
+
+
+
+>
                 <span className="text-neutral-300 font-semibold block mb-1">
                   VERIFICATION STATUS
                 </span>
@@ -460,6 +466,7 @@ export const MemberDetailDialog = ({
           </div>
         </div>
       </div>
+
     </div>
   );
 };

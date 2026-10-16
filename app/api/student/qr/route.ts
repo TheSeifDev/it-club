@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Interview QR credentials are only available for accepted or scheduled applications.",
+          "Interview QR credentials are only available for shortlisted, scheduled, or accepted applications.",
         code: "QR_NOT_ELIGIBLE",
         currentStatus: application.status,
       },

@@ -570,13 +570,12 @@ describe("Immediate Student Account Provisioning & 24-Hour Password Enforcement 
   });
 
   // 14. Existing QR Eligibility Rules Intact
-  describe("7. QR Eligibility Rules Preservation", () => {
-    it("only permits QR token issuance for ACCEPTED or INTERVIEW_SCHEDULED statuses", () => {
+  describe("7. QR Eligibility Rules", () => {
+    it("permits QR token issuance for SHORTLISTED, ACCEPTED, or INTERVIEW_SCHEDULED statuses", () => {
+      assert.equal(isQrEligibleStatus("SHORTLISTED"), true);
       assert.equal(isQrEligibleStatus("ACCEPTED"), true);
       assert.equal(isQrEligibleStatus("INTERVIEW_SCHEDULED"), true);
 
-      // Provisioned SHORTLISTED applicant is NOT eligible for QR until scheduled or accepted
-      assert.equal(isQrEligibleStatus("SHORTLISTED"), false);
       assert.equal(isQrEligibleStatus("UNDER_REVIEW"), false);
       assert.equal(isQrEligibleStatus("PENDING_REVIEW"), false);
       assert.equal(isQrEligibleStatus("REJECTED"), false);

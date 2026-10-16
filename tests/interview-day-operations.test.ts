@@ -141,17 +141,17 @@ describe("Interview-Day Operations & Least-Privilege Staff Access", () => {
     it("atomically records attendance once and prevents duplicate check-in", async () => {
       if (!serviceClient) return;
 
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
       const testEmail = `2024${randomSuffix}@batechu.com`;
       const refCode = `ITC-CHK${randomSuffix}`;
       const staffInterviewerId = await createTestStaffUser("interviewer");
 
-      const { data: app } = await serviceClient
+      const { data: app, error: appErr } = await serviceClient
         .from("applications")
         .insert({
           application_reference: refCode,
           full_name: `Checkin Candidate ${randomSuffix}`,
-          national_id: `304082501${randomSuffix}1`,
+          national_id: `3040825${randomSuffix}1`,
           academic_id: `BATU-CHK-${randomSuffix}`,
           phone: "+201011112222",
           whatsapp: "+201011112222",
@@ -169,7 +169,7 @@ describe("Interview-Day Operations & Least-Privilege Staff Access", () => {
         .select("id, application_reference, full_name, primary_track, status")
         .single();
 
-      if (!app) assert.fail("Failed to insert candidate");
+      if (!app || appErr) assert.fail(`Failed to insert candidate: ${appErr?.message}`);
       cleanupAppIds.push(app.id);
 
       // Generate active QR token

@@ -445,13 +445,12 @@ describe("Shortlisted Applicant Account Activation & Notification Suite", () => 
       assert.equal(isStudentPortalAllowedStatus(undefined), false);
     });
 
-    it("strictly separates account activation from QR eligibility: SHORTLISTED is QR ineligible", () => {
-      // Shortlisted students can activate and access dashboard, but CANNOT receive an interview QR
-      assert.equal(isQrEligibleStatus("SHORTLISTED"), false);
-
-      // Only confirmed appointments (INTERVIEW_SCHEDULED) or final cohort (ACCEPTED) are QR eligible
+    it("verifies QR eligibility includes SHORTLISTED, INTERVIEW_SCHEDULED, and ACCEPTED statuses", () => {
+      assert.equal(isQrEligibleStatus("SHORTLISTED"), true);
       assert.equal(isQrEligibleStatus("INTERVIEW_SCHEDULED"), true);
       assert.equal(isQrEligibleStatus("ACCEPTED"), true);
+      assert.equal(isQrEligibleStatus("PENDING_REVIEW"), false);
+      assert.equal(isQrEligibleStatus("REJECTED"), false);
     });
 
     it("verifies unauthenticated requests to /api/student/me receive 401 UNAUTHORIZED_STUDENT", async () => {

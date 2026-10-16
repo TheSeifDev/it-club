@@ -101,14 +101,14 @@ describe("Phase 4: Student Dashboard, Information Card & Interview QR Credential
 
   // 2. Status-Based QR Eligibility Rules
   describe("2. Status-Based QR Eligibility", () => {
-    it("allows QR issuance strictly for ACCEPTED and INTERVIEW_SCHEDULED statuses", () => {
+    it("allows QR issuance for SHORTLISTED, ACCEPTED, and INTERVIEW_SCHEDULED statuses", () => {
+      assert.equal(isQrEligibleStatus("SHORTLISTED"), true);
       assert.equal(isQrEligibleStatus("ACCEPTED"), true);
       assert.equal(isQrEligibleStatus("INTERVIEW_SCHEDULED"), true);
 
       assert.equal(isQrEligibleStatus("PENDING_REVIEW"), false);
       assert.equal(isQrEligibleStatus("UNDER_REVIEW"), false);
       assert.equal(isQrEligibleStatus("NEEDS_CORRECTION"), false);
-      assert.equal(isQrEligibleStatus("SHORTLISTED"), false);
       assert.equal(isQrEligibleStatus("REJECTED"), false);
       assert.equal(isQrEligibleStatus("WAITLISTED"), false);
       assert.equal(isQrEligibleStatus(undefined), false);

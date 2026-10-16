@@ -134,11 +134,15 @@ export function isStudentPortalAllowedStatus(status: string | null | undefined):
 
 /**
  * Validates whether an application status is eligible for interview QR code and credential issuance.
- * Only ACCEPTED and INTERVIEW_SCHEDULED are approved for QR issuance.
- * PENDING_REVIEW, UNDER_REVIEW, NEEDS_CORRECTION, SHORTLISTED, REJECTED, and WAITLISTED are ineligible.
+ * SHORTLISTED, ACCEPTED, and INTERVIEW_SCHEDULED are approved for QR issuance.
+ * PENDING_REVIEW, UNDER_REVIEW, NEEDS_CORRECTION, REJECTED, and WAITLISTED are ineligible.
  */
 export function isQrEligibleStatus(status: string | null | undefined): boolean {
   if (!status) return false;
-  return status === "ACCEPTED" || status === "INTERVIEW_SCHEDULED";
+  return (
+    status === "SHORTLISTED" ||
+    status === "INTERVIEW_SCHEDULED" ||
+    status === "ACCEPTED"
+  );
 }
 

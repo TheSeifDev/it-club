@@ -23,13 +23,15 @@ import {
   Check,
   Clock,
   ShieldAlert,
+  Play,
+  XCircle,
 } from "lucide-react";
 import type { ApplicationDetail, ApplicationStatus, InvitationNotificationSummary } from "../../../../lib/admin/types";
 import {
   STATUS_METADATA,
   TRACK_METADATA,
   ACADEMIC_YEAR_METADATA,
-  VALID_STATUS_TRANSITIONS,
+  isValidStatusTransition,
 } from "../../../../lib/admin/transitions";
 import { isStudentPortalAllowedStatus } from "../../../../lib/auth/student";
 
@@ -54,6 +56,7 @@ export default function ApplicantDetailClient({
   const [actionTargetStatus, setActionTargetStatus] = useState<ApplicationStatus | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [isStartingReview, setIsStartingReview] = useState(false);
   const [actionError, setActionError] = useState("");
   const [feedbackSuccess, setFeedbackSuccess] = useState("");
 
@@ -152,8 +155,6 @@ export default function ApplicantDetailClient({
     description: "",
   };
 
-  const allowedNextStatuses = VALID_STATUS_TRANSITIONS[app.status] || [];
-
   // Handle Status Update Decision
   const handleConfirmDecision = async () => {
     if (!actionTargetStatus) return;
@@ -200,6 +201,41 @@ export default function ApplicantDetailClient({
       setActionError("A network error occurred while updating the status. Please retry.");
     } finally {
       setIsSubmittingAction(false);
+    }
+  };
+
+  // Handle Start Review (Prominent Primary Action)
+  const handleStartReview = async () => {
+    if (app.status !== "PENDING_REVIEW" || isStartingReview) return;
+
+    setIsStartingReview(true);
+    setActionError("");
+    setFeedbackSuccess("");
+
+    try {
+      const res = await fetch(`/api/admin/applications/${app.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nextStatus: "UNDER_REVIEW",
+          expectedCurrentStatus: app.status,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setActionError(json.error || "Failed to start review.");
+        return;
+      }
+
+      setApp(json.application);
+      setFeedbackSuccess(json.message || "Application status updated to Under Review.");
+      router.refresh();
+    } catch {
+      setActionError("A network error occurred while starting review. Please retry.");
+    } finally {
+      setIsStartingReview(false);
     }
   };
 
@@ -269,6 +305,11 @@ export default function ApplicantDetailClient({
     new Date(serverTimestamp || app.updated_at).getTime() >
       new Date(app.student_account.temp_password_expires_at).getTime()
   );
+
+  const canStartReview = app.status === "PENDING_REVIEW";
+  const isUnderReview = app.status === "UNDER_REVIEW";
+  const canReject = isValidStatusTransition(app.status, "REJECTED");
+  const canAccept = isValidStatusTransition(app.status, "ACCEPTED");
 
   return (
     <div className="space-y-6">
@@ -626,74 +667,99 @@ export default function ApplicantDetailClient({
             )}
 
             {/* Transition Actions */}
-            <div className="pt-4 border-t border-white/10 space-y-2">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50 block mb-2">
+            <div className="pt-4 border-t border-white/10 space-y-3">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50 block">
                 WORKFLOW DECISION ACTIONS
               </span>
 
-              {allowedNextStatuses.length === 0 ? (
-                <p className="text-xs font-mono text-white/40">No further status transitions available.</p>
+              {/* 1. PRIMARY ACTION: Start Review */}
+              {canStartReview ? (
+                <button
+                  type="button"
+                  disabled={isStartingReview}
+                  onClick={handleStartReview}
+                  className="w-full py-3 px-4 border border-sky-500/50 hover:border-sky-400 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 hover:text-white font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-sky-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isStartingReview ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin text-sky-400" />
+                      <span>STARTING REVIEW...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={15} className="text-sky-400 fill-sky-400/20" />
+                      <span>START REVIEW · بدء المراجعة</span>
+                    </>
+                  )}
+                </button>
+              ) : isUnderReview ? (
+                <div className="w-full py-3 px-4 border border-sky-500/30 bg-sky-500/10 text-sky-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                  </span>
+                  <span>REVIEW IN PROGRESS · قيد المراجعة</span>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 font-mono text-xs">
-                  {allowedNextStatuses.includes("UNDER_REVIEW") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("UNDER_REVIEW")}
-                      className="w-full text-left px-3 py-2 border border-sky-500/30 hover:border-sky-500/60 bg-sky-500/10 text-sky-300 font-semibold transition-colors cursor-pointer"
-                    >
-                      &bull; Start Review &rarr; (قيد المراجعة)
-                    </button>
-                  )}
+                <div className="w-full py-2.5 px-3 border border-white/10 bg-white/[0.02] text-white/40 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                  <CheckCircle2 size={14} className="text-white/30" />
+                  <span>REVIEW COMPLETED · {currentStatusMeta.label}</span>
+                </div>
+              )}
 
-                  {allowedNextStatuses.includes("SHORTLISTED") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("SHORTLISTED")}
-                      className="w-full text-left px-3 py-2 border border-purple-500/30 hover:border-purple-500/60 bg-purple-500/10 text-purple-300 font-semibold transition-colors cursor-pointer"
-                    >
-                      &bull; Shortlist for Interview &rarr; (ترشيح للمقابلة)
-                    </button>
-                  )}
+              {/* 2. SECONDARY ACTIONS: Reject Application & Final Accept */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Left: Reject Application */}
+                <button
+                  type="button"
+                  disabled={!canReject || isSubmittingAction}
+                  onClick={() => setActionTargetStatus("REJECTED")}
+                  title={
+                    !canReject
+                      ? app.status === "REJECTED"
+                        ? "Application already rejected"
+                        : `Cannot reject from ${currentStatusMeta.label}`
+                      : "Reject application"
+                  }
+                  className={`h-11 sm:h-12 px-3 border font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                    canReject
+                      ? "border-rose-500/40 hover:border-rose-500/80 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 cursor-pointer shadow-lg shadow-rose-500/10"
+                      : "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  <XCircle size={15} className={canReject ? "text-rose-400" : "text-white/30"} />
+                  <span>REJECT APPLICATION</span>
+                </button>
 
-                  {allowedNextStatuses.includes("ACCEPTED") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("ACCEPTED")}
-                      className="w-full text-left px-3 py-2 border border-[#00e599]/40 hover:border-[#00e599]/80 bg-[#00e599]/10 text-[#00e599] font-bold transition-colors cursor-pointer"
-                    >
-                      &bull; Accept Applicant &rarr; (قبول نهائي)
-                    </button>
-                  )}
+                {/* Right: Final Accept */}
+                <button
+                  type="button"
+                  disabled={!canAccept || isSubmittingAction}
+                  onClick={() => setActionTargetStatus("ACCEPTED")}
+                  title={
+                    !canAccept
+                      ? app.status === "ACCEPTED"
+                        ? "Application already accepted"
+                        : app.status === "PENDING_REVIEW"
+                        ? "Start review before final accept"
+                        : `Cannot accept from ${currentStatusMeta.label}`
+                      : "Final accept applicant"
+                  }
+                  className={`h-11 sm:h-12 px-3 border font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                    canAccept
+                      ? "border-[#00e599]/40 hover:border-[#00e599] bg-[#00e599]/15 hover:bg-[#00e599]/25 text-[#00e599] cursor-pointer shadow-lg shadow-[#00e599]/10"
+                      : "border-white/10 bg-white/[0.02] text-white/30 cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  <CheckCircle2 size={15} className={canAccept ? "text-[#00e599]" : "text-white/30"} />
+                  <span>FINAL ACCEPT</span>
+                </button>
+              </div>
 
-                  {allowedNextStatuses.includes("NEEDS_CORRECTION") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("NEEDS_CORRECTION")}
-                      className="w-full text-left px-3 py-2 border border-orange-500/30 hover:border-orange-500/60 bg-orange-500/10 text-orange-300 transition-colors cursor-pointer"
-                    >
-                      &bull; Request Data Correction &rarr; (طلب تعديل)
-                    </button>
-                  )}
-
-                  {allowedNextStatuses.includes("WAITLISTED") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("WAITLISTED")}
-                      className="w-full text-left px-3 py-2 border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-300 transition-colors cursor-pointer"
-                    >
-                      &bull; Add to Waitlist &rarr; (قائمة الانتظار)
-                    </button>
-                  )}
-
-                  {allowedNextStatuses.includes("REJECTED") && (
-                    <button
-                      type="button"
-                      onClick={() => setActionTargetStatus("REJECTED")}
-                      className="w-full text-left px-3 py-2 border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 transition-colors cursor-pointer"
-                    >
-                      &bull; Reject Application &rarr; (رفض)
-                    </button>
-                  )}
+              {actionError && (
+                <div className="p-2.5 border border-rose-500/40 bg-rose-500/10 text-xs font-mono text-rose-300 flex items-start gap-1.5">
+                  <AlertCircle size={13} className="shrink-0 mt-0.5 text-rose-400" />
+                  <span>{actionError}</span>
                 </div>
               )}
             </div>
@@ -991,59 +1057,86 @@ export default function ApplicantDetailClient({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
         >
-          <div className="border border-white/15 bg-[#080a0c] w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative">
+          <div
+            className={`border bg-[#080a0c] w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative ${
+              actionTargetStatus === "REJECTED" ? "border-rose-500/40" : "border-[#00e599]/40"
+            }`}
+          >
+            <div
+              className={`h-1 w-full absolute top-0 left-0 ${
+                actionTargetStatus === "REJECTED"
+                  ? "bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500"
+                  : "bg-gradient-to-r from-[#00e599] via-[#18c8ed] to-[#9b7cff]"
+              }`}
+            />
+
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2">
-                <AlertCircle size={18} className="text-[#00e599]" />
+                {actionTargetStatus === "REJECTED" ? (
+                  <XCircle size={18} className="text-rose-400" />
+                ) : (
+                  <CheckCircle2 size={18} className="text-[#00e599]" />
+                )}
                 <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-white">
-                  CONFIRM RECRUITMENT DECISION
+                  {actionTargetStatus === "REJECTED"
+                    ? "CONFIRM REJECTION DECISION"
+                    : "CONFIRM FINAL ACCEPTANCE"}
                 </h3>
               </div>
               <button
                 type="button"
+                disabled={isSubmittingAction}
                 onClick={() => setActionTargetStatus(null)}
-                className="text-white/40 hover:text-white text-lg font-mono"
+                className="text-white/40 hover:text-white text-lg font-mono disabled:opacity-40 cursor-pointer"
+                title="Cancel"
               >
                 &times;
               </button>
             </div>
 
             {actionError && (
-              <div className="p-3 border border-rose-500/40 bg-rose-500/10 text-xs text-rose-300 font-mono">
-                {actionError}
+              <div className="p-3 border border-rose-500/40 bg-rose-500/10 text-xs text-rose-300 font-mono flex items-start gap-1.5">
+                <AlertCircle size={14} className="shrink-0 mt-0.5 text-rose-400" />
+                <span>{actionError}</span>
               </div>
             )}
 
             <div className="space-y-3 font-mono text-xs">
               <p className="text-white/70">
-                You are about to change the application status for applicant:
+                You are about to record a consequential recruitment decision for:
               </p>
-              <div className="p-3 border border-white/10 bg-white/[0.02]">
-                <p className="font-sans font-bold text-white text-sm">{app.full_name}</p>
-                <p className="text-white/40 text-[11px]">{app.application_reference} · {trackMeta.name}</p>
+              <div className="p-3.5 border border-white/10 bg-white/[0.02] space-y-1">
+                <p className="font-sans font-black text-white text-base">{app.full_name}</p>
+                <p className="text-white/50 text-xs">
+                  Ref: <span className="text-[#00e599] font-bold">{app.application_reference}</span> · Track: {trackMeta.name}
+                </p>
+                <p className="text-white/40 text-[11px]">
+                  Academic ID: {app.academic_id} · Email: {app.university_email}
+                </p>
               </div>
 
-              <div className="flex items-center justify-between py-2 border-y border-white/5">
-                <span className="text-white/40">TARGET DECISION:</span>
+              <div className="flex items-center justify-between py-2.5 border-y border-white/5">
+                <span className="text-white/40">INTENDED DECISION:</span>
                 <span
                   className={`px-3 py-1 border text-xs uppercase font-bold ${STATUS_METADATA[actionTargetStatus].bgClass} ${STATUS_METADATA[actionTargetStatus].borderClass} ${STATUS_METADATA[actionTargetStatus].textClass}`}
                 >
-                  {STATUS_METADATA[actionTargetStatus].label}
+                  {actionTargetStatus === "REJECTED" ? "Reject Application · رفض" : "Final Accept · قبول نهائي"}
                 </span>
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase text-white/50 mb-1.5">
+                <label className="block text-[10px] uppercase text-white/50 mb-1.5 font-bold tracking-wider">
                   INTERNAL DECISION NOTE (OPTIONAL)
                 </label>
                 <textarea
                   rows={3}
                   value={decisionNote}
+                  disabled={isSubmittingAction}
                   onChange={(e) => setDecisionNote(e.target.value)}
                   placeholder="Reason for decision, committee remarks, or candidate feedback..."
-                  className="w-full border border-white/10 bg-white/[0.02] p-2.5 text-xs text-white placeholder:text-white/30 focus:border-[#00e599] focus:outline-none"
+                  className="w-full border border-white/10 bg-white/[0.02] p-2.5 text-xs text-white placeholder:text-white/30 focus:border-[#00e599] focus:outline-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -1053,7 +1146,7 @@ export default function ApplicantDetailClient({
                 type="button"
                 disabled={isSubmittingAction}
                 onClick={() => setActionTargetStatus(null)}
-                className="px-4 py-2 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                className="px-4 py-2 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
               >
                 CANCEL
               </button>
@@ -1062,7 +1155,11 @@ export default function ApplicantDetailClient({
                 type="button"
                 disabled={isSubmittingAction}
                 onClick={handleConfirmDecision}
-                className="px-5 py-2 bg-[#00e599] hover:bg-[#00c985] text-[#050708] font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className={`px-5 py-2 font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 ${
+                  actionTargetStatus === "REJECTED"
+                    ? "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
+                    : "bg-[#00e599] hover:bg-[#00c985] text-[#050708] shadow-lg shadow-[#00e599]/20"
+                }`}
               >
                 {isSubmittingAction ? (
                   <>
@@ -1070,7 +1167,9 @@ export default function ApplicantDetailClient({
                     <span>RECORDING...</span>
                   </>
                 ) : (
-                  <span>CONFIRM DECISION</span>
+                  <span>
+                    CONFIRM {actionTargetStatus === "REJECTED" ? "REJECTION" : "FINAL ACCEPTANCE"}
+                  </span>
                 )}
               </button>
             </div>

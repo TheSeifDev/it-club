@@ -385,7 +385,7 @@ function nextStepForStatus(status: string, fallback: string) {
     return "Your interview appointment has been confirmed. Bring your information card and QR credential for check-in on interview day.";
   }
   if (status === "SHORTLISTED") {
-    return "You have been shortlisted for the interview stage! Prepare your materials. Your interview appointment details and check-in QR pass will appear here once scheduled by the committee.";
+    return "You have been shortlisted for the interview stage! Your official Information Card and check-in QR pass are ready below. Present your card at check-in on interview day.";
   }
   if (status === "PENDING_REVIEW" || status === "UNDER_REVIEW") {
     return "Your application is being reviewed. No action is required right now.";

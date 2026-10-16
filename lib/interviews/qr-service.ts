@@ -133,7 +133,7 @@ export async function getOrCreateInterviewQrToken(
       eligible: false,
       code: "NOT_ELIGIBLE",
       error:
-        "Interview QR credentials are only issued for accepted or scheduled applications.",
+        "Interview QR credentials are only issued for shortlisted, scheduled, or accepted applications.",
     };
   }
 

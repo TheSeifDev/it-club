@@ -58,12 +58,11 @@ describe("Shortlisted Student Login & Activation Fix Suite", () => {
       assert.equal(isStudentPortalAllowedStatus("REJECTED"), false);
     });
 
-    it("strictly separates QR issuance from SHORTLISTED account activation", () => {
-      // QR codes are NOT issued to SHORTLISTED applicants until an interview is scheduled or accepted
+    it("verifies QR issuance for SHORTLISTED applicants", () => {
       assert.equal(
         isQrEligibleStatus("SHORTLISTED"),
-        false,
-        "SHORTLISTED applicants must not receive QR credentials upon initial activation"
+        true,
+        "SHORTLISTED applicants are eligible for QR credentials"
       );
       assert.equal(
         isQrEligibleStatus("INTERVIEW_SCHEDULED"),
@@ -313,13 +312,13 @@ describe("Shortlisted Student Login & Activation Fix Suite", () => {
         applicationReference: "ITC-60037746",
         fullName: "Seif Ayman",
         primaryTrack: "it",
-        universityEmail: "2521233@batechu.com",
+        universityEmail: "2521993@batechu.com",
         googleEmail: "safalmoaz16@gmail.com",
       }, { forceReissue: true });
 
       assert.equal(result.success, true);
       assert.equal(result.recipientEmail, "safalmoaz16@gmail.com");
-      assert.equal(result.authEmail, "2521233@batechu.com");
+      assert.equal(result.authEmail, "2521993@batechu.com");
       assert.equal(result.isFallback, false);
       assert.equal(dispatchedTo, "safalmoaz16@gmail.com");
     });
@@ -343,13 +342,13 @@ describe("Shortlisted Student Login & Activation Fix Suite", () => {
         applicationReference: "ITC-60037746",
         fullName: "Seif Ayman",
         primaryTrack: "it",
-        universityEmail: "2521233@batechu.com",
+        universityEmail: "2521994@batechu.com",
         googleEmail: "safalmoaz16@gmail.com",
       }, { forceReissue: true });
 
       assert.equal(result.success, true);
       assert.equal(result.recipientEmail, "safalmoaz16@gmail.com");
-      assert.equal(result.authEmail, "2521233@batechu.com");
+      assert.equal(result.authEmail, "2521994@batechu.com");
       assert.equal(result.isFallback, false);
       assert.equal(dispatchedTo, "safalmoaz16@gmail.com");
     });
@@ -382,7 +381,7 @@ describe("Shortlisted Student Login & Activation Fix Suite", () => {
         applicationReference: "ITC-FAIL01",
         fullName: "Fail Candidate",
         primaryTrack: "it",
-        universityEmail: "2521233@batechu.com",
+        universityEmail: "2521995@batechu.com",
         googleEmail: "safalmoaz16@gmail.com",
       }, { forceReissue: true });
 

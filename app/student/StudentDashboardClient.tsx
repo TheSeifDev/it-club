@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import NextImage from "next/image";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -18,7 +19,6 @@ import {
   LogOut,
   MapPin,
   QrCode,
-  Shield,
   User,
 } from "lucide-react";
 import type { ApplicationDetail } from "../../lib/admin/types.ts";
@@ -121,6 +121,21 @@ export default function StudentDashboardClient({
       ctx.fillStyle = grad;
       ctx.fillRect(36, 36, 1128, 8);
 
+      // Draw official IT Club logo onto the card header
+      try {
+        const logoImage = new window.Image();
+        logoImage.src = "/logo.webp";
+        await new Promise((resolve) => {
+          logoImage.onload = resolve;
+          logoImage.onerror = resolve;
+        });
+        if (logoImage.complete && logoImage.naturalWidth > 0) {
+          ctx.drawImage(logoImage, 1030, 60, 58, 58);
+        }
+      } catch (err) {
+        console.warn("Failed to load logo on card canvas:", err);
+      }
+
       ctx.fillStyle = "#00e599";
       ctx.font = "700 16px Montserrat, sans-serif";
       ctx.fillText("IT CLUB RECRUITMENT 2026", 74, 88);
@@ -205,9 +220,16 @@ export default function StudentDashboardClient({
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#00e599] via-[#18c8ed] to-[#9b7cff]" />
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#00e599]">
-                    IT Club Recruitment 2026
-                  </p>
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00e599]">
+                    <NextImage
+                      src="/logo.webp"
+                      alt="IT Club"
+                      width={18}
+                      height={18}
+                      className="object-contain"
+                    />
+                    <span>IT Club Recruitment 2026</span>
+                  </div>
                   <h1 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-4xl">
                     Welcome, {application.full_name}
                   </h1>
@@ -418,12 +440,29 @@ function CredentialCard({
   return (
     <aside className="border border-white/10 bg-[#080a0c] p-5">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#00e599]">
-        <Shield size={15} />
+        <NextImage
+          src="/logo.webp"
+          alt="IT Club"
+          width={18}
+          height={18}
+          className="object-contain"
+        />
         Information Card
       </div>
       <div className="mt-4 border border-white/10 bg-[#050708] p-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/35">Candidate</p>
-        <h2 className="mt-1 text-xl font-black text-white">{application.full_name}</h2>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/35">Candidate</p>
+            <h2 className="mt-1 text-xl font-black text-white">{application.full_name}</h2>
+          </div>
+          <NextImage
+            src="/logo.webp"
+            alt="IT Club"
+            width={28}
+            height={28}
+            className="object-contain opacity-75"
+          />
+        </div>
         <p className="mt-2 text-sm font-bold text-[#00e599]">{application.application_reference}</p>
         <p className="mt-1 text-xs text-white/50">{primaryTrack}</p>
         <p className="mt-1 text-xs text-white/50">Status: {statusLabel}</p>

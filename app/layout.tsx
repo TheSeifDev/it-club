@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "IT Club — Recruitment 2026",
   description:
     "Join IT Club. Learn, build, collaborate, and grow with a community of ambitious students.",
+  icons: {
+    icon: "/logo.webp",
+    apple: "/logo.webp",
+  },
 };
 
 export default function RootLayout({

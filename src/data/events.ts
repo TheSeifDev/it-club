@@ -85,7 +85,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "The IT Club Annual Hackathon brings together ambitious university students for intensive collaborative building. Supported by official club sponsors and academic faculty at BATU, participating squads receive direct mentorship from senior engineers, compete in specialized tracks, and present their prototypes before an industry jury.",
     featured: true,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "All Tracks (IT, R&D, OC, PR, SM, HR)",
     accentColor: "#eaff00",
     highlights: [
@@ -111,7 +111,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "Our annual recruitment cycle welcomes hundreds of ambitious university students to apply, interview, and join the IT Club family. Over the course of the selection period, candidates undergo technical and behavioral interviews held on October 17, 2026 conducted by our committee heads, concluding with an induction day and cross-track team integration.",
     featured: true,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "All Tracks",
     accentColor: "#35d98a",
     highlights: [
@@ -136,7 +136,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "Organized by the IT Club Organizing Committee and Public Relations teams in collaboration with campus leadership, this summit unites students, faculty mentors, and external technology partners for an inspiring day of keynotes, tech booths, and project demonstrations.",
     featured: false,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "Organizing Committee & Public Relations",
     accentColor: "#ffab18",
     highlights: [
@@ -160,7 +160,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "IT Club delegates and track heads attended the premier AI Summit MENA gathering in Cairo. Members participated in deep-dive technical sessions spanning AI in Tech & Infrastructure, LLMs in Production, and Creative Generative AI, returning to club workshops with practical insights and new ecosystem connections.",
     featured: true,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "Research & Development / IT",
     accentColor: "#18c8ed",
     highlights: [
@@ -206,7 +206,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "Conducted by the Information Technology track leads to train club members on production software engineering practices, clean code conventions, component encapsulation, and modern full-stack web application development.",
     featured: false,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "Information Technology",
     accentColor: "#18c8ed",
     highlights: [
@@ -230,7 +230,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     fullDescription:
       "An intensive technical workshop designed to prepare all club members for real-world software workflows, code review etiquette, git rebasing, and open-source collaboration hygiene.",
     featured: false,
-    coverImage: "/spotlight-stage.jpg",
+    coverImage: "/spotlight-stage.webp",
     trackAffiliation: "Information Technology & R&D",
     accentColor: "#9b7cff",
     highlights: [

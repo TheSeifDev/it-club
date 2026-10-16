@@ -130,7 +130,7 @@ export default function EventDetailDialog({
         {/* Cover Banner (if available) */}
         <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-neutral-950 border-b border-white/10">
           <Image
-            src={event.coverImage || "/spotlight-stage.jpg"}
+            src={event.coverImage || "/spotlight-stage.webp"}
             alt={event.title}
             fill
             sizes="(max-width: 768px) 100vw, 800px"

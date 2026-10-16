@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,7 +14,6 @@ import {
   PanelLeftOpen,
   QrCode,
   Settings,
-  ShieldCheck,
   Users,
   X,
 } from "lucide-react";
@@ -96,8 +96,15 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
           onClick={() => setMobileOpen(false)}
           className="flex min-w-0 items-center gap-3 text-white transition-colors hover:text-[#00e599]"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599]">
-            <ShieldCheck size={19} />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#00e599]/40 bg-[#00e599]/10 p-1">
+            <Image
+              src="/logo.webp"
+              alt="IT Club"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+              priority
+            />
           </span>
           {!compact && (
             <span className="min-w-0">
@@ -249,8 +256,16 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-[#080a0c]/95 px-4 backdrop-blur lg:hidden">
-        <Link href="/admin" className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-white">
-          <ShieldCheck size={18} className="text-[#00e599]" />
+        <Link href="/admin" className="flex items-center gap-2.5 text-sm font-black uppercase tracking-[0.12em] text-white">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#00e599]/40 bg-[#00e599]/10 p-0.5">
+            <Image
+              src="/logo.webp"
+              alt="IT Club"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
+            />
+          </span>
           IT Club Staff
         </Link>
         <button

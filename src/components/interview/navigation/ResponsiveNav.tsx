@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
@@ -62,9 +63,19 @@ export default function ResponsiveNav() {
         <Link
           href={BRAND.href}
           onClick={close}
-          className="text-lg font-bold tracking-tight text-white"
+          className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-white transition-opacity hover:opacity-90"
         >
-          {BRAND.label}
+          <Image
+            src="/logo.webp"
+            alt="IT Club"
+            width={34}
+            height={34}
+            className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
+            priority
+          />
+          <span className="font-sans font-black tracking-[-0.02em]">
+            IT<span className="text-[#00e599] ml-1">CLUB</span>
+          </span>
         </Link>
 
         {/* Links + button — right */}

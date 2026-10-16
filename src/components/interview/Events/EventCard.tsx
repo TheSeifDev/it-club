@@ -35,7 +35,7 @@ export default function EventCard({ event, onSelect }: EventCardProps) {
       {/* Visual Header / Cover Image */}
       <div className="relative aspect-video w-full overflow-hidden bg-neutral-950 border-b border-white/10">
         <Image
-          src={event.coverImage || "/spotlight-stage.jpg"}
+          src={event.coverImage || "/spotlight-stage.webp"}
           alt={event.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

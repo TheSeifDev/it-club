@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -37,7 +38,7 @@ export default function LoginPage() {
         aria-hidden="true"
         className="pointer-events-none absolute -bottom-10 -left-10 w-full max-w-[850px] h-[550px] z-0 opacity-40 lg:opacity-55 mix-blend-screen"
         style={{
-          backgroundImage: "url('/images/auth-building-night.jpg')",
+          backgroundImage: "url('/images/auth-building-night.webp')",
           backgroundSize: "cover",
           backgroundPosition: "left bottom",
           maskImage: "radial-gradient(ellipse 90% 80% at 20% 80%, black 40%, transparent 80%)",
@@ -72,9 +73,18 @@ export default function LoginPage() {
             className="group flex items-center gap-3 text-white transition-opacity hover:opacity-90"
             aria-label="IT Club Home"
           >
-            <div className="flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 font-sans text-sm font-black tracking-[0.16em] uppercase">
-              <span className="text-white">IT</span>
-              <span className="text-[#00e599] ml-1">CLUB</span>
+            <div className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-sans">
+              <Image
+                src="/logo.webp"
+                alt="IT Club"
+                width={26}
+                height={26}
+                className="object-contain"
+                priority
+              />
+              <span className="text-sm font-black tracking-[0.16em] uppercase text-white">
+                IT<span className="text-[#00e599] ml-1">CLUB</span>
+              </span>
             </div>
             <span className="hidden sm:inline-block font-sans text-[11px] font-semibold tracking-[0.18em] uppercase text-white/40 border-l border-white/10 pl-3">
               Staff Portal

@@ -581,7 +581,7 @@ export default function TracksHero({
         className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
       >
         <Image
-          src="/spotlight-stage.jpg"
+          src="/spotlight-stage.webp"
           alt=""
           fill
           priority

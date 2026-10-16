@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, Mail, AlertCircle, ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { Lock, Mail, AlertCircle, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { createClient } from "../../../utils/supabase/client";
 
 export default function StudentLoginForm() {
@@ -71,7 +72,13 @@ export default function StudentLoginForm() {
 
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles size={16} className="text-[#00e599]" />
+          <Image
+            src="/logo.webp"
+            alt="IT Club"
+            width={18}
+            height={18}
+            className="object-contain"
+          />
           <span className="font-mono text-[10px] tracking-widest uppercase text-[#00e599] font-bold">
             IT CLUB STUDENT PORTAL
           </span>

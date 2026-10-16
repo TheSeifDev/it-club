@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock,
-  KeyRound,
   FileCheck2,
   AlertCircle,
   CheckCircle2,
@@ -166,7 +166,13 @@ export default function ActivateClient({
 
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1.5">
-          <KeyRound size={16} className="text-[#00e599]" />
+          <Image
+            src="/logo.webp"
+            alt="IT Club"
+            width={18}
+            height={18}
+            className="object-contain"
+          />
           <span className="font-mono text-[10px] tracking-widest uppercase text-[#00e599] font-bold">
             ACCEPTED MEMBER ACTIVATION
           </span>

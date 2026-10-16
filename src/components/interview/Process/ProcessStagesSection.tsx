@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   User,
@@ -265,17 +266,18 @@ function GrowVisual() {
         }}
       />
 
-      {/* Center badge */}
+      {/* Center badge with official IT Club logo */}
       <div
-        className="relative z-10 flex flex-col items-center justify-center text-center w-20 h-20 bg-[#0e1112] border-2 border-[#9b7cff]/40"
+        className="relative z-10 flex items-center justify-center w-20 h-20 bg-[#0e1112] border-2 border-[#9b7cff]/50 shadow-[0_0_24px_rgba(155,124,255,0.25)] p-3"
         style={{ borderRadius: "50%" }}
       >
-        <span className="text-[11px] font-black tracking-[0.1em] text-white uppercase leading-tight">
-          IT
-        </span>
-        <span className="text-[11px] font-black tracking-[0.1em] text-[#9b7cff] uppercase leading-tight">
-          CLUB
-        </span>
+        <Image
+          src="/logo.webp"
+          alt="IT Club"
+          width={46}
+          height={46}
+          className="w-full h-full object-contain"
+        />
       </div>
 
       {/* Feature labels — absolute positioned around the circle */}
@@ -444,7 +446,7 @@ export default function ProcessStagesSection() {
                   )}
 
                   {stage.id === "grow" && (
-                    <div className="mt-7">
+                    <div className="mt-7 flex flex-wrap items-center gap-3">
                       <Link
                         href="/tracks"
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-transparent border font-bold text-[11px] tracking-widest uppercase transition-colors duration-200"
@@ -457,6 +459,18 @@ export default function ProcessStagesSection() {
                         Discover Our Tracks
                         <ArrowRight size={13} />
                       </Link>
+                      <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-3.5 py-2">
+                        <Image
+                          src="/logo.webp"
+                          alt="IT Club"
+                          width={18}
+                          height={18}
+                          className="object-contain"
+                        />
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/60">
+                          IT Club Family
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

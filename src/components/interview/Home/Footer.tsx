@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import {
@@ -94,10 +95,18 @@ export default function Footer() {
           <div>
             <Link
               href="/"
-              className="inline-block text-[25px] font-black leading-none tracking-[-0.04em]"
+              className="inline-flex items-center gap-3 text-[24px] font-black leading-none tracking-[-0.04em] transition-opacity hover:opacity-90"
             >
-              IT
-              <span className="text-[#42e895]"> CLUB</span>
+              <Image
+                src="/logo.webp"
+                alt="IT Club"
+                width={40}
+                height={40}
+                className="h-10 w-10 object-contain"
+              />
+              <span>
+                IT<span className="text-[#42e895]"> CLUB</span>
+              </span>
             </Link>
 
             <p className="mt-7 max-w-75 text-[15px] leading-[1.7] text-[#8f969d]">

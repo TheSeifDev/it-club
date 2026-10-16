@@ -12,3 +12,4 @@ export type { CommunityGridProps } from "./CommunityGrid";
 
 export { CommunityDirectory } from "./CommunityDirectory";
 export { SpeakerApplicationSection } from "./SpeakerApplicationSection";
+export { CommunityPartners } from "./CommunityPartners";

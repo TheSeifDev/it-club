@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --env-file=.env.local --env-file=config/test.env --test --experimental-strip-types tests/**/*.test.ts"
+    "test": "node --env-file=.env.local --env-file=config/test.env --test --experimental-strip-types tests/**/*.test.ts",
+    "generate:assets": "node scripts/generate-assets.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -1,4 +1,4 @@
-import React from "react";
+import type { Metadata } from "next";
 
 import AboutClub from "@/src/components/interview/Home/About/AboutClub";
 import HeroSection from "@/src/components/interview/Home/Hero/HeroSection";
@@ -9,6 +9,12 @@ import HeadsSection from "@/src/components/interview/Interview/HeadsSection";
 import SponsorsSection from "@/src/components/interview/Sponsors/SponsorsSection";
 import Footer from "@/src/components/interview/Home/Footer";
 import JoinSection from "@/src/components/interview/Home/JoinSection";
+
+export const metadata: Metadata = {
+  title: "IT Club — Recruitment 2026 | BATU",
+  description:
+    "Join IT Club at Borg Al Arab Technological University. Learn, build, collaborate, and grow with a community of ambitious students.",
+};
 
 const HomePage = () => {
   return (

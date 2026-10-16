@@ -17,17 +17,12 @@ import { getEmailConfig, isEmailConfigured } from "../../../lib/email/config";
 import { getServiceRoleClient } from "../../../lib/auth/service-role";
 import { AdminPageHeader, Panel } from "../dashboard-ui";
 import AdminSettingsClient from "./AdminSettingsClient";
+import OwnerStaffManagement, { type StaffDirectoryItem } from "./OwnerStaffManagement";
 
 export const metadata: Metadata = {
   title: "Settings - IT Club Admin",
   robots: { index: false, follow: false },
 };
-
-interface StaffRecord {
-  user_id: string;
-  role: "owner" | "admin";
-  created_at: string;
-}
 
 export default async function AdminSettingsPage() {
   const { user, role } = await requireStaffRole(["owner", "admin"]);
@@ -46,17 +41,17 @@ export default async function AdminSettingsPage() {
   ]);
 
   // If user is owner, fetch verified staff roster from database
-  let staffList: StaffRecord[] = [];
+  let staffList: StaffDirectoryItem[] = [];
   if (role === "owner") {
     try {
       const serviceClient = getServiceRoleClient();
       const { data, error } = await serviceClient
         .from("staff_members")
-        .select("user_id, role, created_at")
+        .select("user_id, role, email, created_at, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at")
         .order("created_at", { ascending: true });
 
       if (!error && data) {
-        staffList = data as StaffRecord[];
+        staffList = data as StaffDirectoryItem[];
       }
     } catch {
       // Gracefully handle query fallback
@@ -146,65 +141,13 @@ export default async function AdminSettingsPage() {
         role={role}
       />
 
-      {/* Verified Staff Roster (Owner-Only) */}
-      {role === "owner" && staffList.length > 0 && (
-        <Panel
-          title="Staff Account Directory (Owner Clearance)"
-          description="Verified staff memberships recorded in public.staff_members. Role alterations require audited administrative procedures."
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/[0.02] text-white/40">
-                  <th className="px-5 py-3 font-bold uppercase tracking-wider">User ID</th>
-                  <th className="px-5 py-3 font-bold uppercase tracking-wider">Role</th>
-                  <th className="px-5 py-3 font-bold uppercase tracking-wider">Enrolled Date</th>
-                  <th className="px-5 py-3 font-bold uppercase tracking-wider text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {staffList.map((member) => (
-                  <tr key={member.user_id} className="hover:bg-white/[0.01]">
-                    <td className="px-5 py-3 font-mono text-white/80">
-                      {member.user_id === user.id ? (
-                        <span className="flex items-center gap-2 text-[#00e599]">
-                          <span>{member.user_id}</span>
-                          <span className="border border-[#00e599]/30 bg-[#00e599]/10 px-1.5 py-0.5 text-[9px] uppercase font-bold">You</span>
-                        </span>
-                      ) : (
-                        <span>{member.user_id}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`inline-flex border px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          member.role === "owner"
-                            ? "border-[#9b7cff]/40 bg-[#9b7cff]/10 text-[#b49dff]"
-                            : "border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599]"
-                        }`}
-                      >
-                        {member.role}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-white/50">
-                      {new Date(member.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-[#00e599]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#00e599]" />
-                        Active
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
+      {/* Verified Staff Management & Directory (Owner Clearance Only) */}
+      {role === "owner" && (
+        <OwnerStaffManagement
+          initialStaffList={staffList}
+          currentUserId={user.id}
+          isEmailConfigured={emailConfigured}
+        />
       )}
 
       {/* Recruitment Operations & Governance Boundaries */}

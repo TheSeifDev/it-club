@@ -4,10 +4,22 @@ import Footer from "@/src/components/interview/Home/Footer";
 import RegisterFlow from "./RegisterFlow";
 
 export const metadata: Metadata = {
-  title: "Apply to IT Club — Recruitment 2026 | BATU",
+  title: "Apply Now — IT Club Recruitment 2026",
   description:
-    "Join the next cohort of IT Club. Apply for our six specialized tracks across software, engineering, people, media, and technology leadership.",
-  robots: { index: false, follow: false },
+    "Apply to join IT Club at Borg Al Arab Technological University. Choose from six specialized tracks across software, engineering, people, media, and technology leadership.",
+  openGraph: {
+    title: "Apply Now — IT Club Recruitment 2026 | BATU",
+    description:
+      "Apply to join IT Club at Borg Al Arab Technological University. Choose from six specialized tracks across software, engineering, people, media, and technology leadership.",
+    url: "/register",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Apply Now — IT Club Recruitment 2026 | BATU",
+    description:
+      "Apply to join IT Club at Borg Al Arab Technological University. Choose from six specialized tracks across software, engineering, people, media, and technology leadership.",
+  },
 };
 
 export default function RegisterPage() {

@@ -26,6 +26,14 @@ const eventLinks = [
     href: "#heads",
   },
   {
+    label: "Community Directory",
+    href: "/community",
+  },
+  {
+    label: "Alumni Recognition",
+    href: "/alumni",
+  },
+  {
     label: "Sponsors & Partners",
     href: "/sponsors",
   },

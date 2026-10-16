@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server.js";
-import { getCurrentUser, getStaffRole } from "../../../../lib/auth/server.ts";
+import { getCurrentUser, getCurrentStaff } from "../../../../lib/auth/server.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,8 +13,8 @@ export async function GET() {
     );
   }
 
-  const role = await getStaffRole(user.id);
-  if (!role) {
+  const staff = await getCurrentStaff();
+  if (!staff) {
     return NextResponse.json(
       {
         error: "Access denied. User account is not an authorized staff member.",
@@ -30,6 +30,8 @@ export async function GET() {
       id: user.id,
       email: user.email,
     },
-    role,
+    role: staff.role,
+    passwordChangeRequired: Boolean(staff.passwordChangeRequired),
+    isTempPasswordExpired: Boolean(staff.isTempPasswordExpired),
   });
 }

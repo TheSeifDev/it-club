@@ -4,14 +4,21 @@ import Footer from "@/src/components/interview/Home/Footer";
 import { CommunityDirectory } from "@/src/components/interview/Community/CommunityDirectory";
 
 export const metadata: Metadata = {
-  title: "Community — IT Club | BATU",
+  title: "Community Directory",
   description:
     "Meet the students building, organizing, and growing the IT Club community across every committee. Explore the full community directory.",
   openGraph: {
     title: "Community — IT Club | BATU",
     description:
       "Meet the students building, organizing, and growing the IT Club community across every committee.",
+    url: "/community",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Community — IT Club | BATU",
+    description:
+      "Meet the students building, organizing, and growing the IT Club community across every committee.",
   },
 };
 

@@ -9,7 +9,6 @@ import {
   AlertCircle,
   ArrowRight,
   ShieldCheck,
-  Shield,
   Loader2,
   Eye,
   EyeOff,
@@ -104,6 +103,21 @@ export default function LoginForm() {
         return;
       }
 
+      const verifyData = await verifyRes.json();
+      if (verifyData.isTempPasswordExpired) {
+        setAuthStatus("success");
+        router.push("/admin/change-password?error=expired");
+        router.refresh();
+        return;
+      }
+
+      if (verifyData.passwordChangeRequired) {
+        setAuthStatus("success");
+        router.push("/admin/change-password");
+        router.refresh();
+        return;
+      }
+
       // Safe redirect prevents Open Redirect vulnerabilities
       setAuthStatus("success");
       const targetPath = sanitizeRedirectPath(nextParam, "/admin");
@@ -118,196 +132,193 @@ export default function LoginForm() {
 
   return (
     <div className="w-full">
-      <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl border border-emerald-500/20 bg-[#080d0b]/90 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,229,153,0.06),0_25px_60px_rgba(0,0,0,0.85)] transition-all">
-        {/* Subtle Inner Glow Border */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#080b0e]/85 backdrop-blur-xl p-6 sm:p-9 shadow-[0_0_50px_rgba(0,0,0,0.6)]">
+        {/* Subtle accent highlight at top edge */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-2xl lg:rounded-3xl border border-white/5"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"
         />
 
-        <div className="p-6 sm:p-9 lg:p-11">
-          {/* Centered Security Badge & Header */}
-          <div className="text-center mb-7 sm:mb-9">
-            <div className="mx-auto w-14 h-14 rounded-2xl border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] flex items-center justify-center shadow-[0_0_24px_rgba(0,229,153,0.25)] mb-4 transition-transform hover:scale-105">
-              <ShieldCheck size={28} />
-            </div>
-
-            <p className="font-sans text-[11px] font-bold tracking-[0.22em] uppercase text-[#00e599] mb-1.5">
-              RESTRICTED ACCESS · <span className="arabic" dir="rtl">بوابة المخولين</span>
-            </p>
-
-            <h2 className="font-sans text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Staff Sign In
-            </h2>
-
-            <p className="arabic mt-2 text-xs sm:text-sm text-white/55 leading-relaxed font-medium" dir="rtl">
-              تسجيل الدخول مخصص لمسؤولي ورؤساء لجان IT Club فقط
-            </p>
+        {/* Header with lock icon */}
+        <div className="mb-6 sm:mb-8 text-center sm:text-left">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-400 mb-3.5">
+            <ShieldCheck size={22} />
           </div>
 
-          {/* Error Banner */}
-          {errorMessage && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs sm:text-sm text-rose-200"
-            >
-              <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-400" />
-              <div className="leading-relaxed font-sans">{errorMessage}</div>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="font-mono text-[10.5px] font-bold tracking-[0.2em] text-emerald-400 uppercase">
+              STAFF PORTAL
+            </span>
+            <span className="text-white/20">·</span>
+            <span className="arabic text-xs text-white/50" dir="rtl">
+              بوابة المخولين
+            </span>
+          </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-5">
-            {/* Email Field */}
-            <div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+            Staff Sign In
+          </h2>
+
+          <p className="arabic mt-1.5 text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium" dir="rtl">
+            تسجيل الدخول مخصص لمسؤولي ورؤساء لجان IT Club فقط
+          </p>
+        </div>
+
+        {/* Error Banner */}
+        {errorMessage && (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs sm:text-sm text-rose-200"
+          >
+            <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-400" />
+            <div className="leading-relaxed font-sans">{errorMessage}</div>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-5">
+          {/* Email Field */}
+          <div>
+            <label
+              htmlFor="staff-email"
+              className="flex items-center gap-1.5 font-sans text-xs font-semibold text-white/80 mb-2"
+            >
+              <span>Email Address</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+            </label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-white/40">
+                <Mail size={17} />
+              </div>
+              <input
+                id="staff-email"
+                name="email"
+                type="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="next"
+                required
+                disabled={loading || authStatus === "success"}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  if (errorMessage) setErrorMessage("");
+                }}
+                placeholder="name@itclub.one"
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "staff-email-error" : undefined}
+                className={`w-full rounded-xl border bg-white/[0.03] pl-11 pr-4 py-3.5 font-sans text-sm text-white placeholder:text-white/25 transition-all duration-200 focus:outline-none ${
+                  fieldErrors.email
+                    ? "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/[0.02]"
+                    : "border-white/10 hover:border-white/20 focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400"
+                }`}
+              />
+            </div>
+            {fieldErrors.email && (
+              <p id="staff-email-error" className="mt-1.5 font-sans text-xs text-rose-400">
+                {fieldErrors.email}
+              </p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
               <label
-                htmlFor="staff-email"
-                className="flex items-center gap-1.5 font-sans text-xs font-semibold text-white/80 mb-2"
+                htmlFor="staff-password"
+                className="flex items-center gap-1.5 font-sans text-xs font-semibold text-white/80"
               >
-                <span>Email Address</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00e599]" aria-hidden="true" />
+                <span>Password</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
               </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-white/40">
-                  <Mail size={17} />
-                </div>
-                <input
-                  id="staff-email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  enterKeyHint="next"
-                  required
-                  disabled={loading || authStatus === "success"}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
-                    if (errorMessage) setErrorMessage("");
-                  }}
-                  placeholder="name@itclub.one"
-                  aria-invalid={!!fieldErrors.email}
-                  aria-describedby={fieldErrors.email ? "staff-email-error" : undefined}
-                  className={`w-full rounded-xl border bg-white/[0.03] pl-11 pr-4 py-3.5 font-sans text-sm text-white placeholder:text-white/25 transition-all duration-200 focus:outline-none ${
-                    fieldErrors.email
-                      ? "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/[0.02]"
-                      : "border-white/10 hover:border-white/20 focus:border-[#00e599] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#00e599]"
-                  }`}
-                />
-              </div>
-              {fieldErrors.email && (
-                <p id="staff-email-error" className="mt-1.5 font-sans text-xs text-rose-400">
-                  {fieldErrors.email}
-                </p>
-              )}
             </div>
-
-            {/* Password Field */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="staff-password"
-                  className="flex items-center gap-1.5 font-sans text-xs font-semibold text-white/80"
-                >
-                  <span>Password</span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#00e599]" aria-hidden="true" />
-                </label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-white/40">
+                <Lock size={17} />
               </div>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-white/40">
-                  <Lock size={17} />
-                </div>
-                <input
-                  id="staff-password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  enterKeyHint="done"
-                  required
-                  disabled={loading || authStatus === "success"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                    if (errorMessage) setErrorMessage("");
-                  }}
-                  placeholder="••••••••••••"
-                  aria-invalid={!!fieldErrors.password}
-                  aria-describedby={fieldErrors.password ? "staff-password-error" : undefined}
-                  className={`w-full rounded-xl border bg-white/[0.03] pl-11 pr-12 py-3.5 font-sans text-sm text-white placeholder:text-white/25 transition-all duration-200 focus:outline-none ${
-                    fieldErrors.password
-                      ? "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/[0.02]"
-                      : "border-white/10 hover:border-white/20 focus:border-[#00e599] focus:bg-white/[0.05] focus:ring-1 focus:ring-[#00e599]"
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/40 hover:text-white focus-visible:text-white focus-visible:outline-none transition-colors cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  aria-pressed={showPassword}
-                  disabled={loading || authStatus === "success"}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {fieldErrors.password && (
-                <p id="staff-password-error" className="mt-1.5 font-sans text-xs text-rose-400">
-                  {fieldErrors.password}
-                </p>
-              )}
+              <input
+                id="staff-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                enterKeyHint="done"
+                required
+                disabled={loading || authStatus === "success"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                  if (errorMessage) setErrorMessage("");
+                }}
+                placeholder="••••••••••••"
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={fieldErrors.password ? "staff-password-error" : undefined}
+                className={`w-full rounded-xl border bg-white/[0.03] pl-11 pr-12 py-3.5 font-sans text-sm text-white placeholder:text-white/25 transition-all duration-200 focus:outline-none ${
+                  fieldErrors.password
+                    ? "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/[0.02]"
+                    : "border-white/10 hover:border-white/20 focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/40 hover:text-white focus-visible:text-white focus-visible:outline-none transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                disabled={loading || authStatus === "success"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading || authStatus === "success"}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00e599] hover:bg-[#00c985] text-[#050708] font-sans text-sm font-bold tracking-wide py-3.5 px-6 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(0,229,153,0.28)] hover:shadow-[0_0_36px_rgba(0,229,153,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e599] focus-visible:ring-offset-2 focus-visible:ring-offset-[#080d0b] cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : authStatus === "success" ? (
-                <>
-                  <CheckCircle2 size={18} className="text-[#050708]" />
-                  <span>Access Granted · Redirecting...</span>
-                </>
-              ) : (
-                <>
-                  <Lock size={16} />
-                  <span>Sign In</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Reference Card Security Notice */}
-          <div className="mt-7 pt-6 border-t border-white/10 flex items-start gap-3 text-left">
-            <Shield size={18} className="text-[#00e599] shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-sans text-xs text-white/60 leading-relaxed">
-                This portal is restricted to authorized IT Club staff members.
+            {fieldErrors.password && (
+              <p id="staff-password-error" className="mt-1.5 font-sans text-xs text-rose-400">
+                {fieldErrors.password}
               </p>
-              <p className="arabic text-xs text-white/45 leading-relaxed font-medium" dir="rtl">
-                هذه البوابة متاحة فقط لأعضاء لجان IT Club المصرح لهم.
-              </p>
-            </div>
+            )}
           </div>
 
-          {/* Student Portal Switcher */}
-          <div className="mt-4 pt-3 text-center border-t border-white/5">
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading || authStatus === "success"}
+            className="w-full mt-2 inline-flex items-center justify-center gap-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-sans text-sm font-bold tracking-wide py-3.5 px-6 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(52,211,153,0.22)] hover:shadow-[0_0_36px_rgba(52,211,153,0.35)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Authenticating...</span>
+              </>
+            ) : authStatus === "success" ? (
+              <>
+                <CheckCircle2 size={18} className="text-zinc-950" />
+                <span>Access Granted · Redirecting...</span>
+              </>
+            ) : (
+              <>
+                <Lock size={16} />
+                <span>Sign In</span>
+                <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Security Notice & Student Switch */}
+        <div className="mt-7 pt-5 border-t border-white/10 space-y-3">
+          <p className="font-sans text-xs text-white/50 leading-relaxed text-center sm:text-left">
+            This gateway is restricted to authorized IT Club staff members and committee leads.
+          </p>
+
+          <div className="pt-2 text-center sm:text-left">
             <p className="font-sans text-xs text-white/45">
-              Accepted student candidate?{" "}
+              Candidate or student member?{" "}
               <Link
                 href="/student/login"
-                className="text-[#00e599] hover:text-[#00c985] font-semibold inline-flex items-center gap-1 transition-colors hover:underline"
+                className="text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 transition-colors hover:underline"
               >
                 <span>Sign in to Student Portal</span>
                 <ArrowUpRight size={13} />
@@ -319,3 +330,4 @@ export default function LoginForm() {
     </div>
   );
 }
+

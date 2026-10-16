@@ -10,6 +10,7 @@ import {
 import { CommunityHero } from "./CommunityHero";
 import { CommunityToolbar } from "./CommunityToolbar";
 import { CommunityGrid } from "./CommunityGrid";
+import { CommunityPartners } from "./CommunityPartners";
 import { SpeakerApplicationSection } from "./SpeakerApplicationSection";
 import { MemberDetailDialog } from "@/src/components/interview/Team/MemberDetailDialog";
 
@@ -201,7 +202,12 @@ export function CommunityDirectory() {
       </section>
 
       {/* ============================================================= */}
-      {/* SECTION G: SPEAKER APPLICATION SECTION (REFERENCE 2)          */}
+      {/* SECTION G: APPROVED COMMUNITY PARTNERS                        */}
+      {/* ============================================================= */}
+      <CommunityPartners />
+
+      {/* ============================================================= */}
+      {/* SECTION H: SPEAKER APPLICATION SECTION (REFERENCE 2)          */}
       {/* ============================================================= */}
       <SpeakerApplicationSection />
 

@@ -300,3 +300,26 @@ export const verifiedSponsorStats = [
  * Active verified partners list.
  */
 export const verifiedPartners: Sponsor[] = sponsors;
+
+export interface CommunityPartner {
+  id: string;
+  name: string;
+  arabicName?: string;
+}
+
+/**
+ * Approved partner list for the Community section.
+ * Exactly two organizations: Creativa and VentureX.
+ */
+export const approvedCommunityPartners: CommunityPartner[] = [
+  {
+    id: "creativa",
+    name: "Creativa",
+    arabicName: "كرياتيفا",
+  },
+  {
+    id: "venturex",
+    name: "VentureX",
+    arabicName: "فينتشر إكس",
+  },
+];

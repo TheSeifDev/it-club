@@ -290,6 +290,9 @@ export async function updateApplicationStatus(input: {
   reviewerNotes?: string;
   reviewerUserId: string;
   expectedCurrentStatus?: string;
+  interviewDate?: string | null;
+  interviewTime?: string | null;
+  interviewLocation?: string | null;
 }): Promise<UpdateStatusResult> {
   if (!isApplicationStatus(input.nextStatus)) {
     return {
@@ -304,7 +307,7 @@ export async function updateApplicationStatus(input: {
   // 1. Fetch current application record
   const { data: current, error: fetchErr } = await serviceClient
     .from("applications")
-    .select("id, status, reviewer_notes, application_reference")
+    .select("id, status, reviewer_notes, application_reference, interview_date, interview_time, interview_location")
     .eq("id", input.id)
     .maybeSingle();
 
@@ -359,6 +362,16 @@ export async function updateApplicationStatus(input: {
 
   if (typeof input.reviewerNotes === "string") {
     updatePayload.reviewer_notes = input.reviewerNotes.trim();
+  }
+
+  if (typeof input.interviewDate !== "undefined") {
+    updatePayload.interview_date = input.interviewDate ? input.interviewDate.trim() : null;
+  }
+  if (typeof input.interviewTime !== "undefined") {
+    updatePayload.interview_time = input.interviewTime ? input.interviewTime.trim() : null;
+  }
+  if (typeof input.interviewLocation !== "undefined") {
+    updatePayload.interview_location = input.interviewLocation ? input.interviewLocation.trim() : null;
   }
 
   const { data: updated, error: updateErr } = await serviceClient

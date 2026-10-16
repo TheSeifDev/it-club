@@ -5,7 +5,10 @@ import {
   updateApplicationStatus,
   saveReviewerNotes,
 } from "../../../../../lib/admin/queries.ts";
-import { sendAcceptanceInvitation } from "../../../../../lib/email/notification-service.ts";
+import {
+  sendAcceptanceInvitation,
+  sendInterviewScheduled,
+} from "../../../../../lib/email/notification-service.ts";
 import { recordAuditEvent } from "../../../../../lib/audit/service.ts";
 import type { AuditActorRole } from "../../../../../lib/audit/types.ts";
 
@@ -64,6 +67,9 @@ export async function PATCH(
     nextStatus?: string;
     expectedCurrentStatus?: string;
     reviewerNotes?: string;
+    interviewDate?: string;
+    interviewTime?: string;
+    interviewLocation?: string;
   }
 
   let body: ApplicationUpdatePayload;
@@ -131,6 +137,9 @@ export async function PATCH(
       reviewerNotes: body.reviewerNotes,
       reviewerUserId: auth.user!.id,
       expectedCurrentStatus: body.expectedCurrentStatus,
+      interviewDate: body.interviewDate,
+      interviewTime: body.interviewTime,
+      interviewLocation: body.interviewLocation,
     });
 
     if (!result.success) {
@@ -184,6 +193,7 @@ export async function PATCH(
     });
 
     let invitationDelivery: { status: string; message: string } | undefined;
+    let interviewDelivery: { status: string; message: string } | undefined;
 
     // Trigger acceptance invitation ONLY when transitioned to ACCEPTED
     if (
@@ -232,10 +242,65 @@ export async function PATCH(
       }
     }
 
+    // Trigger interview notification when transitioned to INTERVIEW_SCHEDULED with real saved schedule
+    if (
+      result.application?.status === "INTERVIEW_SCHEDULED" &&
+      result.application.interview_date
+    ) {
+      try {
+        const isRescheduled = result.previousStatus === "INTERVIEW_SCHEDULED";
+        const intRes = await sendInterviewScheduled({
+          applicationId: result.application.id,
+          applicationReference: result.application.application_reference,
+          recipientEmail: result.application.university_email,
+          fullName: result.application.full_name,
+          primaryTrack: result.application.primary_track,
+          interviewDate: result.application.interview_date,
+          interviewTime: result.application.interview_time,
+          interviewLocation: result.application.interview_location,
+          isRescheduled,
+        });
+
+        if (intRes.status === "sent") {
+          interviewDelivery = {
+            status: "sent",
+            message: isRescheduled
+              ? "Interview rescheduling notice dispatched."
+              : "Interview appointment confirmation dispatched.",
+          };
+        } else if (intRes.status === "already_sent") {
+          interviewDelivery = {
+            status: "already_sent",
+            message: "Interview notification was previously sent for this schedule.",
+          };
+        } else if (intRes.status === "unconfigured") {
+          interviewDelivery = {
+            status: "unconfigured",
+            message: "Email provider unconfigured. Notification queued.",
+          };
+        } else {
+          interviewDelivery = {
+            status: "failed",
+            message: "Interview notification delivery queued or delayed.",
+          };
+        }
+      } catch (intErr: unknown) {
+        console.error(
+          "Interview notification dispatch failed:",
+          intErr instanceof Error ? intErr.message : intErr
+        );
+        interviewDelivery = {
+          status: "failed",
+          message: "Interview notification encountered an unexpected error.",
+        };
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       application: result.application,
       invitationDelivery,
+      interviewDelivery,
       message: `Application status updated to ${result.application?.status}.`,
     });
   } catch (err: unknown) {

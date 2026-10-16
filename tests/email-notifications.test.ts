@@ -5,6 +5,12 @@ import {
   renderRegistrationReceiptEmail,
 } from "../lib/email/templates/registration-receipt.ts";
 import {
+  renderAcceptanceInvitationEmail,
+} from "../lib/email/templates/acceptance-invitation.ts";
+import {
+  renderInterviewScheduledEmail,
+} from "../lib/email/templates/interview-scheduled.ts";
+import {
   getEmailConfig,
   isEmailConfigured,
 } from "../lib/email/config.ts";
@@ -518,6 +524,213 @@ describe("Direct Gmail SMTP & Transactional Registration Confirmation Emails", (
       // Cleanup
       await serviceClient.from("application_notifications").delete().eq("application_id", savedApp.id);
       await serviceClient.from("applications").delete().eq("id", savedApp.id);
+    });
+  });
+
+  // 6. Branded Acceptance & Account Activation Template
+  describe("6. Branded Acceptance & Account Activation Email Template", () => {
+    it("renders official IT Club branding, accepted track, and secure activation instructions", () => {
+      const sampleAcceptance = {
+        fullName: "Youssef Ibrahim",
+        referenceCode: "ITC-ACC8899",
+        primaryTrack: "it",
+        activationUrl: "https://dev.itclub.one/auth/confirm?token_hash=abc123hash&type=invite&next=%2Fstudent%2Factivate",
+        appBaseUrl: "https://dev.itclub.one",
+      };
+
+      const { subject, html, text } = renderAcceptanceInvitationEmail(sampleAcceptance);
+
+      // Subject line
+      assert.match(subject, /Welcome to IT Club/);
+      assert.match(subject, /ITC-ACC8899/);
+
+      // Branding & Headings
+      assert.ok(html.includes("IT CLUB RECRUITMENT 2026"));
+      assert.ok(html.includes("https://dev.itclub.one/logo.png"));
+      assert.ok(html.includes("Congratulations! You&apos;re Accepted."));
+      assert.ok(html.includes("مبروك! تم قبولك رسمياً في نادي تكنولوجيا المعلومات"));
+      assert.ok(html.includes("dir=\"rtl\""));
+
+      // Candidate details
+      assert.ok(html.includes("Youssef Ibrahim"));
+      assert.ok(html.includes("ITC-ACC8899"));
+      assert.ok(html.includes("Information Technology"));
+
+      // Activation link & security notice
+      assert.ok(html.includes("token_hash=abc123hash"));
+      assert.ok(html.includes("next=%2Fstudent%2Factivate"));
+      assert.ok(html.includes("ACTIVATE STUDENT ACCOUNT"));
+      assert.ok(html.includes("expires in 24 hours"));
+
+      // Privacy: no raw passwords
+      assert.ok(!html.includes("password123"));
+      assert.ok(!html.includes("raw_token"));
+
+      // Plain-text alternative
+      assert.ok(text.includes("ITC-ACC8899"));
+      assert.ok(text.includes("Youssef Ibrahim"));
+      assert.ok(text.includes(sampleAcceptance.activationUrl));
+      assert.ok(text.includes("expires in 24 hours"));
+    });
+  });
+
+  // 7. Branded Interview Scheduling & Rescheduling Template
+  describe("7. Branded Interview Scheduling & Rescheduling Email Template", () => {
+    it("renders confirmed appointment date, time, location, and practical arrival instructions", () => {
+      const scheduleData = {
+        fullName: "Nouran Khaled",
+        referenceCode: "ITC-INT7744",
+        primaryTrack: "rnd",
+        interviewDate: "Saturday, October 17, 2026",
+        interviewTime: "11:30 AM",
+        interviewLocation: "Hall 2 Check-In Station, Campus Building B",
+        appBaseUrl: "https://dev.itclub.one",
+      };
+
+      const { subject, html, text } = renderInterviewScheduledEmail(scheduleData);
+
+      // Subject
+      assert.match(subject, /Interview Scheduled/);
+      assert.match(subject, /ITC-INT7744/);
+
+      // HTML details
+      assert.ok(html.includes("Saturday, October 17, 2026"));
+      assert.ok(html.includes("11:30 AM"));
+      assert.ok(html.includes("Hall 2 Check-In Station, Campus Building B"));
+      assert.ok(html.includes("Research &amp; Development"));
+      assert.ok(html.includes("Nouran Khaled"));
+      assert.ok(html.includes("Station 1 (Check-In Desk)"));
+      assert.ok(html.includes("Station 2 (Interview Room)"));
+      assert.ok(html.includes("VIEW YOUR INTERVIEW QR PASS"));
+      assert.ok(html.includes("https://dev.itclub.one/student"));
+
+      // Plain-text alternative
+      assert.ok(text.includes("Saturday, October 17, 2026"));
+      assert.ok(text.includes("11:30 AM"));
+      assert.ok(text.includes("Station 1"));
+      assert.ok(text.includes("https://dev.itclub.one/student"));
+    });
+
+    it("clearly communicates rescheduled appointment when isRescheduled is true", () => {
+      const rescheduleData = {
+        fullName: "Nouran Khaled",
+        referenceCode: "ITC-INT7744",
+        primaryTrack: "rnd",
+        interviewDate: "Sunday, October 18, 2026",
+        interviewTime: "02:00 PM",
+        interviewLocation: "Hall 3 Main Hall",
+        isRescheduled: true,
+        appBaseUrl: "https://dev.itclub.one",
+      };
+
+      const { subject, html, text } = renderInterviewScheduledEmail(rescheduleData);
+
+      assert.match(subject, /Interview Rescheduled/);
+      assert.ok(html.includes("Your Interview Has Been Rescheduled"));
+      assert.ok(html.includes("RESCHEDULED"));
+      assert.ok(html.includes("تم تحديث موعد المقابلة الشخصية"));
+      assert.ok(text.includes("INTERVIEW RESCHEDULED"));
+    });
+  });
+
+  // 8. Comprehensive Submission Summary & Optional Field Handling
+  describe("8. Comprehensive Submission Summary & Brand Safety", () => {
+    it("renders rich student-submitted fields when provided without leaking undefined", () => {
+      const richData = {
+        fullName: "Karim Hassan",
+        referenceCode: "ITC-RICH1234",
+        primaryTrack: "it",
+        secondaryTrack: "rnd",
+        academicYear: "third",
+        department: "Computer Systems",
+        academicId: "BATU-2024-5555",
+        universityEmail: "20245555@batechu.com",
+        googleEmail: "karim.personal@gmail.com",
+        phone: "+201099998888",
+        whatsapp: "+201099998888",
+        experienceLevel: "experienced",
+        skills: "Docker, Kubernetes, Next.js, PostgreSQL",
+        experienceDetails: "Built a full-stack campus event management portal with TypeScript",
+        volunteerExperience: "Previous mentor at IEEE Student Branch",
+        motivation: "Eager to contribute technical workshops and infrastructure automation.",
+        learningGoal: "Master cloud architectures and lead hands-on developer tracks.",
+        contribution: "Will deliver 3 Linux container workshops for new recruits.",
+        availability: "weekends",
+        appBaseUrl: "https://dev.itclub.one",
+      };
+
+      const { html, text } = renderRegistrationReceiptEmail(richData);
+
+      // Verify all rich fields render
+      assert.ok(html.includes("BATU-2024-5555"));
+      assert.ok(html.includes("20245555@batechu.com"));
+      assert.ok(html.includes("karim.personal@gmail.com"));
+      assert.ok(html.includes("+201099998888"));
+      assert.ok(html.includes("Docker, Kubernetes, Next.js, PostgreSQL"));
+      assert.ok(html.includes("Built a full-stack campus event management portal"));
+      assert.ok(html.includes("Previous mentor at IEEE Student Branch"));
+      assert.ok(html.includes("Eager to contribute technical workshops"));
+      assert.ok(html.includes("Master cloud architectures"));
+      assert.ok(html.includes("Will deliver 3 Linux container workshops"));
+
+      // Verify text version includes rich summary
+      assert.ok(text.includes("BATU-2024-5555"));
+      assert.ok(text.includes("Docker, Kubernetes, Next.js, PostgreSQL"));
+      assert.ok(text.includes("karim.personal@gmail.com"));
+
+      // Verify no 'undefined' literals anywhere
+      assert.equal(html.includes("undefined"), false);
+      assert.equal(text.includes("undefined"), false);
+    });
+
+    it("gracefully omits missing optional fields without rendering empty rows or undefined", () => {
+      const minimalData = {
+        fullName: "Sara Ali",
+        referenceCode: "ITC-MIN0001",
+        primaryTrack: "hr",
+        academicYear: "first",
+        department: "General Engineering",
+        appBaseUrl: "https://dev.itclub.one",
+      };
+
+      const { html, text } = renderRegistrationReceiptEmail(minimalData);
+
+      // Required fields present
+      assert.ok(html.includes("Sara Ali"));
+      assert.ok(html.includes("ITC-MIN0001"));
+      assert.ok(html.includes("General Engineering"));
+
+      // Optional fields that were NOT provided should NOT have empty labels or undefined
+      assert.equal(html.includes("undefined"), false);
+      assert.equal(text.includes("undefined"), false);
+      assert.equal(html.includes("STUDENT ID"), false);
+      assert.equal(html.includes("PERSONAL EMAIL"), false);
+      assert.equal(html.includes("SKILLS &amp; TOOLS"), false);
+    });
+
+    it("truthfully recognizes Vercel placeholder credentials as unconfigured", () => {
+      const origUser = process.env.GMAIL_USER;
+      const origPass = process.env.GMAIL_APP_PASSWORD;
+
+      try {
+        process.env.GMAIL_USER = "seif.tanjiro@gmail.com";
+        process.env.GMAIL_APP_PASSWORD = "SET_THIS_IN_VERCEL_ENVIRONMENT_VARIABLES";
+
+        // Must return false so system does not claim delivery when placeholder is left in env
+        assert.equal(isEmailConfigured(), false);
+
+        process.env.GMAIL_APP_PASSWORD = "your-16-character-app-password";
+        assert.equal(isEmailConfigured(), false);
+
+        // Real 16-char app password returns true
+        process.env.GMAIL_APP_PASSWORD = "abcd efgh ijkl mnop";
+        assert.equal(isEmailConfigured(), true);
+      } finally {
+        if (origUser) process.env.GMAIL_USER = origUser;
+        else delete process.env.GMAIL_USER;
+        if (origPass) process.env.GMAIL_APP_PASSWORD = origPass;
+        else delete process.env.GMAIL_APP_PASSWORD;
+      }
     });
   });
 });

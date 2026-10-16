@@ -38,61 +38,99 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(subject)}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; }
+      .header-pad { padding: 24px 20px 18px 20px !important; }
+      .body-pad { padding: 0 20px 20px 20px !important; }
+      .footer-pad { padding: 20px !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #050708; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased;">
+<body style="margin: 0; padding: 0; background-color: #050708; font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased;">
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #050708; width: 100%;">
     <tr>
-      <td align="center" style="padding: 30px 15px;">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #080a0c; border: 1px solid #1a2228; text-align: left;">
+      <td align="center" style="padding: 30px 12px;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-container" style="max-width: 600px; background-color: #080b0e; border: 1px solid #17222c; text-align: left; border-radius: 8px; overflow: hidden;">
           
           <!-- Accent Gradient Bar -->
           <tr>
             <td style="height: 4px; background: linear-gradient(90deg, #00e599 0%, #18c8ed 50%, #9b7cff 100%); line-height: 4px; font-size: 0;">&nbsp;</td>
           </tr>
 
-          <!-- Header -->
+          <!-- Official Brand Header -->
           <tr>
-            <td style="padding: 32px 32px 24px 32px;">
+            <td class="header-pad" style="padding: 32px 32px 20px 32px;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td>
-                    <span style="font-family: monospace; font-size: 11px; letter-spacing: 3px; color: #00e599; text-transform: uppercase; font-weight: bold;">
-                      IT CLUB RECRUITMENT 2026
+                  <td style="vertical-align: middle;">
+                    <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 14px;">
+                          <img src="${safeBaseUrl}/logo.png" alt="IT Club" width="46" height="46" style="display: block; border: 0; outline: none; width: 46px; height: 46px; border-radius: 8px;" />
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <span style="font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase; display: block; line-height: 1.2;">
+                            IT CLUB
+                          </span>
+                          <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 2.5px; color: #00e599; font-weight: 700; text-transform: uppercase; display: block; margin-top: 3px; line-height: 1.2;">
+                            IT CLUB RECRUITMENT 2026
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" style="vertical-align: middle;">
+                    <span style="display: inline-block; background-color: #072518; border: 1px solid #00e599; color: #00e599; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 4px;">
+                      ACCEPTED
                     </span>
-                    <h1 style="margin: 12px 0 6px 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
-                      Congratulations! You&apos;re Accepted.
-                    </h1>
-                    <p style="margin: 0; font-size: 15px; color: #00e599; font-weight: 600;" dir="rtl">
-                      مبروك! تم قبولك رسمياً في نادي تكنولوجيا المعلومات
-                    </p>
                   </td>
                 </tr>
               </table>
+
+              <!-- Main Heading -->
+              <h1 style="margin: 24px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.3;">
+                Congratulations! You&apos;re Accepted.
+              </h1>
+              
+              <!-- Arabic Headline (Alexandria Font) -->
+              <div dir="rtl" style="margin: 6px 0 0 0; font-family: 'Alexandria', Arial, sans-serif; font-size: 15px; color: #00e599; font-weight: 600; text-align: right;">
+                مبروك! تم قبولك رسمياً في نادي تكنولوجيا المعلومات
+              </div>
             </td>
           </tr>
 
           <!-- Congratulatory Message -->
           <tr>
-            <td style="padding: 0 32px 24px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
+            <td class="body-pad" style="padding: 0 32px 24px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
               Dear <strong style="color: #ffffff;">${safeFullName}</strong>,<br /><br />
-              Following the evaluation of your recruitment submission and technical review, the IT Club leadership and committee heads are delighted to offer you a position as an active member.
+              Following the evaluation of your recruitment submission and technical review, the IT Club leadership and committee heads are delighted to offer you a position as an active member for the 2026 season.
             </td>
           </tr>
 
           <!-- Accepted Track & Reference Callout -->
           <tr>
-            <td style="padding: 0 32px 24px 32px;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #040506; border: 1px solid #1f2b33; padding: 20px;">
+            <td class="body-pad" style="padding: 0 32px 24px 32px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #040608; border: 1px solid #1b2834; padding: 20px; border-radius: 6px;">
                 <tr>
                   <td>
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; font-size: 13px;">
-                      <tr style="border-bottom: 1px solid #141b22;">
-                        <td style="padding: 8px 0; color: #7e8b96; font-family: monospace; text-transform: uppercase; font-size: 11px; width: 40%;">ACCEPTED TRACK</td>
-                        <td style="padding: 8px 0; color: #00e599; font-weight: bold;">${escapeHtml(primaryTrackLabel)}</td>
+                      <tr style="border-bottom: 1px solid #141f27;">
+                        <td style="padding: 8px 0; color: #7e8b96; font-family: 'Montserrat', monospace, sans-serif; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; width: 38%;">
+                          ACCEPTED TRACK
+                        </td>
+                        <td style="padding: 8px 0; color: #00e599; font-weight: bold;">
+                          ${escapeHtml(primaryTrackLabel)}
+                        </td>
                       </tr>
                       <tr>
-                        <td style="padding: 8px 0; color: #7e8b96; font-family: monospace; text-transform: uppercase; font-size: 11px;">APPLICATION REF</td>
-                        <td style="padding: 8px 0; color: #ffffff; font-family: monospace; font-weight: bold; letter-spacing: 1px;">${safeReference}</td>
+                        <td style="padding: 8px 0; color: #7e8b96; font-family: 'Montserrat', monospace, sans-serif; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">
+                          APPLICATION REF
+                        </td>
+                        <td style="padding: 8px 0; color: #ffffff; font-family: 'Courier New', Courier, monospace; font-weight: bold; letter-spacing: 1.5px;">
+                          ${safeReference}
+                        </td>
                       </tr>
                     </table>
                   </td>
@@ -103,33 +141,33 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
 
           <!-- Next Step: Account Activation -->
           <tr>
-            <td style="padding: 0 32px 20px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
-              To confirm your membership and access club resources, please activate your official student account.
-              You will be prompted to verify your application reference code and choose a secure password.
+            <td class="body-pad" style="padding: 0 32px 20px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
+              To confirm your membership and access internal club resources, workshops, and cohort onboarding, please activate your official student account.
+              You will be prompted to verify your application reference code (<strong style="color: #00e599; font-family: monospace;">${safeReference}</strong>) and choose your own secure password.
             </td>
           </tr>
 
           <!-- Call to Action Button -->
           <tr>
             <td align="center" style="padding: 0 32px 28px 32px;">
-              <a href="${safeActivationUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: monospace; font-size: 13px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 15px 32px; border: none;">
+              <a href="${safeActivationUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: 'Montserrat', monospace, sans-serif; font-size: 13px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 15px 32px; border-radius: 4px;">
                 ACTIVATE STUDENT ACCOUNT &rarr;
               </a>
             </td>
           </tr>
 
-          <!-- Security Notice -->
+          <!-- Security & Expiration Notice -->
           <tr>
-            <td style="padding: 0 32px 28px 32px;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #091210; border-left: 3px solid #00e599; padding: 16px;">
+            <td class="body-pad" style="padding: 0 32px 28px 32px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #091210; border-left: 3px solid #00e599; padding: 16px; border-radius: 0 4px 4px 0;">
                 <tr>
                   <td style="font-size: 12px; line-height: 1.6; color: #a2b0a9;">
-                    <strong style="color: #00e599; text-transform: uppercase; font-family: monospace; font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 4px;">
+                    <strong style="color: #00e599; text-transform: uppercase; font-family: 'Montserrat', monospace, sans-serif; font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 4px;">
                       SECURITY &amp; EXPIRATION
                     </strong>
                     This activation link is personalized for your university email and expires in 24 hours. Do not share or forward this link. If your link expires, contact recruitment organizers to request a fresh activation invitation.
-                    <div style="margin-top: 6px;" dir="rtl">
-                      هذا الرابط مخصص لبريدك الجامعي وصالح لمدة 24 ساعة. يرجى عدم مشاركة الرابط مع أي شخص آخر.
+                    <div dir="rtl" style="margin-top: 8px; font-family: 'Alexandria', Arial, sans-serif; color: #86efac; text-align: right;">
+                      هذا الرابط مخصص لبريدك الجامعي وصالح لمدة 24 ساعة. يرجى عدم مشاركة الرابط مع أي شخص آخر حفاظاً على أمان حسابك.
                     </div>
                   </td>
                 </tr>
@@ -139,19 +177,19 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
 
           <!-- Direct Link Fallback -->
           <tr>
-            <td style="padding: 0 32px 28px 32px; font-size: 11px; line-height: 1.5; color: #52606d;">
+            <td class="body-pad" style="padding: 0 32px 28px 32px; font-size: 11px; line-height: 1.5; color: #6b7280;">
               If the button above does not work, copy and paste this secure URL into your browser:<br />
-              <a href="${safeActivationUrl}" style="color: #18c8ed; word-break: break-all;">${safeActivationUrl}</a>
+              <a href="${safeActivationUrl}" style="color: #18c8ed; word-break: break-all; text-decoration: none;">${safeActivationUrl}</a>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 32px; border-top: 1px solid #141b22; background-color: #050708; font-size: 11px; color: #52606d; line-height: 1.5;">
+            <td class="footer-pad" style="padding: 24px 32px; border-top: 1px solid #141f27; background-color: #050708; font-size: 11px; color: #6b7280; line-height: 1.6;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    IT Club Recruitment &bull; Building Egypt&apos;s next generation of tech leaders.<br />
+                    <strong style="color: #9ca3af;">IT Club Recruitment</strong> &bull; Building Egypt&apos;s next generation of tech leaders.<br />
                     Portal: <a href="${safeBaseUrl}" style="color: #00e599; text-decoration: none;">${safeBaseUrl}</a>
                   </td>
                 </tr>
@@ -181,8 +219,8 @@ To confirm your spot and complete your onboarding, activate your official studen
 ${data.activationUrl}
 
 IMPORTANT INSTRUCTIONS:
-- You will need to confirm your application reference code (${data.referenceCode}) and set a secure password.
-- This activation link is personalized for your university email and is time-limited.
+- You will need to confirm your application reference code (${data.referenceCode}) and set your own secure password.
+- This activation link is personalized for your university email and expires in 24 hours.
 - Do not forward or share this link.
 
 Portal: ${data.appBaseUrl}

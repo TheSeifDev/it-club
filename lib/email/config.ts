@@ -28,14 +28,14 @@ export function getEmailConfig(): EmailConfig {
   if (!from) {
     from = gmailUser
       ? `IT Club Recruitment <${gmailUser}>`
-      : "IT Club Recruitment <noreply@gmail.com>";
+      : "IT Club Recruitment <seif.tanjiro@gmail.com>";
   }
 
-  // Ensure production emails link to the actual public application URL
+  // Ensure production emails link to the actual verified application URL
   let appBaseUrl =
     process.env.APP_BASE_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    "https://it-club-recruitment.vercel.app";
+    "https://dev.itclub.one";
 
   appBaseUrl = appBaseUrl.replace(/\/+$/, "");
 
@@ -52,13 +52,23 @@ export function getEmailConfig(): EmailConfig {
 
 /**
  * Validates the presence of required credentials without leaking values.
+ * Truthfully identifies placeholder values as unconfigured to prevent false delivery claims.
  */
 export function isEmailConfigured(): boolean {
   const config = getEmailConfig();
-  return Boolean(
-    config.gmailUser &&
-      config.gmailUser.includes("@") &&
-      config.gmailAppPassword &&
-      config.gmailAppPassword.replace(/\s+/g, "").length >= 8
-  );
+  if (!config.gmailUser || !config.gmailAppPassword) {
+    return false;
+  }
+
+  const cleanAppPassword = config.gmailAppPassword.replace(/\s+/g, "");
+  if (
+    cleanAppPassword === "SET_THIS_IN_VERCEL_ENVIRONMENT_VARIABLES" ||
+    cleanAppPassword === "your-16-character-app-password" ||
+    cleanAppPassword.startsWith("your_") ||
+    cleanAppPassword.length < 8
+  ) {
+    return false;
+  }
+
+  return config.gmailUser.includes("@");
 }

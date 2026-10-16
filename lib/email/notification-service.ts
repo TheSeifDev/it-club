@@ -3,6 +3,7 @@ import { getEmailConfig } from "./config.ts";
 import { sendMail, isEmailProviderActive } from "./mailer.ts";
 import { renderRegistrationReceiptEmail } from "./templates/registration-receipt.ts";
 import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitation.ts";
+import { renderInterviewScheduledEmail } from "./templates/interview-scheduled.ts";
 import { recordAuditEvent } from "../audit/service.ts";
 
 export interface SendRegistrationReceiptInput {
@@ -10,11 +11,23 @@ export interface SendRegistrationReceiptInput {
   applicationReference: string;
   recipientEmail: string;
   fullName: string;
-  academicId: string;
+  academicId?: string | null;
   academicYear: string;
   department: string;
   primaryTrack: string;
   secondaryTrack?: string | null;
+  universityEmail?: string | null;
+  googleEmail?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  experienceLevel?: string | null;
+  skills?: string | null;
+  experienceDetails?: string | null;
+  volunteerExperience?: string | null;
+  motivation?: string | null;
+  learningGoal?: string | null;
+  contribution?: string | null;
+  availability?: string | null;
 }
 
 export interface SendAcceptanceInvitationInput {
@@ -23,6 +36,18 @@ export interface SendAcceptanceInvitationInput {
   recipientEmail: string;
   fullName: string;
   primaryTrack: string;
+}
+
+export interface SendInterviewScheduledInput {
+  applicationId: string;
+  applicationReference: string;
+  recipientEmail: string;
+  fullName: string;
+  primaryTrack: string;
+  interviewDate: string;
+  interviewTime?: string | null;
+  interviewLocation?: string | null;
+  isRescheduled?: boolean;
 }
 
 export interface NotificationSendResult {
@@ -187,6 +212,19 @@ export async function sendRegistrationReceipt(
       secondaryTrack: input.secondaryTrack,
       academicYear: input.academicYear,
       department: input.department,
+      academicId: input.academicId,
+      universityEmail: input.universityEmail || input.recipientEmail,
+      googleEmail: input.googleEmail,
+      phone: input.phone,
+      whatsapp: input.whatsapp,
+      experienceLevel: input.experienceLevel,
+      skills: input.skills,
+      experienceDetails: input.experienceDetails,
+      volunteerExperience: input.volunteerExperience,
+      motivation: input.motivation,
+      learningGoal: input.learningGoal,
+      contribution: input.contribution,
+      availability: input.availability,
       appBaseUrl: config.appBaseUrl,
     });
 
@@ -677,6 +715,240 @@ export async function sendAcceptanceInvitation(
   }
 }
 
+/**
+ * Sends an interview scheduling or rescheduling notification with confirmed appointment details.
+ * Strictly idempotent: will not send duplicate notifications for the same confirmed schedule.
+ * Does not invent fake dates or times — data must be sourced from the actual saved application record.
+ */
+export async function sendInterviewScheduled(
+  input: SendInterviewScheduledInput
+): Promise<NotificationSendResult> {
+  const serviceClient = getServiceRoleClient();
+  const scheduleSlug = `${input.interviewDate}_${input.interviewTime || "slot"}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const idempotencyKey = `interview_scheduled_${input.applicationId}_${scheduleSlug}`;
+  const now = new Date().toISOString();
+
+  let notificationId: string | undefined;
+  let attemptCount = 1;
+
+  try {
+    // 1. Idempotency Check
+    const { data: existing, error: lookupErr } = await serviceClient
+      .from("application_notifications")
+      .select("id, delivery_status, attempt_count, provider_message_id")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (lookupErr) {
+      console.error(
+        `[notification-service] Failed to query interview notification for ${input.applicationReference}:`,
+        lookupErr.message
+      );
+    }
+
+    if (existing) {
+      notificationId = existing.id;
+      attemptCount = (existing.attempt_count || 0) + 1;
+
+      if (existing.delivery_status === "SENT") {
+        return {
+          success: true,
+          status: "already_sent",
+          notificationId: existing.id,
+          providerMessageId: existing.provider_message_id || undefined,
+        };
+      }
+
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          attempt_count: attemptCount,
+          attempted_at: now,
+          delivery_status: "PENDING",
+        })
+        .eq("id", existing.id);
+    } else {
+      const { data: inserted, error: insertErr } = await serviceClient
+        .from("application_notifications")
+        .insert({
+          application_id: input.applicationId,
+          notification_type: "INTERVIEW_SCHEDULED",
+          idempotency_key: idempotencyKey,
+          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          delivery_status: "PENDING",
+          attempt_count: 1,
+          attempted_at: now,
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) {
+        if (insertErr.code === "23505") {
+          return {
+            success: true,
+            status: "already_sent",
+            safeReason: "CONCURRENT_NOTIFICATION_ATTEMPT",
+          };
+        }
+        console.error(
+          `[notification-service] Failed to create interview notification log for ${input.applicationReference}:`,
+          insertErr.message
+        );
+      } else if (inserted) {
+        notificationId = inserted.id;
+      }
+    }
+
+    // 2. Provider Configuration Check
+    if (!isEmailProviderActive()) {
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_NOT_CONFIGURED",
+            error_message:
+              "Gmail SMTP credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured.",
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "unconfigured",
+        notificationId,
+        safeReason: "PROVIDER_NOT_CONFIGURED",
+      };
+    }
+
+    // 3. Render Email Template
+    const config = getEmailConfig();
+    const { subject, html, text } = renderInterviewScheduledEmail({
+      fullName: input.fullName,
+      referenceCode: input.applicationReference,
+      primaryTrack: input.primaryTrack,
+      interviewDate: input.interviewDate,
+      interviewTime: input.interviewTime,
+      interviewLocation: input.interviewLocation,
+      isRescheduled: input.isRescheduled,
+      appBaseUrl: config.appBaseUrl,
+    });
+
+    // 4. Dispatch Email via Gmail SMTP
+    const mailResult = await sendMail({
+      from: config.from,
+      to: input.recipientEmail.trim().toLowerCase(),
+      subject,
+      html,
+      text,
+    });
+
+    if (!mailResult.success) {
+      const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
+      const safeMsg =
+        mailResult.errorMessage || "Gmail SMTP delivery failed.";
+
+      console.error(
+        `[notification-service] Gmail SMTP dispatch failed for interview notification to ${input.applicationReference}: ${safeReason}`
+      );
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: safeReason,
+            error_message: safeMsg,
+          })
+          .eq("id", notificationId);
+      }
+
+      await recordAuditEvent({
+        actor: { role: "system" },
+        action: "NOTIFICATION_FAILED",
+        entityType: "notification",
+        entityId: input.applicationId,
+        entityReference: input.applicationReference,
+        metadata: {
+          notificationType: "INTERVIEW_SCHEDULED",
+          recipient: input.recipientEmail.trim().toLowerCase(),
+        },
+        outcome: "FAILURE",
+        errorCategory: safeReason,
+      });
+
+      return {
+        success: false,
+        status: "failed",
+        notificationId,
+        safeReason,
+      };
+    }
+
+    // 5. Success
+    const providerMessageId = mailResult.messageId;
+    if (notificationId) {
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          delivery_status: "SENT",
+          provider_message_id: providerMessageId,
+          completed_at: new Date().toISOString(),
+          error_message: null,
+          safe_error_category: null,
+        })
+        .eq("id", notificationId);
+    }
+
+    await recordAuditEvent({
+      actor: { role: "system" },
+      action: "NOTIFICATION_DELIVERED",
+      entityType: "notification",
+      entityId: input.applicationId,
+      entityReference: input.applicationReference,
+      metadata: {
+        notificationType: "INTERVIEW_SCHEDULED",
+        recipient: input.recipientEmail.trim().toLowerCase(),
+        providerMessageId,
+      },
+      outcome: "SUCCESS",
+    });
+
+    return {
+      success: true,
+      status: "sent",
+      notificationId,
+      providerMessageId,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(
+      `[notification-service] Unexpected interview notification failure for ${input.applicationReference}:`,
+      errorMsg
+    );
+
+    if (notificationId) {
+      try {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "UNEXPECTED_ERROR",
+            error_message: errorMsg,
+          })
+          .eq("id", notificationId);
+      } catch {
+        // Suppress secondary logging error
+      }
+    }
+
+    return {
+      success: false,
+      status: "failed",
+      notificationId,
+      safeReason: "UNEXPECTED_ERROR",
+    };
+  }
+}
+
 export interface ProcessNotificationsResult {
   processed: number;
   sent: number;
@@ -717,7 +989,7 @@ export async function processPendingNotifications(
       const { data: app, error: appErr } = await serviceClient
         .from("applications")
         .select(
-          "application_reference, full_name, academic_id, academic_year, department, primary_track, secondary_track"
+          "application_reference, full_name, academic_id, academic_year, department, primary_track, secondary_track, university_email, google_email, phone, whatsapp, experience_level, skills, experience_details, volunteer_experience, motivation, learning_goal, contribution, availability, interview_date, interview_time, interview_location"
         )
         .eq("id", notif.application_id)
         .maybeSingle();
@@ -735,20 +1007,69 @@ export async function processPendingNotifications(
         continue;
       }
 
-      const res = await sendRegistrationReceipt(
-        {
+      let res: NotificationSendResult;
+
+      if (notif.notification_type === "ACCEPTANCE_INVITATION") {
+        res = await sendAcceptanceInvitation({
           applicationId: notif.application_id,
           applicationReference: app.application_reference,
           recipientEmail: notif.recipient_email,
           fullName: app.full_name,
-          academicId: app.academic_id,
-          academicYear: app.academic_year,
-          department: app.department,
           primaryTrack: app.primary_track,
-          secondaryTrack: app.secondary_track,
-        },
-        { dispatchMode: "sync", timeoutMs: 8000 }
-      );
+        });
+      } else if (notif.notification_type === "INTERVIEW_SCHEDULED") {
+        if (!app.interview_date) {
+          await serviceClient
+            .from("application_notifications")
+            .update({
+              delivery_status: "FAILED",
+              safe_error_category: "MISSING_SCHEDULE_DATA",
+              error_message: "Interview date has not been set for this candidate.",
+            })
+            .eq("id", notif.id);
+          failed++;
+          continue;
+        }
+
+        res = await sendInterviewScheduled({
+          applicationId: notif.application_id,
+          applicationReference: app.application_reference,
+          recipientEmail: notif.recipient_email,
+          fullName: app.full_name,
+          primaryTrack: app.primary_track,
+          interviewDate: app.interview_date,
+          interviewTime: app.interview_time,
+          interviewLocation: app.interview_location,
+        });
+      } else {
+        // Default: REGISTRATION_RECEIPT with rich submitted fields
+        res = await sendRegistrationReceipt(
+          {
+            applicationId: notif.application_id,
+            applicationReference: app.application_reference,
+            recipientEmail: notif.recipient_email,
+            fullName: app.full_name,
+            academicId: app.academic_id,
+            academicYear: app.academic_year,
+            department: app.department,
+            primaryTrack: app.primary_track,
+            secondaryTrack: app.secondary_track,
+            universityEmail: app.university_email,
+            googleEmail: app.google_email,
+            phone: app.phone,
+            whatsapp: app.whatsapp,
+            experienceLevel: app.experience_level,
+            skills: app.skills,
+            experienceDetails: app.experience_details,
+            volunteerExperience: app.volunteer_experience,
+            motivation: app.motivation,
+            learningGoal: app.learning_goal,
+            contribution: app.contribution,
+            availability: app.availability,
+          },
+          { dispatchMode: "sync", timeoutMs: 8000 }
+        );
+      }
 
       if (res.status === "sent" || res.status === "already_sent") {
         sent++;

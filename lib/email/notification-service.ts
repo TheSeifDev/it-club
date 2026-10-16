@@ -419,7 +419,8 @@ export async function getNotificationForApplication(
  * Never throws — failures are recorded in public.application_notifications.
  */
 export async function sendAcceptanceInvitation(
-  input: SendAcceptanceInvitationInput
+  input: SendAcceptanceInvitationInput,
+  options?: NotificationOptions & { forceReissue?: boolean }
 ): Promise<NotificationSendResult> {
   const serviceClient = getServiceRoleClient();
   const idempotencyKey = `acceptance_invitation_${input.applicationId}`;
@@ -447,7 +448,7 @@ export async function sendAcceptanceInvitation(
       notificationId = existing.id;
       attemptCount = (existing.attempt_count || 0) + 1;
 
-      if (existing.delivery_status === "SENT") {
+      if (existing.delivery_status === "SENT" && !options?.forceReissue) {
         return {
           success: true,
           status: "already_sent",
@@ -730,7 +731,8 @@ export async function sendAcceptanceInvitation(
  * Securely provisions a Supabase Auth invitation/recovery link with single-use / 24-hour expiry semantics.
  */
 export async function sendShortlistedInvitation(
-  input: SendShortlistedInvitationInput
+  input: SendShortlistedInvitationInput,
+  options?: NotificationOptions & { forceReissue?: boolean }
 ): Promise<NotificationSendResult> {
   const serviceClient = getServiceRoleClient();
   const idempotencyKey = `shortlisted_invitation_${input.applicationId}`;
@@ -758,7 +760,7 @@ export async function sendShortlistedInvitation(
       notificationId = existing.id;
       attemptCount = (existing.attempt_count || 1) + 1;
 
-      if (existing.delivery_status === "SENT") {
+      if (existing.delivery_status === "SENT" && !options?.forceReissue) {
         return {
           success: true,
           status: "already_sent",
@@ -1418,5 +1420,91 @@ export async function processPendingNotifications(
   }
 
   return { processed: pending.length, sent, failed, errors };
+}
+
+export interface ReissueInvitationInput {
+  applicationId: string;
+  force?: boolean;
+}
+
+export interface ReissueInvitationResult {
+  success: boolean;
+  status: "sent" | "already_sent" | "unconfigured" | "failed";
+  message: string;
+  providerMessageId?: string | null;
+  safeReason?: string | null;
+}
+
+/**
+ * Owner/Admin authorized action to retry or reissue an activation invitation.
+ * Sourced strictly from the actual saved application record.
+ * Generates a fresh single-use Supabase Auth token and dispatches via Gmail SMTP.
+ */
+export async function reissueInvitation(
+  input: ReissueInvitationInput
+): Promise<ReissueInvitationResult> {
+  const serviceClient = getServiceRoleClient();
+  const { data: app, error } = await serviceClient
+    .from("applications")
+    .select("id, application_reference, full_name, primary_track, university_email, status, activated_at")
+    .eq("id", input.applicationId)
+    .maybeSingle();
+
+  if (error || !app) {
+    return {
+      success: false,
+      status: "failed",
+      message: "Application not found.",
+      safeReason: "APPLICATION_NOT_FOUND",
+    };
+  }
+
+  if (app.status !== "SHORTLISTED" && app.status !== "ACCEPTED") {
+    return {
+      success: false,
+      status: "failed",
+      message: `Cannot reissue invitation for application with status ${app.status}. Only SHORTLISTED and ACCEPTED applications are eligible.`,
+      safeReason: "INELIGIBLE_STATUS",
+    };
+  }
+
+  let res: NotificationSendResult;
+  if (app.status === "SHORTLISTED") {
+    res = await sendShortlistedInvitation(
+      {
+        applicationId: app.id,
+        applicationReference: app.application_reference,
+        recipientEmail: app.university_email,
+        fullName: app.full_name,
+        primaryTrack: app.primary_track,
+      },
+      { forceReissue: input.force ?? true }
+    );
+  } else {
+    res = await sendAcceptanceInvitation(
+      {
+        applicationId: app.id,
+        applicationReference: app.application_reference,
+        recipientEmail: app.university_email,
+        fullName: app.full_name,
+        primaryTrack: app.primary_track,
+      },
+      { forceReissue: input.force ?? true }
+    );
+  }
+
+  return {
+    success: res.success,
+    status: res.status === "pending" ? "failed" : res.status,
+    message: res.status === "sent"
+      ? `Invitation successfully dispatched to ${app.university_email}.`
+      : res.status === "already_sent"
+      ? "An active invitation has already been sent to this student within the 24-hour window."
+      : res.status === "unconfigured"
+      ? "Gmail SMTP credentials are not configured on the server."
+      : "Failed to dispatch email invitation.",
+    providerMessageId: res.providerMessageId,
+    safeReason: res.safeReason,
+  };
 }
 

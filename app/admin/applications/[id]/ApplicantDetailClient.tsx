@@ -49,6 +49,11 @@ export default function ApplicantDetailClient({ application: initialApp, current
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [notesMessage, setNotesMessage] = useState("");
 
+  // Invitation Reissue State
+  const [isReissuingInvite, setIsReissuingInvite] = useState(false);
+  const [reissueMessage, setReissueMessage] = useState("");
+  const [reissueError, setReissueError] = useState("");
+
   const trackMeta = TRACK_METADATA[app.primary_track] || {
     name: app.primary_track,
     arabicName: app.primary_track,
@@ -101,7 +106,13 @@ export default function ApplicantDetailClient({ application: initialApp, current
       if (decisionNote.trim()) {
         setNotesText(decisionNote.trim());
       }
-      const deliverySuffix = json.invitationDelivery?.message ? ` (${json.invitationDelivery.message})` : "";
+      const deliverySuffix = json.shortlistDelivery?.message
+        ? ` (${json.shortlistDelivery.message})`
+        : json.invitationDelivery?.message
+        ? ` (${json.invitationDelivery.message})`
+        : json.interviewDelivery?.message
+        ? ` (${json.interviewDelivery.message})`
+        : "";
       setFeedbackSuccess(`Decision recorded: Status updated to ${STATUS_METADATA[actionTargetStatus].label}.${deliverySuffix}`);
       setActionTargetStatus(null);
       setDecisionNote("");
@@ -110,6 +121,33 @@ export default function ApplicantDetailClient({ application: initialApp, current
       setActionError("A network error occurred while updating the status. Please retry.");
     } finally {
       setIsSubmittingAction(false);
+    }
+  };
+
+  // Handle Reissue Invitation Email
+  const handleReissueInvite = async () => {
+    setIsReissuingInvite(true);
+    setReissueMessage("");
+    setReissueError("");
+
+    try {
+      const res = await fetch(`/api/admin/applications/${app.id}/resend-invitation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force: true }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setReissueError(json.error || "Failed to reissue invitation.");
+      } else {
+        setReissueMessage(json.message || "Invitation dispatched successfully.");
+        setTimeout(() => setReissueMessage(""), 5000);
+      }
+    } catch {
+      setReissueError("Network error while attempting to reissue invitation.");
+    } finally {
+      setIsReissuingInvite(false);
     }
   };
 
@@ -564,6 +602,82 @@ export default function ApplicantDetailClient({ application: initialApp, current
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Student Invitation & Portal Activation Card */}
+          <div className="border border-white/10 bg-[#080a0c] p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <Mail size={13} className="text-[#00e599]" />
+                <span>STUDENT INVITATION & PORTAL</span>
+              </span>
+              {app.activated_at ? (
+                <span className="px-2 py-0.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] font-mono text-[10px] font-bold uppercase">
+                  ACTIVATED
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 border border-amber-500/40 bg-amber-500/10 text-amber-300 font-mono text-[10px] font-bold uppercase">
+                  PENDING ACTIVATION
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2.5 font-mono text-xs">
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase">PORTAL LOGIN EMAIL</span>
+                <span className="text-white font-semibold">{app.university_email}</span>
+              </div>
+              {app.google_email && (
+                <div>
+                  <span className="text-white/40 block text-[10px] uppercase">PERSONAL GOOGLE EMAIL</span>
+                  <span className="text-white/70">{app.google_email}</span>
+                  <span className="text-[10px] text-amber-400 block mt-0.5">
+                    (Student must sign in with university email, not personal Gmail)
+                  </span>
+                </div>
+              )}
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase">PORTAL STATUS</span>
+                <span className={app.activated_at ? "text-[#00e599]" : "text-amber-300"}>
+                  {app.activated_at
+                    ? `Activated on ${new Date(app.activated_at).toLocaleString()}`
+                    : "Not yet activated (Student has not set their password)"}
+                </span>
+              </div>
+            </div>
+
+            {(app.status === "SHORTLISTED" || app.status === "ACCEPTED") && (
+              <div className="pt-2 border-t border-white/5 space-y-2">
+                <button
+                  type="button"
+                  disabled={isReissuingInvite}
+                  onClick={handleReissueInvite}
+                  className="w-full py-2.5 px-3 border border-[#00e599]/30 hover:border-[#00e599] bg-[#00e599]/10 hover:bg-[#00e599]/20 text-[#00e599] font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                >
+                  {isReissuingInvite ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>DISPATCHING INVITATION...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={13} />
+                      <span>REISSUE INVITATION EMAIL</span>
+                    </>
+                  )}
+                </button>
+                {reissueMessage && (
+                  <p className="font-mono text-[11px] leading-relaxed text-[#00e599]">
+                    {reissueMessage}
+                  </p>
+                )}
+                {reissueError && (
+                  <p className="font-mono text-[11px] leading-relaxed text-red-400">
+                    {reissueError}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Internal Reviewer Notes Card */}

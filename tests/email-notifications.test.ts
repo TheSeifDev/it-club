@@ -388,7 +388,7 @@ describe("Direct Gmail SMTP & Transactional Registration Confirmation Emails", (
       assert.equal(secondAttempt.providerMessageId, "msg_test_idempotency_123");
 
       // Verify that the notification record was retrieved
-      const fetched = await getNotificationForApplication(app.id);
+      const fetched = await getNotificationForApplication(app.id, "REGISTRATION_RECEIPT");
       assert.ok(fetched);
       assert.equal(fetched.delivery_status, "SENT");
       assert.equal(fetched.provider_message_id, "msg_test_idempotency_123");

@@ -16,6 +16,7 @@ export default function StudentLoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showActivationGuidance, setShowActivationGuidance] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     activatedParam === "true"
       ? "Account activated successfully! Please sign in with your password."
@@ -26,9 +27,18 @@ export default function StudentLoginForm() {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setShowActivationGuidance(false);
 
-    if (!email.trim() || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
       setErrorMessage("Please enter both your university email address and password.");
+      return;
+    }
+
+    if (!cleanEmail.endsWith("@batechu.com")) {
+      setErrorMessage(
+        "Student accounts use your official university email (@batechu.com), not your personal email. Please use your student ID email address (e.g. 2024XXXX@batechu.com)."
+      );
       return;
     }
 
@@ -37,12 +47,13 @@ export default function StudentLoginForm() {
     try {
       const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password,
       });
 
       if (signInError) {
         setErrorMessage("Invalid email or password. Please verify your credentials.");
+        setShowActivationGuidance(true);
         setLoading(false);
         return;
       }
@@ -50,7 +61,8 @@ export default function StudentLoginForm() {
       // Verify the authenticated user is an activated student member
       const verifyRes = await fetch("/api/student/me");
       if (!verifyRes.ok) {
-        setErrorMessage("No active student membership found for this account. If you received an acceptance email, please complete activation first.");
+        setErrorMessage("No active student account found for this user. If you received an invitation email, please complete account activation first.");
+        setShowActivationGuidance(true);
         setLoading(false);
         return;
       }
@@ -102,6 +114,29 @@ export default function StudentLoginForm() {
         <div className="mb-6 p-3.5 border border-red-500/30 bg-red-500/10 flex items-start gap-2.5">
           <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
           <p className="text-xs text-red-200 leading-relaxed font-sans">{errorMessage}</p>
+        </div>
+      )}
+
+      {showActivationGuidance && (
+        <div className="mb-6 p-4 border border-[#00e599]/30 bg-[#00e599]/5 flex items-start gap-3">
+          <CheckCircle2 size={16} className="text-[#00e599] shrink-0 mt-0.5" />
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-white font-mono tracking-wide">
+              First time signing in?
+            </p>
+            <p className="text-xs text-white/70 leading-relaxed">
+              Shortlisted and accepted applicants must first activate their portal account by clicking the secure activation link sent to their official university email (<span className="text-[#00e599] font-mono">@batechu.com</span>) to set their password.
+            </p>
+            <div>
+              <Link
+                href="/student/activate"
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#00e599] hover:text-white transition-colors"
+              >
+                <span>Go to Account Activation</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
@@ -169,7 +204,7 @@ export default function StudentLoginForm() {
 
       <div className="mt-8 pt-6 border-t border-white/10 text-center space-y-2">
         <p className="text-xs text-white/40 font-mono">
-          Accepted student needing to activate?{" "}
+          Shortlisted or accepted applicant?{" "}
           <Link
             href="/student/activate"
             className="text-[#00e599] hover:underline"

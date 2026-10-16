@@ -174,7 +174,7 @@ export default function ActivateClient({
             className="object-contain"
           />
           <span className="font-mono text-[10px] tracking-widest uppercase text-[#00e599] font-bold">
-            ACCEPTED MEMBER ACTIVATION
+            APPLICANT ACCOUNT ACTIVATION
           </span>
         </div>
         <h2 className="text-2xl font-black tracking-tight text-white">

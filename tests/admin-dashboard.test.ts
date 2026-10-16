@@ -11,6 +11,7 @@ import {
   getApplicationById,
   updateApplicationStatus,
 } from "../lib/admin/queries.ts";
+import { getServiceRoleClient } from "../lib/auth/service-role.ts";
 import { GET as getMetricsRoute } from "../app/api/admin/metrics/route.ts";
 import { GET as getApplicationsRoute } from "../app/api/admin/applications/route.ts";
 import {
@@ -184,10 +185,17 @@ describe("Admin Dashboard & Application Management (Phase 2)", () => {
     it("retrieves existing application record by reference code", async () => {
       if (!serviceKey) return;
 
-      // Query the existing confirmed application in the database
-      const app = await getApplicationById("ITC-5035B6CD");
-      assert.ok(app, "Existing application ITC-5035B6CD must be retrievable");
-      assert.equal(app.application_reference, "ITC-5035B6CD");
+      const serviceClient = getServiceRoleClient();
+      const { data: firstApp } = await serviceClient
+        .from("applications")
+        .select("application_reference")
+        .limit(1)
+        .maybeSingle();
+
+      const ref = firstApp?.application_reference || "ITC-60037746";
+      const app = await getApplicationById(ref);
+      assert.ok(app, `Existing application ${ref} must be retrievable`);
+      assert.equal(app.application_reference, ref);
       assert.ok(app.status);
       assert.ok(app.full_name);
       assert.ok(app.national_id);

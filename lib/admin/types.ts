@@ -64,6 +64,8 @@ export interface ApplicationDetail {
   interview_date?: string | null;
   interview_time?: string | null;
   interview_location?: string | null;
+  user_id?: string | null;
+  activated_at?: string | null;
   consented_at: string;
   created_at: string;
   updated_at: string;

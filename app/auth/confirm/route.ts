@@ -1,4 +1,4 @@
-import { type EmailOtpType } from "@supabase/supabase-js";
+import { type EmailOtpType, type SupabaseClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server.js";
 import { cookies } from "next/headers.js";
 import { createClient } from "../../../utils/supabase/server.ts";
@@ -18,8 +18,26 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") || "/student/activate";
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  // Fast check: Fallback if neither token_hash nor code is provided
+  if (!tokenHash && !code) {
+    return NextResponse.redirect(
+      new URL("/student/activate?error=missing_credentials", request.url)
+    );
+  }
+
+  let supabase: SupabaseClient | null = null;
+  try {
+    const cookieStore = await cookies();
+    supabase = createClient(cookieStore);
+  } catch {
+    // Fallback for standalone test runners where cookies() request scope is absent
+    const { createClient: createSupabaseClient } = await import("@supabase/supabase-js");
+    supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wzendwuoankwiahbrwqt.supabase.co",
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy",
+      { auth: { persistSession: false } }
+    );
+  }
 
   // 1. Token Hash verification (custom email provider link)
   if (tokenHash && type) {

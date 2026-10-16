@@ -13,6 +13,7 @@ interface TrackDetailSectionProps {
 
 export default function TrackDetailSection({
   track,
+  isFirst = false,
 }: TrackDetailSectionProps) {
   // Find verified team members assigned to this track
   const trackMembers: TeamMember[] = track.memberIds
@@ -190,49 +191,68 @@ export default function TrackDetailSection({
         {/* =============================================================== */}
         {/* 4. SPONSOR / PARTNER BOX ("BROUGHT TO YOU BY")                   */}
         {/* =============================================================== */}
-        {track.partner && (
-          <div
-            className="mt-12 mb-12 p-6 sm:p-8 lg:p-10 bg-black/60 border backdrop-blur-sm"
-            style={{ borderColor: track.color }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
-              {/* Left Logo Column (Col 1-4) */}
-              <div className="md:col-span-4 flex flex-col justify-center">
-                <span
-                  className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase mb-4"
-                  style={{ color: track.color }}
-                >
-                  BROUGHT TO YOU BY
-                </span>
-                <div className="relative h-12 w-44 brightness-0 invert opacity-90 hover:opacity-100 transition-opacity">
+        <div
+          className="mt-12 mb-12 p-6 sm:p-8 lg:p-10 bg-black/60 border backdrop-blur-sm"
+          style={{ borderColor: track.color }}
+        >
+          <div className="flex flex-col gap-6">
+            {/* Section Eyebrow */}
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase"
+                style={{ color: track.color }}
+              >
+                BROUGHT TO YOU BY
+              </span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            {/* Partner Logos: Side by side on desktop, stacked on mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-center">
+              {/* CREATIVA Hub */}
+              <a
+                href="https://creativa.gov.eg/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit CREATIVA Hub official website"
+                aria-label="CREATIVA Hub official website (opens in a new tab)"
+                className="group relative flex items-center justify-center p-5 sm:p-6 bg-white/[0.97] hover:bg-white border border-white/20 hover:border-white/40 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e599] focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[92px] sm:min-h-[104px]"
+              >
+                <div className="relative h-12 sm:h-14 w-full max-w-[170px] sm:max-w-[190px] flex items-center justify-center">
                   <Image
-                    src={track.partner.logo}
-                    alt={track.partner.name}
-                    fill
-                    className="object-contain object-left"
+                    src="/images/partners/creativa-logo.webp"
+                    alt="CREATIVA Hub official logo"
+                    width={600}
+                    height={535}
+                    className="max-h-full max-w-full w-auto h-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+                    priority={isFirst}
                   />
                 </div>
-              </div>
+              </a>
 
-              {/* Right Description Column (Col 5-12) */}
-              <div className="md:col-span-8">
-                <p className="text-xs sm:text-sm text-neutral-300 font-light leading-relaxed mb-3">
-                  {track.partner.description}
-                </p>
-                <a
-                  href={track.partner.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold tracking-wider hover:underline"
-                  style={{ color: track.color }}
-                >
-                  <span>Visit</span>
-                  <span aria-hidden="true">&rarr;</span>
-                </a>
-              </div>
+              {/* VentureX */}
+              <a
+                href="https://www.theventurex.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit VentureX official website"
+                aria-label="VentureX official website (opens in a new tab)"
+                className="group relative flex items-center justify-center p-5 sm:p-6 bg-white/[0.97] hover:bg-white border border-white/20 hover:border-white/40 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e599] focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[92px] sm:min-h-[104px]"
+              >
+                <div className="relative h-8 sm:h-9 w-full max-w-[210px] sm:max-w-[240px] flex items-center justify-center">
+                  <Image
+                    src="/images/partners/venturex-logo.webp"
+                    alt="VentureX official logo"
+                    width={577}
+                    height={53}
+                    className="max-h-full max-w-full w-auto h-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+                    priority={isFirst}
+                  />
+                </div>
+              </a>
             </div>
           </div>
-        )}
+        </div>
 
         {/* =============================================================== */}
         {/* 5. ON THIS TRACK: MEMBER ROSTER GRID (6 COLUMNS)                 */}

@@ -40,14 +40,12 @@ function createIcoFromPngBuffers(pngBuffersWithSizes) {
 async function generateFavicons() {
   console.log('Generating favicons and browser icons from:', LOGO_PATH);
 
-  // Generate PNG buffers for 16, 32, 48
-  const [png16, png32, png48, png180, png192, png512] = await Promise.all([
+  // Generate PNG buffers for 16, 32, 48, 180
+  const [png16, png32, png48, png180] = await Promise.all([
     sharp(LOGO_PATH).resize(16, 16, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
     sharp(LOGO_PATH).resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
     sharp(LOGO_PATH).resize(48, 48, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
     sharp(LOGO_PATH).resize(180, 180, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
-    sharp(LOGO_PATH).resize(192, 192, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
-    sharp(LOGO_PATH).resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer(),
   ]);
 
   // Create multi-resolution .ico containing 16x16, 32x32, 48x48
@@ -57,25 +55,32 @@ async function generateFavicons() {
     { size: 48, buffer: png48 },
   ]);
 
+  // Generate WebP buffers for modern browsers
+  const [webp32, webp192, webp512] = await Promise.all([
+    sharp(LOGO_PATH).resize(32, 32, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ lossless: true, effort: 6 }).toBuffer(),
+    sharp(LOGO_PATH).resize(192, 192, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ lossless: true, effort: 6 }).toBuffer(),
+    sharp(LOGO_PATH).resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ lossless: true, effort: 6 }).toBuffer(),
+  ]);
+
   // Write favicon.ico to app/ and public/
   fs.writeFileSync(path.join(__dirname, '..', 'app', 'favicon.ico'), icoBuffer);
   fs.writeFileSync(path.join(__dirname, '..', 'public', 'favicon.ico'), icoBuffer);
   console.log('✓ Wrote app/favicon.ico and public/favicon.ico (multi-res ICO: 16x16, 32x32, 48x48)');
 
-  // Write icon.png (32x32) to app/ and public/
-  fs.writeFileSync(path.join(__dirname, '..', 'app', 'icon.png'), png32);
-  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon.png'), png32);
-  console.log('✓ Wrote app/icon.png and public/icon.png (32x32)');
+  // Write icon.webp (32x32) to app/ and public/
+  fs.writeFileSync(path.join(__dirname, '..', 'app', 'icon.webp'), webp32);
+  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon.webp'), webp32);
+  console.log('✓ Wrote app/icon.webp and public/icon.webp (32x32)');
 
-  // Write apple-icon.png (180x180) to app/ and public/
+  // Write apple-icon.png (180x180) to app/ and public/ (Apple Touch Icon specification requires PNG)
   fs.writeFileSync(path.join(__dirname, '..', 'app', 'apple-icon.png'), png180);
   fs.writeFileSync(path.join(__dirname, '..', 'public', 'apple-icon.png'), png180);
   console.log('✓ Wrote app/apple-icon.png and public/apple-icon.png (180x180)');
 
-  // Write icon-192.png and icon-512.png to public/
-  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon-192.png'), png192);
-  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon-512.png'), png512);
-  console.log('✓ Wrote public/icon-192.png and public/icon-512.png');
+  // Write icon-192.webp and icon-512.webp to public/
+  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon-192.webp'), webp192);
+  fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon-512.webp'), webp512);
+  console.log('✓ Wrote public/icon-192.webp and public/icon-512.webp');
 }
 
 async function generateOpenGraphImage() {
@@ -175,7 +180,7 @@ async function generateOpenGraphImage() {
   `);
 
   // 3. Composite official 3D logo onto the canvas
-  const ogBuffer = await sharp(svgOverlay)
+  const ogWebpBuffer = await sharp(svgOverlay)
     .composite([
       {
         input: logoResized,
@@ -183,12 +188,12 @@ async function generateOpenGraphImage() {
         left: 80,
       },
     ])
-    .png({ compressionLevel: 9 })
+    .webp({ lossless: true, effort: 6 })
     .toBuffer();
 
-  const ogPath = path.join(__dirname, '..', 'public', 'og-itclub.png');
-  fs.writeFileSync(ogPath, ogBuffer);
-  console.log(`✓ Wrote ${ogPath} (1200x630, ${(ogBuffer.length / 1024).toFixed(1)} KB)`);
+  const ogWebpPath = path.join(__dirname, '..', 'public', 'og-itclub.webp');
+  fs.writeFileSync(ogWebpPath, ogWebpBuffer);
+  console.log(`✓ Wrote ${ogWebpPath} (1200x630, ${(ogWebpBuffer.length / 1024).toFixed(1)} KB)`);
 }
 
 async function main() {

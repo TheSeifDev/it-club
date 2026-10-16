@@ -2,11 +2,11 @@ async function verify() {
   console.log('--- 1. Testing Static Assets Retrieval ---');
   const assetUrls = [
     'http://localhost:3000/favicon.ico',
-    'http://localhost:3000/icon.png',
+    'http://localhost:3000/icon.webp',
     'http://localhost:3000/apple-icon.png',
-    'http://localhost:3000/og-itclub.png',
-    'http://localhost:3000/icon-192.png',
-    'http://localhost:3000/icon-512.png',
+    'http://localhost:3000/og-itclub.webp',
+    'http://localhost:3000/icon-192.webp',
+    'http://localhost:3000/icon-512.webp',
   ];
   for (const url of assetUrls) {
     try {

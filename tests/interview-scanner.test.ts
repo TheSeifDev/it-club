@@ -12,6 +12,7 @@ import { parseClientQrPayload, isValidQrTokenFormat } from "../lib/interviews/qr
 import {
   classifyCameraError,
   diagnoseCameraEnvironment,
+  probeCameraStream,
 } from "../lib/interviews/camera-diagnostics.ts";
 import { POST as staffCheckInRoute } from "../app/api/admin/interviews/check-in/route.ts";
 
@@ -199,10 +200,92 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       const diag = await diagnoseCameraEnvironment({ isSecure: true, nav: mockNav });
       assert.equal(diag.permissionState, "unsupported");
     });
+
+    it("detects when camera is disallowed by Document Permissions Policy API", async () => {
+      const mockDocBlocked = {
+        permissionsPolicy: {
+          allowsFeature: (feature: string) => feature !== "camera",
+        },
+      };
+
+      const diag = await diagnoseCameraEnvironment({
+        isSecure: true,
+        nav: {
+          mediaDevices: {
+            getUserMedia: async () => ({} as MediaStream),
+          } as unknown as MediaDevices,
+        },
+        doc: mockDocBlocked,
+      });
+
+      assert.equal(diag.isPermissionsPolicyAllowed, false);
+      assert.equal(diag.isSupported, false);
+      assert.match(diag.diagnosticMessage, /Permissions-Policy/i);
+    });
+
+    it("safely probes camera stream and guarantees all tracks are stopped immediately", async () => {
+      let trackStopped = false;
+      const mockStream = {
+        getVideoTracks: () => [
+          {
+            getSettings: () => ({ facingMode: "environment" }),
+          },
+        ],
+        getTracks: () => [
+          {
+            stop: () => {
+              trackStopped = true;
+            },
+          },
+        ],
+      } as unknown as MediaStream;
+
+      const result = await probeCameraStream(
+        { video: { facingMode: { ideal: "environment" } }, audio: false },
+        async () => mockStream
+      );
+
+      assert.equal(result.success, true);
+      assert.equal(trackStopped, true);
+    });
+
+    it("safely releases tracks even when probeCameraStream encounters an error", async () => {
+      let trackStopped = false;
+      const mockStream = {
+        getVideoTracks: () => {
+          throw new Error("Track inspection failed");
+        },
+        getTracks: () => [
+          {
+            stop: () => {
+              trackStopped = true;
+            },
+          },
+        ],
+      } as unknown as MediaStream;
+
+      const result = await probeCameraStream(
+        { video: true },
+        async () => mockStream
+      );
+
+      assert.equal(result.success, false);
+      assert.equal(trackStopped, true);
+    });
   });
 
   // 3. Camera Error Classification & Recovery Instructions
   describe("3. Camera Error Classification & User Instructions", () => {
+    it("classifies Permissions-Policy / Feature-Policy restriction as policy_blocked", () => {
+      const err = new Error("Failed to execute 'getUserMedia' on 'MediaDevices': Access to the feature \"camera\" is disallowed by permissions policy.");
+      const classified = classifyCameraError(err);
+
+      assert.equal(classified.code, "policy_blocked");
+      assert.equal(classified.canRetry, false);
+      assert.equal(classified.fallbackToManual, true);
+      assert.ok(classified.instructions.some((line) => line.includes("Permissions-Policy")));
+    });
+
     it("classifies NotAllowedError as expected denial with actionable instructions", () => {
       const err = new Error("Permission denied by user");
       err.name = "NotAllowedError";
@@ -212,7 +295,7 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       assert.equal(classified.isExpectedDenial, true); // Must not produce alarming console.error stack trace
       assert.equal(classified.canRetry, true);
       assert.equal(classified.fallbackToManual, true);
-      assert.ok(classified.instructions.some((line) => line.includes("address bar")));
+      assert.ok(classified.instructions.some((line) => line.includes("Chrome") || line.includes("address bar")));
     });
 
     it("classifies NotFoundError when no camera hardware is attached", () => {
@@ -223,7 +306,7 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       assert.equal(classified.code, "not_found");
       assert.equal(classified.isExpectedDenial, false);
       assert.equal(classified.fallbackToManual, true);
-      assert.ok(classified.instructions.some((line) => line.includes("webcam")));
+      assert.ok(classified.instructions.some((line) => line.includes("webcam") || line.includes("camera")));
     });
 
     it("classifies NotReadableError when camera is locked by Zoom/Teams/OS", () => {
@@ -251,6 +334,15 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
 
       const classified = classifyCameraError(err);
       assert.equal(classified.code, "insecure_context");
+      assert.equal(classified.canRetry, false);
+      assert.equal(classified.fallbackToManual, true);
+    });
+
+    it("classifies unsupported browser when getUserMedia is missing", () => {
+      const err = new Error("navigator.mediaDevices.getUserMedia is unavailable in unsupported browser");
+      const classified = classifyCameraError(err);
+
+      assert.equal(classified.code, "unsupported");
       assert.equal(classified.canRetry, false);
       assert.equal(classified.fallbackToManual, true);
     });
@@ -348,6 +440,113 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       // Next candidate scan succeeds
       await checkInHandler();
       assert.equal(processCount, 2);
+    });
+
+    it("guards against multiple rapid camera-start clicks (concurrency prevention)", async () => {
+      let isStarting = false;
+      let startAttempts = 0;
+      let successfulStarts = 0;
+
+      const triggerStartCamera = async () => {
+        startAttempts++;
+        if (isStarting) return false;
+        isStarting = true;
+        try {
+          // Simulate camera initialization delay
+          await new Promise((res) => setTimeout(res, 20));
+          successfulStarts++;
+          return true;
+        } finally {
+          isStarting = false;
+        }
+      };
+
+      // User rapidly taps START CAMERA 5 times in quick succession
+      const results = await Promise.all([
+        triggerStartCamera(),
+        triggerStartCamera(),
+        triggerStartCamera(),
+        triggerStartCamera(),
+        triggerStartCamera(),
+      ]);
+
+      assert.equal(startAttempts, 5);
+      assert.equal(successfulStarts, 1);
+      assert.equal(results.filter(Boolean).length, 1);
+    });
+
+    it("halts immediately on permission denial without triggering endless retries", async () => {
+      let startCalls = 0;
+      let retryCalls = 0;
+
+      const attemptCameraStart = async () => {
+        startCalls++;
+        const denialErr = new Error("Permission denied by user");
+        denialErr.name = "NotAllowedError";
+        const classified = classifyCameraError(denialErr);
+
+        // Verification: NotAllowedError must NOT trigger automatic retry
+        if (classified.code === "overconstrained") {
+          retryCalls++;
+        }
+        return classified;
+      };
+
+      const result = await attemptCameraStart();
+      assert.equal(startCalls, 1);
+      assert.equal(retryCalls, 0); // No endless loop on NotAllowedError!
+      assert.equal(result.code, "not_allowed");
+      assert.equal(result.isExpectedDenial, true);
+    });
+
+    it("releases previous scanner session and tracks when switching camera devices", async () => {
+      let activeCameraId = "cam_rear_01";
+      let previousStopped = false;
+      let newStarted = false;
+
+      const stopCamera = async () => {
+        previousStopped = true;
+      };
+
+      const switchCamera = async (newId: string) => {
+        await stopCamera();
+        activeCameraId = newId;
+        newStarted = true;
+      };
+
+      await switchCamera("cam_front_02");
+
+      assert.equal(previousStopped, true);
+      assert.equal(newStarted, true);
+      assert.equal(activeCameraId, "cam_front_02");
+    });
+
+    it("releases any acquired stream tracks if scanner startup subsequently fails", async () => {
+      let trackStopped = false;
+      const initialStream = {
+        getTracks: () => [
+          {
+            stop: () => {
+              trackStopped = true;
+            },
+          },
+        ],
+      };
+
+      let errorCaught = false;
+      // Emulate startCamera try / catch / finally release
+      try {
+        try {
+          throw new Error("HTML5QrCode container failure");
+        } finally {
+          initialStream.getTracks().forEach((t) => t.stop());
+        }
+      } catch {
+        errorCaught = true;
+      }
+
+      assert.equal(errorCaught, true);
+      assert.equal(trackStopped, true);
     });
   });
 

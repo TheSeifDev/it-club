@@ -17,7 +17,6 @@ import {
   Clock,
   Send,
   Info,
-  Lock,
   Power,
   ShieldAlert,
   Users,
@@ -25,6 +24,9 @@ import {
   FileText,
   Save,
   Check,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { parseClientQrPayload, isValidQrTokenFormat } from "../../../../lib/interviews/qr-client.ts";
@@ -56,6 +58,7 @@ export type CameraStatus =
   | "not_readable"
   | "overconstrained"
   | "insecure_context"
+  | "policy_blocked"
   | "error";
 
 export type ResultType =
@@ -206,6 +209,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
   const [cameraErrorInfo, setCameraErrorInfo] = useState<CameraErrorInfo | null>(null);
   const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>("");
+  const [showSettingsHelp, setShowSettingsHelp] = useState(false);
 
   // In-flight & scanning guard
   const [isProcessing, setIsProcessing] = useState(false);
@@ -247,6 +251,13 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
           setCameraErrorInfo(
             classifyCameraError(
               new Error("Unsupported browser: navigator.mediaDevices.getUserMedia is unavailable.")
+            )
+          );
+        } else if (!diag.isPermissionsPolicyAllowed) {
+          setCameraStatus("policy_blocked");
+          setCameraErrorInfo(
+            classifyCameraError(
+              new Error("Camera access is disallowed by Permissions Policy header.")
             )
           );
         }
@@ -562,18 +573,57 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
         return;
       }
 
+      if (!diag.isPermissionsPolicyAllowed) {
+        isStartingRef.current = false;
+        setCameraStatus("policy_blocked");
+        setCameraErrorInfo(
+          classifyCameraError(
+            new Error("Camera access is disallowed by Permissions Policy header.")
+          )
+        );
+        return;
+      }
+
       try {
         await stopCamera();
 
-        // Enumerate video devices safely
+        // 1. Invoke initial getUserMedia request directly inside the user's camera-start interaction
+        // Use a suitable initial constraint without requiring a specific resolution, device label, or camera ID
+        let initialStream: MediaStream | null = null;
+        try {
+          initialStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" },
+            },
+            audio: false,
+          });
+        } finally {
+          // Immediately release the initial stream tracks so it doesn't lock hardware or compete with html5-qrcode
+          if (initialStream) {
+            initialStream.getTracks().forEach((track) => {
+              try {
+                track.stop();
+              } catch {
+                // ignore
+              }
+            });
+          }
+        }
+
+        if (!isMountedRef.current) {
+          isStartingRef.current = false;
+          return;
+        }
+
+        // 2. Enumerate available video devices now that permission has been granted
         let cameras: Array<{ id: string; label: string }> = [];
         try {
           cameras = await Html5Qrcode.getCameras();
-          if (isMountedRef.current) {
+          if (isMountedRef.current && cameras.length > 0) {
             setAvailableCameras(cameras);
           }
-        } catch {
-          // If getCameras fails or permissions prompt needed first, continue to start
+        } catch (camErr) {
+          console.warn("[scanner] Failed to enumerate cameras after permission grant:", camErr);
         }
 
         if (!isMountedRef.current) {
@@ -586,17 +636,31 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
 
         // Config priority:
         // 1. Explicit cameraId selected by staff
-        // 2. Mobile rear camera { facingMode: "environment" }
-        // 3. Fallback to first enumerated camera id
-        const cameraConfig = cameraId
-          ? { deviceId: { exact: cameraId } }
-          : { facingMode: "environment" };
+        // 2. If availableCameras has a rear/back labeled camera, use its deviceId
+        // 3. Mobile rear camera { facingMode: "environment" }
+        // 4. Fallback to first enumerated camera id
+        let cameraConfig: string | { deviceId: { exact: string } } | { facingMode: string } = {
+          facingMode: "environment",
+        };
+
+        if (cameraId) {
+          cameraConfig = { deviceId: { exact: cameraId } };
+        } else {
+          const rearCam = cameras.find((c) =>
+            /back|rear|environment/i.test(c.label)
+          );
+          if (rearCam) {
+            cameraConfig = { deviceId: { exact: rearCam.id } };
+            setSelectedCameraId(rearCam.id);
+          } else {
+            cameraConfig = { facingMode: "environment" };
+          }
+        }
 
         const scannerConfig = {
           fps: 12,
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
             const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-            // Responsive mobile-friendly scan window size
             const size = Math.floor(minDim * 0.72);
             return { width: Math.max(size, 200), height: Math.max(size, 200) };
           },
@@ -616,13 +680,14 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
         try {
           await scanner.start(cameraConfig, scannerConfig, onScanSuccess, onScanFailure);
         } catch (initialErr: unknown) {
-          // If environment constraint failed (OverconstrainedError) on devices without back camera,
-          // automatically retry with unconstrained fallback or front camera
           const classified = classifyCameraError(initialErr);
-          if (classified.code === "overconstrained" || !cameraId) {
+          // Only retry with generic fallback if constraint or device error occurred, NEVER on permission denial!
+          if (classified.code === "overconstrained" || classified.code === "not_found") {
             console.info("[scanner] Retrying with generic camera constraints...");
+            const fallbackTarget =
+              cameras.length > 0 ? cameras[0].id : { facingMode: "user" };
             await scanner.start(
-              cameras.length > 0 ? cameras[0].id : { facingMode: "user" },
+              fallbackTarget,
               scannerConfig,
               onScanSuccess,
               onScanFailure
@@ -634,40 +699,50 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
 
         if (isMountedRef.current) {
           setCameraStatus("scanning");
-          // Re-enumerate cameras now that permission has been granted so labels appear
+          setCameraErrorInfo(null);
+          setShowSettingsHelp(false);
+
+          // Re-enumerate cameras to ensure any remaining labels are fresh
           try {
             const refreshedCameras = await Html5Qrcode.getCameras();
             if (isMountedRef.current && refreshedCameras.length > 0) {
               setAvailableCameras(refreshedCameras);
             }
           } catch {
-            // Ignore background re-enumeration errors
+            // ignore
           }
         }
       } catch (err: unknown) {
         if (!isMountedRef.current) return;
 
+        // Clean up scanner on failure
+        await stopCamera();
+
         const info = classifyCameraError(err);
         setCameraErrorInfo(info);
 
         if (info.isExpectedDenial) {
-          // Non-alarming diagnostic logging for normal permission rejection
           console.info(
             "[scanner] Camera permission denied by user or browser policy:",
             info.message
           );
           setCameraStatus("permission_denied");
+        } else if (info.code === "policy_blocked") {
+          console.warn("[scanner] Camera blocked by Permissions-Policy:", info.message);
+          setCameraStatus("policy_blocked");
         } else if (info.code === "not_found") {
           console.warn("[scanner] No camera hardware found:", info.message);
           setCameraStatus("no_cameras");
         } else if (info.code === "not_readable") {
           console.warn("[scanner] Camera hardware locked or in use:", info.message);
           setCameraStatus("not_readable");
+        } else if (info.code === "overconstrained") {
+          console.warn("[scanner] Camera constraints unsupported:", info.message);
+          setCameraStatus("overconstrained");
         } else if (info.code === "insecure_context") {
           console.warn("[scanner] Insecure context:", info.message);
           setCameraStatus("insecure_context");
         } else {
-          // Real unexpected failure: retain error logging without leaking tokens or applicant data
           console.error("[scanner] Unexpected camera initialization failure:", info.message);
           setCameraStatus("error");
         }
@@ -980,9 +1055,9 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                           ? "bg-[#18c8ed] animate-ping"
                           : cameraStatus === "scanning"
                           ? "bg-[#00e599] animate-pulse"
-                          : cameraStatus === "permission_denied" || cameraStatus === "error"
+                          : cameraStatus === "permission_denied" || cameraStatus === "policy_blocked" || cameraStatus === "error"
                           ? "bg-rose-500"
-                          : cameraStatus === "no_cameras" || cameraStatus === "not_readable"
+                          : cameraStatus === "no_cameras" || cameraStatus === "not_readable" || cameraStatus === "overconstrained"
                           ? "bg-amber-400"
                           : "bg-white/40"
                       }`}
@@ -996,10 +1071,14 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         ? "REQUESTING CAMERA ACCESS..."
                         : cameraStatus === "permission_denied"
                         ? "PERMISSION DENIED"
+                        : cameraStatus === "policy_blocked"
+                        ? "BLOCKED BY PERMISSIONS POLICY"
                         : cameraStatus === "no_cameras"
                         ? "NO CAMERA FOUND"
                         : cameraStatus === "not_readable"
                         ? "CAMERA HARDWARE BUSY"
+                        : cameraStatus === "overconstrained"
+                        ? "CONSTRAINTS UNSUPPORTED"
                         : cameraStatus === "insecure_context"
                         ? "INSECURE CONTEXT (HTTPS REQUIRED)"
                         : "CAMERA READY TO START"}
@@ -1135,7 +1214,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                     </div>
                   )}
 
-                  {/* State 3: PERMISSION DENIED (Comprehensive Instructions + Try Again + Manual Entry) */}
+                  {/* State 3: PERMISSION DENIED (Comprehensive Mobile Instructions + Camera Settings Help + Try Again + Manual Entry) */}
                   {cameraStatus === "permission_denied" && (
                     <div
                       id="scanner-permission-denied-panel"
@@ -1155,20 +1234,91 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         </p>
                       </div>
 
-                      {/* Step-by-Step Instructions */}
-                      <div className="w-full max-w-sm bg-[#050708] border border-white/10 p-3 text-left space-y-2">
-                        <span className="text-[10px] font-mono text-[#00e599] uppercase font-bold flex items-center gap-1.5">
-                          <Lock size={12} />
-                          <span>HOW TO ENABLE CAMERA ACCESS:</span>
-                        </span>
-                        <ol className="text-[11px] font-mono text-white/60 space-y-1.5 list-decimal list-inside leading-relaxed">
-                          <li>Click the camera or lock icon in your browser address bar.</li>
-                          <li>Change camera permission from &quot;Block&quot; to &quot;Allow&quot;.</li>
-                          <li>Click &quot;Try Again&quot; below or reload this page.</li>
-                        </ol>
+                      {/* Expandable Camera Settings Help */}
+                      <div className="w-full max-w-sm text-left">
+                        <button
+                          type="button"
+                          id="btn-camera-settings-help"
+                          onClick={() => setShowSettingsHelp(!showSettingsHelp)}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#050708] border border-white/10 hover:border-[#00e599]/40 text-left transition-colors font-mono text-xs text-[#00e599] cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 font-bold uppercase text-[11px]">
+                            <Sliders size={13} />
+                            <span>CAMERA SETTINGS HELP</span>
+                          </span>
+                          {showSettingsHelp ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
+
+                        {showSettingsHelp && (
+                          <div
+                            id="camera-settings-help-content"
+                            className="p-3.5 bg-[#050708] border-x border-b border-white/10 space-y-3 text-[11px] font-mono text-white/70 leading-relaxed max-h-60 overflow-y-auto"
+                          >
+                            <div className="space-y-1">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Mobile Chrome (Android &amp; iOS):
+                              </span>
+                              <p className="text-white/60">
+                                1. Tap the page controls icon (tune / sliders or lock icon) beside the address bar, or tap menu (⋮) &gt; Settings &gt; Site settings &gt; Camera.
+                              </p>
+                              <p className="text-white/60">
+                                2. Set Camera to <strong>Allow</strong> for this site.
+                              </p>
+                              <p className="text-white/60">
+                                3. <strong>Android System Permission:</strong> If Chrome lacks device permission, open Android Settings &gt; Apps &gt; Chrome &gt; Permissions &gt; Camera &gt; select &quot;Allow only while using the app&quot;.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1 pt-1 border-t border-white/10">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Mobile Safari (iOS):
+                              </span>
+                              <p className="text-white/60">
+                                1. Tap the <strong>aA</strong> or page settings icon in the address bar &gt; Website Settings &gt; Camera &gt; <strong>Allow</strong>.
+                              </p>
+                              <p className="text-white/60">
+                                2. In iOS Settings: open Settings &gt; Safari &gt; Camera &gt; set to <strong>Ask</strong> or <strong>Allow</strong>.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1 pt-1 border-t border-white/10">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Desktop Chrome / Edge / Brave:
+                              </span>
+                              <p className="text-white/60">
+                                Click the site controls icon beside the URL in the address bar and switch Camera to <strong>Allow</strong>.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Two Obvious Primary Actions: Try Again + Manual Entry */}
+                      {/* Working camera selector if multiple sensors enumerated */}
+                      {availableCameras.length > 1 && (
+                        <div className="w-full max-w-sm flex items-center gap-2">
+                          <label htmlFor="recovery-camera-select" className="text-[10px] font-mono text-white/50 uppercase whitespace-nowrap">
+                            CHOOSE CAMERA:
+                          </label>
+                          <select
+                            id="recovery-camera-select"
+                            value={selectedCameraId}
+                            onChange={(e) => {
+                              setSelectedCameraId(e.target.value);
+                              startCamera(e.target.value);
+                            }}
+                            className="w-full bg-[#050708] border border-white/15 text-xs font-mono text-white/90 px-2 py-1.5 focus:border-[#00e599] focus:outline-none"
+                          >
+                            <option value="">Default (Rear Camera)</option>
+                            {availableCameras.map((cam, idx) => (
+                              <option key={cam.id} value={cam.id}>
+                                {cam.label || `Camera ${idx + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Primary Actions: Try Again + Manual Entry */}
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
                         <button
                           type="button"
@@ -1183,6 +1333,120 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         <button
                           type="button"
                           id="btn-permission-use-manual"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={13} />
+                          <span>ENTER TOKEN MANUALLY</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 3b: POLICY BLOCKED */}
+                  {cameraStatus === "policy_blocked" && (
+                    <div
+                      id="scanner-policy-blocked-panel"
+                      className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <ShieldAlert size={24} />
+                      </div>
+
+                      <div className="space-y-1.5 max-w-sm">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA BLOCKED BY POLICY
+                        </h3>
+                        <p className="text-xs text-white/70 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "Camera access is restricted by the website's Permissions-Policy header."}
+                        </p>
+                      </div>
+
+                      <div className="w-full max-w-sm bg-[#050708] border border-white/10 p-3 text-left space-y-1.5 text-[11px] font-mono text-white/60">
+                        <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                          SECURITY POLICY INSTRUCTIONS:
+                        </span>
+                        <p>1. The Permissions-Policy response header must specify camera=(self).</p>
+                        <p>2. If embedded in an iframe, the frame must include allow=&quot;camera&quot;.</p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
+                        <button
+                          type="button"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          <RefreshCw size={13} />
+                          <span>RETRY DETECTION</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={13} />
+                          <span>ENTER TOKEN MANUALLY</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 3c: OVERCONSTRAINED */}
+                  {cameraStatus === "overconstrained" && (
+                    <div
+                      id="scanner-overconstrained-panel"
+                      className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-amber-500/40 bg-amber-500/10 text-amber-400 shrink-0">
+                        <CameraOff size={24} />
+                      </div>
+
+                      <div className="space-y-1.5 max-w-sm">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA CONSTRAINTS UNSUPPORTED
+                        </h3>
+                        <p className="text-xs text-white/70 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "The requested camera sensor could not be started with the current constraints."}
+                        </p>
+                      </div>
+
+                      {availableCameras.length > 1 && (
+                        <div className="w-full max-w-sm flex items-center gap-2">
+                          <label htmlFor="overconstrained-camera-select" className="text-[10px] font-mono text-white/50 uppercase whitespace-nowrap">
+                            CHOOSE CAMERA:
+                          </label>
+                          <select
+                            id="overconstrained-camera-select"
+                            value={selectedCameraId}
+                            onChange={(e) => {
+                              setSelectedCameraId(e.target.value);
+                              startCamera(e.target.value);
+                            }}
+                            className="w-full bg-[#050708] border border-white/15 text-xs font-mono text-white/90 px-2 py-1.5 focus:border-[#00e599] focus:outline-none"
+                          >
+                            <option value="">Default (Rear Camera)</option>
+                            {availableCameras.map((cam, idx) => (
+                              <option key={cam.id} value={cam.id}>
+                                {cam.label || `Camera ${idx + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
+                        <button
+                          type="button"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          <RefreshCw size={13} />
+                          <span>TRY AGAIN</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleSwitchMode("manual")}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
                         >

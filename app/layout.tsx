@@ -37,9 +37,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/icon.webp", type: "image/webp", sizes: "32x32" },
+      { url: "/icon-192.webp", type: "image/webp", sizes: "192x192" },
+      { url: "/icon-512.webp", type: "image/webp", sizes: "512x512" },
     ],
     apple: [
       { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
@@ -58,11 +58,11 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-itclub.png",
+        url: "/og-itclub.webp",
         width: 1200,
         height: 630,
         alt: "IT Club — Recruitment 2026 | BATU",
-        type: "image/png",
+        type: "image/webp",
       },
     ],
   },
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     title: "IT Club — Recruitment 2026 | BATU",
     description:
       "Join IT Club at Borg Al Arab Technological University. Learn, build, collaborate, and grow with a community of ambitious students.",
-    images: ["/og-itclub.png"],
+    images: ["/og-itclub.webp"],
   },
 };
 

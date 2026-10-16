@@ -6,11 +6,55 @@ import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitati
 import { renderShortlistedInvitationEmail } from "./templates/shortlisted-invitation.ts";
 import { renderInterviewScheduledEmail } from "./templates/interview-scheduled.ts";
 import { recordAuditEvent } from "../audit/service.ts";
+import { validatePersonalEmail } from "../validation/university-email.ts";
+
+export interface ResolvedRecipient {
+  recipientEmail: string;
+  authEmail: string;
+  source: "google_email" | "university_email_fallback";
+  isFallback: boolean;
+  reason?: string;
+}
+
+/**
+ * Resolves the student notification delivery recipient according to official policy:
+ * 1. Uses `google_email` (student's personal Gmail) when present and valid.
+ * 2. Uses `university_email` ONLY as a documented fallback when personal Google email is missing or invalid.
+ * 3. Never silently sends to both addresses.
+ * 4. Supabase Auth remains strictly bound to `university_email`.
+ */
+export function resolveNotificationRecipient(input: {
+  googleEmail?: string | null;
+  universityEmail: string;
+}): ResolvedRecipient {
+  const authEmail = (input.universityEmail || "").trim().toLowerCase();
+  const rawGoogle = input.googleEmail?.trim();
+
+  if (rawGoogle) {
+    const val = validatePersonalEmail(rawGoogle);
+    if (val.isValid && val.normalized) {
+      return {
+        recipientEmail: val.normalized,
+        authEmail,
+        source: "google_email",
+        isFallback: false,
+      };
+    }
+  }
+
+  return {
+    recipientEmail: authEmail,
+    authEmail,
+    source: "university_email_fallback",
+    isFallback: true,
+    reason: rawGoogle ? "INVALID_GOOGLE_EMAIL" : "MISSING_GOOGLE_EMAIL",
+  };
+}
 
 export interface SendRegistrationReceiptInput {
   applicationId: string;
   applicationReference: string;
-  recipientEmail: string;
+  recipientEmail?: string;
   fullName: string;
   academicId?: string | null;
   academicYear: string;
@@ -34,7 +78,9 @@ export interface SendRegistrationReceiptInput {
 export interface SendAcceptanceInvitationInput {
   applicationId: string;
   applicationReference: string;
-  recipientEmail: string;
+  recipientEmail?: string;
+  universityEmail?: string;
+  googleEmail?: string | null;
   fullName: string;
   primaryTrack: string;
 }
@@ -42,7 +88,9 @@ export interface SendAcceptanceInvitationInput {
 export interface SendShortlistedInvitationInput {
   applicationId: string;
   applicationReference: string;
-  recipientEmail: string;
+  recipientEmail?: string;
+  universityEmail?: string;
+  googleEmail?: string | null;
   fullName: string;
   primaryTrack: string;
 }
@@ -50,7 +98,9 @@ export interface SendShortlistedInvitationInput {
 export interface SendInterviewScheduledInput {
   applicationId: string;
   applicationReference: string;
-  recipientEmail: string;
+  recipientEmail?: string;
+  universityEmail?: string;
+  googleEmail?: string | null;
   fullName: string;
   primaryTrack: string;
   interviewDate: string;
@@ -65,6 +115,9 @@ export interface NotificationSendResult {
   notificationId?: string;
   providerMessageId?: string;
   safeReason?: string;
+  recipientEmail?: string;
+  authEmail?: string;
+  isFallback?: boolean;
 }
 
 export interface SendReceiptOptions {
@@ -105,10 +158,33 @@ export async function sendRegistrationReceipt(
   let attemptCount = 1;
 
   try {
+    // 0. Recipient Resolution: Google email by default, university email as fallback
+    let uniEmail = input.universityEmail || input.recipientEmail || "";
+    let googleEmail = input.googleEmail;
+
+    if ((!googleEmail || !uniEmail) && input.applicationId) {
+      const { data: appRecord } = await serviceClient
+        .from("applications")
+        .select("university_email, google_email")
+        .eq("id", input.applicationId)
+        .maybeSingle();
+
+      if (appRecord) {
+        if (!uniEmail) uniEmail = appRecord.university_email;
+        if (googleEmail === undefined) googleEmail = appRecord.google_email;
+      }
+    }
+
+    const resolved = resolveNotificationRecipient({
+      googleEmail,
+      universityEmail: uniEmail,
+    });
+    const destinationEmail = resolved.recipientEmail;
+
     // 1. Idempotency Check: lookup existing notification record
     const { data: existing, error: lookupErr } = await serviceClient
       .from("application_notifications")
-      .select("id, delivery_status, attempt_count, provider_message_id")
+      .select("id, delivery_status, attempt_count, provider_message_id, recipient_email")
       .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
 
@@ -130,16 +206,20 @@ export async function sendRegistrationReceipt(
           status: "already_sent",
           notificationId: existing.id,
           providerMessageId: existing.provider_message_id || undefined,
+          recipientEmail: existing.recipient_email,
+          authEmail: resolved.authEmail,
+          isFallback: resolved.isFallback,
         };
       }
 
-      // Update attempt count and timestamp
+      // Update attempt count, timestamp, and recipient
       await serviceClient
         .from("application_notifications")
         .update({
           attempt_count: attemptCount,
           attempted_at: now,
           delivery_status: "PENDING",
+          recipient_email: destinationEmail,
         })
         .eq("id", existing.id);
     } else {
@@ -150,7 +230,7 @@ export async function sendRegistrationReceipt(
           application_id: input.applicationId,
           notification_type: "REGISTRATION_RECEIPT",
           idempotency_key: idempotencyKey,
-          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          recipient_email: destinationEmail,
           delivery_status: "PENDING",
           attempt_count: 1,
           attempted_at: now,
@@ -165,6 +245,9 @@ export async function sendRegistrationReceipt(
             success: true,
             status: "already_sent",
             safeReason: "CONCURRENT_NOTIFICATION_ATTEMPT",
+            recipientEmail: destinationEmail,
+            authEmail: resolved.authEmail,
+            isFallback: resolved.isFallback,
           };
         }
         console.error(
@@ -188,6 +271,9 @@ export async function sendRegistrationReceipt(
         status: "pending",
         notificationId,
         safeReason: "QUEUED_FOR_OUTBOX_DELIVERY",
+        recipientEmail: destinationEmail,
+        authEmail: resolved.authEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -209,6 +295,9 @@ export async function sendRegistrationReceipt(
         status: "unconfigured",
         notificationId,
         safeReason: "PROVIDER_NOT_CONFIGURED",
+        recipientEmail: destinationEmail,
+        authEmail: resolved.authEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -222,8 +311,8 @@ export async function sendRegistrationReceipt(
       academicYear: input.academicYear,
       department: input.department,
       academicId: input.academicId,
-      universityEmail: input.universityEmail || input.recipientEmail,
-      googleEmail: input.googleEmail,
+      universityEmail: resolved.authEmail,
+      googleEmail: resolved.isFallback ? null : destinationEmail,
       phone: input.phone,
       whatsapp: input.whatsapp,
       experienceLevel: input.experienceLevel,
@@ -259,7 +348,7 @@ export async function sendRegistrationReceipt(
     const mailResult = await Promise.race([
       sendMail({
         from: config.from,
-        to: input.recipientEmail.trim().toLowerCase(),
+        to: destinationEmail,
         subject,
         html,
         text,
@@ -278,6 +367,9 @@ export async function sendRegistrationReceipt(
           status: "pending",
           notificationId,
           safeReason: "DISPATCH_TIMED_OUT_QUEUED",
+          recipientEmail: destinationEmail,
+          authEmail: resolved.authEmail,
+          isFallback: resolved.isFallback,
         };
       }
       const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
@@ -294,6 +386,7 @@ export async function sendRegistrationReceipt(
             delivery_status: "FAILED",
             safe_error_category: safeReason,
             error_message: safeMsg,
+            recipient_email: destinationEmail,
           })
           .eq("id", notificationId);
       }
@@ -306,7 +399,9 @@ export async function sendRegistrationReceipt(
         entityReference: input.applicationReference,
         metadata: {
           notificationType: "REGISTRATION_RECEIPT",
-          recipient: input.recipientEmail.trim().toLowerCase(),
+          recipient: destinationEmail,
+          authEmail: resolved.authEmail,
+          isFallback: resolved.isFallback,
         },
         outcome: "FAILURE",
         errorCategory: safeReason,
@@ -317,6 +412,9 @@ export async function sendRegistrationReceipt(
         status: "failed",
         notificationId,
         safeReason,
+        recipientEmail: destinationEmail,
+        authEmail: resolved.authEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -327,6 +425,7 @@ export async function sendRegistrationReceipt(
         .from("application_notifications")
         .update({
           delivery_status: "SENT",
+          recipient_email: destinationEmail,
           provider_message_id: providerMessageId,
           completed_at: new Date().toISOString(),
           error_message: null,
@@ -343,7 +442,9 @@ export async function sendRegistrationReceipt(
       entityReference: input.applicationReference,
       metadata: {
         notificationType: "REGISTRATION_RECEIPT",
-        recipient: input.recipientEmail.trim().toLowerCase(),
+        recipient: destinationEmail,
+        authEmail: resolved.authEmail,
+        isFallback: resolved.isFallback,
         providerMessageId,
       },
       outcome: "SUCCESS",
@@ -354,6 +455,9 @@ export async function sendRegistrationReceipt(
       status: "sent",
       notificationId,
       providerMessageId,
+      recipientEmail: destinationEmail,
+      authEmail: resolved.authEmail,
+      isFallback: resolved.isFallback,
     };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -430,6 +534,36 @@ export async function sendAcceptanceInvitation(
   let attemptCount = 1;
 
   try {
+    // 0. Recipient Resolution: Google email by default, university email as fallback
+    let uniEmail = input.universityEmail || input.recipientEmail || "";
+    let googleEmail = input.googleEmail;
+
+    if ((!googleEmail || !uniEmail) && input.applicationId) {
+      try {
+        const { data: appData } = await serviceClient
+          .from("applications")
+          .select("university_email, google_email")
+          .eq("id", input.applicationId)
+          .maybeSingle();
+
+        if (appData) {
+          if (!uniEmail && appData.university_email) uniEmail = appData.university_email;
+          if (googleEmail === undefined && appData.google_email !== undefined) {
+            googleEmail = appData.google_email;
+          }
+        }
+      } catch {
+        // Fallback to input params
+      }
+    }
+
+    const resolved = resolveNotificationRecipient({
+      googleEmail,
+      universityEmail: uniEmail,
+    });
+    const destinationEmail = resolved.recipientEmail;
+    const cleanAuthEmail = resolved.authEmail;
+
     // 1. Idempotency Check
     const { data: existing, error: lookupErr } = await serviceClient
       .from("application_notifications")
@@ -454,6 +588,9 @@ export async function sendAcceptanceInvitation(
           status: "already_sent",
           notificationId: existing.id,
           providerMessageId: existing.provider_message_id || undefined,
+          recipientEmail: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         };
       }
 
@@ -463,6 +600,7 @@ export async function sendAcceptanceInvitation(
           attempt_count: attemptCount,
           attempted_at: now,
           delivery_status: "PENDING",
+          recipient_email: destinationEmail,
         })
         .eq("id", existing.id);
     } else {
@@ -472,7 +610,7 @@ export async function sendAcceptanceInvitation(
           application_id: input.applicationId,
           notification_type: "ACCEPTANCE_INVITATION",
           idempotency_key: idempotencyKey,
-          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          recipient_email: destinationEmail,
           delivery_status: "PENDING",
           attempt_count: 1,
           attempted_at: now,
@@ -486,6 +624,9 @@ export async function sendAcceptanceInvitation(
             success: true,
             status: "already_sent",
             safeReason: "CONCURRENT_INVITATION_ATTEMPT",
+            recipientEmail: destinationEmail,
+            authEmail: cleanAuthEmail,
+            isFallback: resolved.isFallback,
           };
         }
         console.error(
@@ -497,9 +638,8 @@ export async function sendAcceptanceInvitation(
       }
     }
 
-    // 2. Generate Secure Activation Link via Supabase Auth Admin
+    // 2. Generate Secure Activation Link via Supabase Auth Admin (Strictly for university email)
     const config = getEmailConfig();
-    const cleanEmail = input.recipientEmail.trim().toLowerCase();
     const redirectUrl = `${config.appBaseUrl}/auth/confirm?next=/student/activate`;
 
     let actionLink: string | null = null;
@@ -508,7 +648,7 @@ export async function sendAcceptanceInvitation(
 
     const linkRes = await serviceClient.auth.admin.generateLink({
       type: "invite",
-      email: cleanEmail,
+      email: cleanAuthEmail,
       options: {
         redirectTo: redirectUrl,
       },
@@ -523,7 +663,7 @@ export async function sendAcceptanceInvitation(
         const { data: conflictingAccount } = await serviceClient
           .from("student_accounts")
           .select("application_id")
-          .eq("university_email", cleanEmail)
+          .eq("university_email", cleanAuthEmail)
           .maybeSingle();
 
         if (conflictingAccount && conflictingAccount.application_id !== input.applicationId) {
@@ -543,6 +683,9 @@ export async function sendAcceptanceInvitation(
             status: "failed",
             notificationId,
             safeReason: "ACCOUNT_CONFLICT",
+            recipientEmail: destinationEmail,
+            authEmail: cleanAuthEmail,
+            isFallback: resolved.isFallback,
           };
         }
 
@@ -550,7 +693,7 @@ export async function sendAcceptanceInvitation(
         verificationType = "recovery";
         const recoveryRes = await serviceClient.auth.admin.generateLink({
           type: "recovery",
-          email: cleanEmail,
+          email: cleanAuthEmail,
           options: {
             redirectTo: redirectUrl,
           },
@@ -597,6 +740,9 @@ export async function sendAcceptanceInvitation(
         status: "unconfigured",
         notificationId,
         safeReason: "PROVIDER_NOT_CONFIGURED",
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -609,10 +755,10 @@ export async function sendAcceptanceInvitation(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 5. Dispatch via Gmail SMTP
+    // 5. Dispatch via Gmail SMTP to resolved personal recipient
     const mailResult = await sendMail({
       from: config.from,
-      to: cleanEmail,
+      to: destinationEmail,
       subject,
       html,
       text,
@@ -645,7 +791,9 @@ export async function sendAcceptanceInvitation(
         entityReference: input.applicationReference,
         metadata: {
           notificationType: "ACCEPTANCE_INVITATION",
-          recipient: cleanEmail,
+          recipient: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         },
         outcome: "FAILURE",
         errorCategory: safeReason,
@@ -656,6 +804,9 @@ export async function sendAcceptanceInvitation(
         status: "failed",
         notificationId,
         safeReason,
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -682,7 +833,9 @@ export async function sendAcceptanceInvitation(
       entityReference: input.applicationReference,
       metadata: {
         notificationType: "ACCEPTANCE_INVITATION",
-        recipient: cleanEmail,
+        recipient: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
         providerMessageId,
       },
       outcome: "SUCCESS",
@@ -693,6 +846,9 @@ export async function sendAcceptanceInvitation(
       status: "sent",
       notificationId,
       providerMessageId,
+      recipientEmail: destinationEmail,
+      authEmail: cleanAuthEmail,
+      isFallback: resolved.isFallback,
     };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -742,6 +898,36 @@ export async function sendShortlistedInvitation(
   let attemptCount = 1;
 
   try {
+    // 0. Recipient Resolution: Google email by default, university email as fallback
+    let uniEmail = input.universityEmail || input.recipientEmail || "";
+    let googleEmail = input.googleEmail;
+
+    if ((!googleEmail || !uniEmail) && input.applicationId) {
+      try {
+        const { data: appData } = await serviceClient
+          .from("applications")
+          .select("university_email, google_email")
+          .eq("id", input.applicationId)
+          .maybeSingle();
+
+        if (appData) {
+          if (!uniEmail && appData.university_email) uniEmail = appData.university_email;
+          if (googleEmail === undefined && appData.google_email !== undefined) {
+            googleEmail = appData.google_email;
+          }
+        }
+      } catch {
+        // Fallback to input params
+      }
+    }
+
+    const resolved = resolveNotificationRecipient({
+      googleEmail,
+      universityEmail: uniEmail,
+    });
+    const destinationEmail = resolved.recipientEmail;
+    const cleanAuthEmail = resolved.authEmail;
+
     // 1. Idempotency Check
     const { data: existing, error: lookupErr } = await serviceClient
       .from("application_notifications")
@@ -766,6 +952,9 @@ export async function sendShortlistedInvitation(
           status: "already_sent",
           notificationId: existing.id,
           providerMessageId: existing.provider_message_id,
+          recipientEmail: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         };
       }
 
@@ -775,6 +964,7 @@ export async function sendShortlistedInvitation(
           attempt_count: attemptCount,
           attempted_at: now,
           delivery_status: "PENDING",
+          recipient_email: destinationEmail,
         })
         .eq("id", existing.id);
     } else {
@@ -784,7 +974,7 @@ export async function sendShortlistedInvitation(
           application_id: input.applicationId,
           notification_type: "SHORTLISTED_INVITATION",
           idempotency_key: idempotencyKey,
-          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          recipient_email: destinationEmail,
           delivery_status: "PENDING",
           attempt_count: 1,
           attempted_at: now,
@@ -798,6 +988,9 @@ export async function sendShortlistedInvitation(
             success: true,
             status: "already_sent",
             safeReason: "CONCURRENT_INVITATION_ATTEMPT",
+            recipientEmail: destinationEmail,
+            authEmail: cleanAuthEmail,
+            isFallback: resolved.isFallback,
           };
         }
         console.error(
@@ -809,9 +1002,8 @@ export async function sendShortlistedInvitation(
       }
     }
 
-    // 2. Generate Secure Activation Link via Supabase Auth Admin
+    // 2. Generate Secure Activation Link via Supabase Auth Admin (Strictly bound to university email)
     const config = getEmailConfig();
-    const cleanEmail = input.recipientEmail.trim().toLowerCase();
     const redirectUrl = `${config.appBaseUrl}/auth/confirm?next=/student/activate`;
 
     let actionLink: string | null = null;
@@ -820,7 +1012,7 @@ export async function sendShortlistedInvitation(
 
     const linkRes = await serviceClient.auth.admin.generateLink({
       type: "invite",
-      email: cleanEmail,
+      email: cleanAuthEmail,
       options: {
         redirectTo: redirectUrl,
       },
@@ -835,7 +1027,7 @@ export async function sendShortlistedInvitation(
         const { data: conflictingAccount } = await serviceClient
           .from("student_accounts")
           .select("application_id")
-          .eq("university_email", cleanEmail)
+          .eq("university_email", cleanAuthEmail)
           .maybeSingle();
 
         if (conflictingAccount && conflictingAccount.application_id !== input.applicationId) {
@@ -855,6 +1047,9 @@ export async function sendShortlistedInvitation(
             status: "failed",
             notificationId,
             safeReason: "ACCOUNT_CONFLICT",
+            recipientEmail: destinationEmail,
+            authEmail: cleanAuthEmail,
+            isFallback: resolved.isFallback,
           };
         }
 
@@ -862,7 +1057,7 @@ export async function sendShortlistedInvitation(
         verificationType = "recovery";
         const recoveryRes = await serviceClient.auth.admin.generateLink({
           type: "recovery",
-          email: cleanEmail,
+          email: cleanAuthEmail,
           options: {
             redirectTo: redirectUrl,
           },
@@ -909,6 +1104,9 @@ export async function sendShortlistedInvitation(
         status: "unconfigured",
         notificationId,
         safeReason: "PROVIDER_NOT_CONFIGURED",
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -921,10 +1119,10 @@ export async function sendShortlistedInvitation(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 5. Dispatch via Gmail SMTP
+    // 5. Dispatch via Gmail SMTP to resolved personal recipient
     const mailResult = await sendMail({
       from: config.from,
-      to: cleanEmail,
+      to: destinationEmail,
       subject,
       html,
       text,
@@ -957,7 +1155,9 @@ export async function sendShortlistedInvitation(
         entityReference: input.applicationReference,
         metadata: {
           notificationType: "SHORTLISTED_INVITATION",
-          recipient: cleanEmail,
+          recipient: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         },
         outcome: "FAILURE",
         errorCategory: safeReason,
@@ -968,6 +1168,9 @@ export async function sendShortlistedInvitation(
         status: "failed",
         notificationId,
         safeReason,
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -994,7 +1197,9 @@ export async function sendShortlistedInvitation(
       entityReference: input.applicationReference,
       metadata: {
         notificationType: "SHORTLISTED_INVITATION",
-        recipient: cleanEmail,
+        recipient: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
         providerMessageId,
       },
       outcome: "SUCCESS",
@@ -1005,6 +1210,9 @@ export async function sendShortlistedInvitation(
       status: "sent",
       notificationId,
       providerMessageId,
+      recipientEmail: destinationEmail,
+      authEmail: cleanAuthEmail,
+      isFallback: resolved.isFallback,
     };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -1056,6 +1264,36 @@ export async function sendInterviewScheduled(
   let attemptCount = 1;
 
   try {
+    // 0. Recipient Resolution: Google email by default, university email as fallback
+    let uniEmail = input.universityEmail || input.recipientEmail || "";
+    let googleEmail = input.googleEmail;
+
+    if ((!googleEmail || !uniEmail) && input.applicationId) {
+      try {
+        const { data: appData } = await serviceClient
+          .from("applications")
+          .select("university_email, google_email")
+          .eq("id", input.applicationId)
+          .maybeSingle();
+
+        if (appData) {
+          if (!uniEmail && appData.university_email) uniEmail = appData.university_email;
+          if (googleEmail === undefined && appData.google_email !== undefined) {
+            googleEmail = appData.google_email;
+          }
+        }
+      } catch {
+        // Fallback to input params
+      }
+    }
+
+    const resolved = resolveNotificationRecipient({
+      googleEmail,
+      universityEmail: uniEmail,
+    });
+    const destinationEmail = resolved.recipientEmail;
+    const cleanAuthEmail = resolved.authEmail;
+
     // 1. Idempotency Check
     const { data: existing, error: lookupErr } = await serviceClient
       .from("application_notifications")
@@ -1080,6 +1318,9 @@ export async function sendInterviewScheduled(
           status: "already_sent",
           notificationId: existing.id,
           providerMessageId: existing.provider_message_id || undefined,
+          recipientEmail: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         };
       }
 
@@ -1089,6 +1330,7 @@ export async function sendInterviewScheduled(
           attempt_count: attemptCount,
           attempted_at: now,
           delivery_status: "PENDING",
+          recipient_email: destinationEmail,
         })
         .eq("id", existing.id);
     } else {
@@ -1098,7 +1340,7 @@ export async function sendInterviewScheduled(
           application_id: input.applicationId,
           notification_type: "INTERVIEW_SCHEDULED",
           idempotency_key: idempotencyKey,
-          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          recipient_email: destinationEmail,
           delivery_status: "PENDING",
           attempt_count: 1,
           attempted_at: now,
@@ -1112,6 +1354,9 @@ export async function sendInterviewScheduled(
             success: true,
             status: "already_sent",
             safeReason: "CONCURRENT_NOTIFICATION_ATTEMPT",
+            recipientEmail: destinationEmail,
+            authEmail: cleanAuthEmail,
+            isFallback: resolved.isFallback,
           };
         }
         console.error(
@@ -1141,6 +1386,9 @@ export async function sendInterviewScheduled(
         status: "unconfigured",
         notificationId,
         safeReason: "PROVIDER_NOT_CONFIGURED",
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -1157,10 +1405,10 @@ export async function sendInterviewScheduled(
       appBaseUrl: config.appBaseUrl,
     });
 
-    // 4. Dispatch Email via Gmail SMTP
+    // 4. Dispatch Email via Gmail SMTP to resolved personal recipient
     const mailResult = await sendMail({
       from: config.from,
-      to: input.recipientEmail.trim().toLowerCase(),
+      to: destinationEmail,
       subject,
       html,
       text,
@@ -1193,7 +1441,9 @@ export async function sendInterviewScheduled(
         entityReference: input.applicationReference,
         metadata: {
           notificationType: "INTERVIEW_SCHEDULED",
-          recipient: input.recipientEmail.trim().toLowerCase(),
+          recipient: destinationEmail,
+          authEmail: cleanAuthEmail,
+          isFallback: resolved.isFallback,
         },
         outcome: "FAILURE",
         errorCategory: safeReason,
@@ -1204,6 +1454,9 @@ export async function sendInterviewScheduled(
         status: "failed",
         notificationId,
         safeReason,
+        recipientEmail: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
       };
     }
 
@@ -1230,7 +1483,9 @@ export async function sendInterviewScheduled(
       entityReference: input.applicationReference,
       metadata: {
         notificationType: "INTERVIEW_SCHEDULED",
-        recipient: input.recipientEmail.trim().toLowerCase(),
+        recipient: destinationEmail,
+        authEmail: cleanAuthEmail,
+        isFallback: resolved.isFallback,
         providerMessageId,
       },
       outcome: "SUCCESS",
@@ -1241,6 +1496,9 @@ export async function sendInterviewScheduled(
       status: "sent",
       notificationId,
       providerMessageId,
+      recipientEmail: destinationEmail,
+      authEmail: cleanAuthEmail,
+      isFallback: resolved.isFallback,
     };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
@@ -1337,6 +1595,8 @@ export async function processPendingNotifications(
         res = await sendAcceptanceInvitation({
           applicationId: notif.application_id,
           applicationReference: app.application_reference,
+          universityEmail: app.university_email,
+          googleEmail: app.google_email,
           recipientEmail: notif.recipient_email,
           fullName: app.full_name,
           primaryTrack: app.primary_track,
@@ -1345,6 +1605,8 @@ export async function processPendingNotifications(
         res = await sendShortlistedInvitation({
           applicationId: notif.application_id,
           applicationReference: app.application_reference,
+          universityEmail: app.university_email,
+          googleEmail: app.google_email,
           recipientEmail: notif.recipient_email,
           fullName: app.full_name,
           primaryTrack: app.primary_track,
@@ -1366,6 +1628,8 @@ export async function processPendingNotifications(
         res = await sendInterviewScheduled({
           applicationId: notif.application_id,
           applicationReference: app.application_reference,
+          universityEmail: app.university_email,
+          googleEmail: app.google_email,
           recipientEmail: notif.recipient_email,
           fullName: app.full_name,
           primaryTrack: app.primary_track,
@@ -1431,6 +1695,9 @@ export interface ReissueInvitationResult {
   success: boolean;
   status: "sent" | "already_sent" | "unconfigured" | "failed";
   message: string;
+  recipientEmail?: string;
+  authEmail?: string;
+  isFallback?: boolean;
   providerMessageId?: string | null;
   safeReason?: string | null;
 }
@@ -1446,7 +1713,7 @@ export async function reissueInvitation(
   const serviceClient = getServiceRoleClient();
   const { data: app, error } = await serviceClient
     .from("applications")
-    .select("id, application_reference, full_name, primary_track, university_email, status, activated_at")
+    .select("id, application_reference, full_name, primary_track, university_email, google_email, status, activated_at")
     .eq("id", input.applicationId)
     .maybeSingle();
 
@@ -1468,13 +1735,20 @@ export async function reissueInvitation(
     };
   }
 
+  const resolved = resolveNotificationRecipient({
+    googleEmail: app.google_email,
+    universityEmail: app.university_email,
+  });
+
   let res: NotificationSendResult;
   if (app.status === "SHORTLISTED") {
     res = await sendShortlistedInvitation(
       {
         applicationId: app.id,
         applicationReference: app.application_reference,
-        recipientEmail: app.university_email,
+        universityEmail: app.university_email,
+        googleEmail: app.google_email,
+        recipientEmail: resolved.recipientEmail,
         fullName: app.full_name,
         primaryTrack: app.primary_track,
       },
@@ -1485,7 +1759,9 @@ export async function reissueInvitation(
       {
         applicationId: app.id,
         applicationReference: app.application_reference,
-        recipientEmail: app.university_email,
+        universityEmail: app.university_email,
+        googleEmail: app.google_email,
+        recipientEmail: resolved.recipientEmail,
         fullName: app.full_name,
         primaryTrack: app.primary_track,
       },
@@ -1493,11 +1769,16 @@ export async function reissueInvitation(
     );
   }
 
+  const targetEmail = res.recipientEmail || resolved.recipientEmail;
+
   return {
     success: res.success,
     status: res.status === "pending" ? "failed" : res.status,
+    recipientEmail: targetEmail,
+    authEmail: res.authEmail || resolved.authEmail,
+    isFallback: res.isFallback ?? resolved.isFallback,
     message: res.status === "sent"
-      ? `Invitation successfully dispatched to ${app.university_email}.`
+      ? `Invitation successfully dispatched to ${targetEmail}.`
       : res.status === "already_sent"
       ? "An active invitation has already been sent to this student within the 24-hour window."
       : res.status === "unconfigured"

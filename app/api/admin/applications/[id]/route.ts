@@ -206,7 +206,9 @@ export async function PATCH(
         const shortRes = await sendShortlistedInvitation({
           applicationId: result.application.id,
           applicationReference: result.application.application_reference,
-          recipientEmail: result.application.university_email,
+          universityEmail: result.application.university_email,
+          googleEmail: result.application.google_email,
+          recipientEmail: result.application.google_email || result.application.university_email,
           fullName: result.application.full_name,
           primaryTrack: result.application.primary_track,
         });
@@ -214,7 +216,7 @@ export async function PATCH(
         if (shortRes.status === "sent") {
           shortlistDelivery = {
             status: "sent",
-            message: "Shortlisted notification email dispatched with account activation link.",
+            message: `Shortlisted notification email dispatched to ${shortRes.recipientEmail || result.application.google_email || result.application.university_email} with account activation link.`,
           };
         } else if (shortRes.status === "already_sent") {
           shortlistDelivery = {
@@ -253,7 +255,9 @@ export async function PATCH(
         const invRes = await sendAcceptanceInvitation({
           applicationId: result.application.id,
           applicationReference: result.application.application_reference,
-          recipientEmail: result.application.university_email,
+          universityEmail: result.application.university_email,
+          googleEmail: result.application.google_email,
+          recipientEmail: result.application.google_email || result.application.university_email,
           fullName: result.application.full_name,
           primaryTrack: result.application.primary_track,
         });
@@ -261,7 +265,7 @@ export async function PATCH(
         if (invRes.status === "sent") {
           invitationDelivery = {
             status: "sent",
-            message: "Acceptance invitation email dispatched with activation link.",
+            message: `Acceptance invitation email dispatched to ${invRes.recipientEmail || result.application.google_email || result.application.university_email} with activation link.`,
           };
         } else if (invRes.status === "already_sent") {
           invitationDelivery = {
@@ -301,7 +305,9 @@ export async function PATCH(
         const intRes = await sendInterviewScheduled({
           applicationId: result.application.id,
           applicationReference: result.application.application_reference,
-          recipientEmail: result.application.university_email,
+          universityEmail: result.application.university_email,
+          googleEmail: result.application.google_email,
+          recipientEmail: result.application.google_email || result.application.university_email,
           fullName: result.application.full_name,
           primaryTrack: result.application.primary_track,
           interviewDate: result.application.interview_date,

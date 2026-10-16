@@ -1,13 +1,23 @@
-import { describe, it } from "node:test";
+import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { isQrEligibleStatus, isStudentPortalAllowedStatus } from "../lib/auth/student.ts";
-import { reissueInvitation, sendShortlistedInvitation } from "../lib/email/notification-service.ts";
+import {
+  resolveNotificationRecipient,
+  reissueInvitation,
+  sendShortlistedInvitation,
+  sendRegistrationReceipt,
+  sendAcceptanceInvitation,
+} from "../lib/email/notification-service.ts";
+import { setMockTransporter, resetMailerTransporter } from "../lib/email/mailer.ts";
 import { POST as resendInvitationRoute } from "../app/api/admin/applications/[id]/resend-invitation/route.ts";
 import { POST as activateStudentRoute } from "../app/api/student/activate/route.ts";
 import { GET as confirmAuthRoute } from "../app/auth/confirm/route.ts";
 import { NextRequest } from "next/server.js";
 
 describe("Shortlisted Student Login & Activation Fix Suite", () => {
+  afterEach(() => {
+    resetMailerTransporter();
+  });
   // 1. Domain Validation & Wrong Email Prevention
   describe("1. Email Domain & Credential Defense", () => {
     it("enforces canonical university email domain (@batechu.com) and rejects personal Gmail", () => {
@@ -161,6 +171,224 @@ describe("Shortlisted Student Login & Activation Fix Suite", () => {
 
       const res = await activateStudentRoute(req);
       assert.equal(res.status, 401); // Session expired check fires first
+    });
+  });
+
+  // 7. Student Notification Recipient Policy & Resolver
+  describe("7. Student Recipient Resolution Policy (Personal Gmail vs University Auth)", () => {
+    it("routes student notifications to valid google_email while preserving university_email auth identity", () => {
+      const resolved = resolveNotificationRecipient({
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      });
+
+      assert.equal(resolved.recipientEmail, "safalmoaz16@gmail.com");
+      assert.equal(resolved.authEmail, "2521233@batechu.com");
+      assert.equal(resolved.isFallback, false);
+      assert.equal(resolved.source, "google_email");
+    });
+
+    it("falls back safely to university_email when google_email is missing or null", () => {
+      const resolvedMissing = resolveNotificationRecipient({
+        universityEmail: "2521233@BATECHU.COM ",
+        googleEmail: null,
+      });
+
+      assert.equal(resolvedMissing.recipientEmail, "2521233@batechu.com");
+      assert.equal(resolvedMissing.authEmail, "2521233@batechu.com");
+      assert.equal(resolvedMissing.isFallback, true);
+      assert.equal(resolvedMissing.source, "university_email_fallback");
+      assert.equal(resolvedMissing.reason, "MISSING_GOOGLE_EMAIL");
+    });
+
+    it("falls back safely to university_email when google_email has invalid format", () => {
+      const resolvedInvalid = resolveNotificationRecipient({
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "not-a-valid-email",
+      });
+
+      assert.equal(resolvedInvalid.recipientEmail, "2521233@batechu.com");
+      assert.equal(resolvedInvalid.authEmail, "2521233@batechu.com");
+      assert.equal(resolvedInvalid.isFallback, true);
+      assert.equal(resolvedInvalid.reason, "INVALID_GOOGLE_EMAIL");
+    });
+
+    it("never silently sends to both addresses — exactly one recipient address is resolved", () => {
+      const resolved = resolveNotificationRecipient({
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      });
+
+      assert.equal(typeof resolved.recipientEmail, "string");
+      assert.equal(resolved.recipientEmail.includes(","), false);
+      assert.equal(resolved.recipientEmail.includes(";"), false);
+      assert.equal(resolved.recipientEmail, "safalmoaz16@gmail.com");
+    });
+  });
+
+  // 8. Registration Receipts Recipient Routing
+  describe("8. Registration Receipts Delivery Policy", () => {
+    it("dispatches registration receipt to personal Gmail when valid", async () => {
+      let dispatchedTo = "";
+      setMockTransporter({
+        sendMail: async (mailOpts: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          dispatchedTo = mailOpts.to;
+          return {
+            messageId: "<test_msg_reg_01@mock>",
+            accepted: [mailOpts.to],
+            rejected: [],
+            response: "250 OK",
+          };
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = await sendRegistrationReceipt({
+        applicationId: "00000000-0000-4000-a000-000000000001",
+        applicationReference: "ITC-REG0001",
+        fullName: "Applicant One",
+        academicYear: "second",
+        department: "CS",
+        primaryTrack: "it",
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.recipientEmail, "safalmoaz16@gmail.com");
+      assert.equal(result.authEmail, "2521233@batechu.com");
+      assert.equal(result.isFallback, false);
+      assert.equal(dispatchedTo, "safalmoaz16@gmail.com");
+    });
+
+    it("falls back to university email when personal Google email is missing in registration receipt", async () => {
+      let dispatchedTo = "";
+      setMockTransporter({
+        sendMail: async (mailOpts: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          dispatchedTo = mailOpts.to;
+          return {
+            messageId: "<test_msg_reg_02@mock>",
+            accepted: [mailOpts.to],
+            rejected: [],
+            response: "250 OK",
+          };
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = await sendRegistrationReceipt({
+        applicationId: "00000000-0000-4000-a000-000000000002",
+        applicationReference: "ITC-REG0002",
+        fullName: "Applicant Two",
+        academicYear: "second",
+        department: "CS",
+        primaryTrack: "it",
+        universityEmail: "2521233@batechu.com",
+        googleEmail: null,
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.recipientEmail, "2521233@batechu.com");
+      assert.equal(result.isFallback, true);
+      assert.equal(dispatchedTo, "2521233@batechu.com");
+    });
+  });
+
+  // 9. Shortlisted Invitations & Supabase Auth Separation
+  describe("9. Shortlisted Invitations & Supabase Auth Identity Separation", () => {
+    it("dispatches shortlisted invitation to personal Gmail while binding auth identity to university email", async () => {
+      let dispatchedTo = "";
+      setMockTransporter({
+        sendMail: async (mailOpts: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          dispatchedTo = mailOpts.to;
+          return {
+            messageId: "<test_msg_short_01@mock>",
+            accepted: [mailOpts.to],
+            rejected: [],
+            response: "250 OK",
+          };
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = await sendShortlistedInvitation({
+        applicationId: "00000000-0000-4000-a000-000000000003",
+        applicationReference: "ITC-60037746",
+        fullName: "Seif Ayman",
+        primaryTrack: "it",
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      }, { forceReissue: true });
+
+      assert.equal(result.success, true);
+      assert.equal(result.recipientEmail, "safalmoaz16@gmail.com");
+      assert.equal(result.authEmail, "2521233@batechu.com");
+      assert.equal(result.isFallback, false);
+      assert.equal(dispatchedTo, "safalmoaz16@gmail.com");
+    });
+
+    it("acceptance invitations also dispatch to personal Gmail with university email auth identity", async () => {
+      let dispatchedTo = "";
+      setMockTransporter({
+        sendMail: async (mailOpts: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          dispatchedTo = mailOpts.to;
+          return {
+            messageId: "<test_msg_acc_01@mock>",
+            accepted: [mailOpts.to],
+            rejected: [],
+            response: "250 OK",
+          };
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = await sendAcceptanceInvitation({
+        applicationId: "00000000-0000-4000-a000-000000000004",
+        applicationReference: "ITC-60037746",
+        fullName: "Seif Ayman",
+        primaryTrack: "it",
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      }, { forceReissue: true });
+
+      assert.equal(result.success, true);
+      assert.equal(result.recipientEmail, "safalmoaz16@gmail.com");
+      assert.equal(result.authEmail, "2521233@batechu.com");
+      assert.equal(result.isFallback, false);
+      assert.equal(dispatchedTo, "safalmoaz16@gmail.com");
+    });
+  });
+
+  // 10. Admin Reissue & UI Destination Display
+  describe("10. Admin Reissue & UI Destination Truthfulness", () => {
+    it("reports actual destination email when reissuing rather than automatically displaying university_email", () => {
+      const resolved = resolveNotificationRecipient({
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      });
+
+      const successMsg = `Invitation successfully dispatched to ${resolved.recipientEmail}.`;
+      assert.ok(successMsg.includes("safalmoaz16@gmail.com"));
+      assert.ok(!successMsg.includes("2521233@batechu.com"));
+    });
+
+    it("truthfully reports failure and does not claim success when SMTP transport fails", async () => {
+      setMockTransporter({
+        sendMail: async () => {
+          const err = new Error("Connection refused: connect ECONNREFUSED 127.0.0.1:465");
+          Object.assign(err, { code: "ECONNREFUSED" });
+          throw err;
+        },
+      } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+      const result = await sendShortlistedInvitation({
+        applicationId: "00000000-0000-4000-a000-000000000005",
+        applicationReference: "ITC-FAIL01",
+        fullName: "Fail Candidate",
+        primaryTrack: "it",
+        universityEmail: "2521233@batechu.com",
+        googleEmail: "safalmoaz16@gmail.com",
+      }, { forceReissue: true });
+
+      assert.equal(result.success, false);
+      assert.equal(result.status, "failed");
+      assert.equal(result.safeReason, "CONNECTION_FAILED");
     });
   });
 });

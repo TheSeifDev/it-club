@@ -74,7 +74,8 @@ export async function POST(
         application.status === "SHORTLISTED"
           ? "SHORTLISTED_INVITATION"
           : "ACCEPTANCE_INVITATION",
-      recipient: application.university_email,
+      recipient: application.google_email || application.university_email,
+      authEmail: application.university_email,
       force,
     },
   });
@@ -100,7 +101,9 @@ export async function POST(
     ok: true,
     status: result.status,
     message: result.message,
-    recipientEmail: application.university_email,
+    recipientEmail: result.recipientEmail || application.google_email || application.university_email,
+    authEmail: result.authEmail || application.university_email,
+    isFallback: result.isFallback,
     providerMessageId: result.providerMessageId || undefined,
   });
 }

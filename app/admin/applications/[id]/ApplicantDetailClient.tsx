@@ -142,7 +142,7 @@ export default function ApplicantDetailClient({ application: initialApp, current
         setReissueError(json.error || "Failed to reissue invitation.");
       } else {
         setReissueMessage(json.message || "Invitation dispatched successfully.");
-        setTimeout(() => setReissueMessage(""), 5000);
+        setTimeout(() => setReissueMessage(""), 8000);
       }
     } catch {
       setReissueError("Network error while attempting to reissue invitation.");
@@ -283,7 +283,7 @@ export default function ApplicantDetailClient({ application: initialApp, current
               </div>
 
               <div>
-                <span className="text-white/40 block text-[10px] uppercase mb-1">ACADEMIC EMAIL</span>
+                <span className="text-white/40 block text-[10px] uppercase mb-1">UNIVERSITY LOGIN EMAIL (AUTH)</span>
                 <a
                   href={`mailto:${app.university_email}`}
                   className="text-white hover:text-[#00e599] transition-colors flex items-center gap-1.5"
@@ -317,17 +317,24 @@ export default function ApplicantDetailClient({ application: initialApp, current
                 </a>
               </div>
 
-              {app.google_email && (
-                <div className="sm:col-span-2">
-                  <span className="text-white/40 block text-[10px] uppercase mb-1">SECONDARY EMAIL (GOOGLE)</span>
+              <div className="sm:col-span-2">
+                <span className="text-white/40 block text-[10px] uppercase mb-1">NOTIFICATION RECIPIENT (PERSONAL GMAIL)</span>
+                {app.google_email ? (
                   <a
                     href={`mailto:${app.google_email}`}
-                    className="text-white hover:text-[#00e599] transition-colors"
+                    className="text-[#00e599] hover:underline transition-colors flex items-center gap-1.5"
                   >
-                    {app.google_email}
+                    <Mail size={12} />
+                    <span>{app.google_email} (All notifications dispatched here)</span>
                   </a>
-                </div>
-              )}
+                ) : (
+                  <span className="text-white/50 flex items-center gap-1.5">
+                    <Mail size={12} className="text-white/30" />
+                    <span>{app.university_email}</span>
+                    <span className="text-amber-400 text-[10px]">(Fallback: No Google email provided)</span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -615,33 +622,51 @@ export default function ApplicantDetailClient({ application: initialApp, current
                 <span className="px-2 py-0.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] font-mono text-[10px] font-bold uppercase">
                   ACTIVATED
                 </span>
-              ) : (
+              ) : app.status === "SHORTLISTED" || app.status === "ACCEPTED" ? (
                 <span className="px-2 py-0.5 border border-amber-500/40 bg-amber-500/10 text-amber-300 font-mono text-[10px] font-bold uppercase">
                   PENDING ACTIVATION
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 border border-white/20 bg-white/5 text-white/50 font-mono text-[10px] font-bold uppercase">
+                  NOT ACTIVATED
                 </span>
               )}
             </div>
 
-            <div className="space-y-2.5 font-mono text-xs">
+            <div className="space-y-3 font-mono text-xs">
               <div>
-                <span className="text-white/40 block text-[10px] uppercase">PORTAL LOGIN EMAIL</span>
+                <span className="text-white/40 block text-[10px] uppercase">UNIVERSITY LOGIN EMAIL</span>
                 <span className="text-white font-semibold">{app.university_email}</span>
+                <span className="text-[10px] text-white/40 block mt-0.5">
+                  (Canonical Supabase Auth & Student Portal login identity)
+                </span>
               </div>
-              {app.google_email && (
-                <div>
-                  <span className="text-white/40 block text-[10px] uppercase">PERSONAL GOOGLE EMAIL</span>
-                  <span className="text-white/70">{app.google_email}</span>
-                  <span className="text-[10px] text-amber-400 block mt-0.5">
-                    (Student must sign in with university email, not personal Gmail)
-                  </span>
-                </div>
-              )}
               <div>
-                <span className="text-white/40 block text-[10px] uppercase">PORTAL STATUS</span>
-                <span className={app.activated_at ? "text-[#00e599]" : "text-amber-300"}>
+                <span className="text-white/40 block text-[10px] uppercase">NOTIFICATION RECIPIENT</span>
+                {app.google_email ? (
+                  <>
+                    <span className="text-[#00e599] font-semibold">{app.google_email}</span>
+                    <span className="text-[10px] text-white/50 block mt-0.5">
+                      (Personal Gmail — all invitations & status emails dispatched here)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-amber-300 font-semibold">{app.university_email}</span>
+                    <span className="text-[10px] text-amber-400/80 block mt-0.5">
+                      (Fallback: Personal Google email missing/invalid)
+                    </span>
+                  </>
+                )}
+              </div>
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase">ACTIVATION STATUS</span>
+                <span className={app.activated_at ? "text-[#00e599]" : app.status === "SHORTLISTED" || app.status === "ACCEPTED" ? "text-amber-300" : "text-white/50"}>
                   {app.activated_at
                     ? `Activated on ${new Date(app.activated_at).toLocaleString()}`
-                    : "Not yet activated (Student has not set their password)"}
+                    : app.status === "SHORTLISTED" || app.status === "ACCEPTED"
+                    ? "Pending activation — invitation dispatched to notification recipient"
+                    : "Not activated (Eligible after shortlisting or acceptance)"}
                 </span>
               </div>
             </div>

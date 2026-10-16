@@ -12,7 +12,28 @@ export type CameraErrorCode =
   | "policy_blocked"
   | "unsupported"
   | "request_timeout"
+  | "invalid_configuration"
   | "unknown";
+
+export type ValidHtml5QrcodeConfig =
+  | { facingMode: "environment" | "user" }
+  | { facingMode: { exact: "environment" | "user" } }
+  | { deviceId: { exact: string } }
+  | string;
+
+/**
+ * Builds a strictly valid camera configuration matching html5-qrcode's createVideoConstraints contract.
+ * Prevents invalid { ideal: "..." } objects or multi-key objects from ever reaching Html5Qrcode.start().
+ */
+export function buildValidCameraConfig(
+  cameraId?: string,
+  facingMode: "environment" | "user" = "environment"
+): ValidHtml5QrcodeConfig {
+  if (cameraId && cameraId.trim().length > 0) {
+    return { deviceId: { exact: cameraId.trim() } };
+  }
+  return { facingMode };
+}
 
 export interface CameraErrorInfo {
   code: CameraErrorCode;
@@ -303,6 +324,30 @@ export function classifyCameraError(err: unknown): CameraErrorInfo {
     };
   }
 
+  // 4b. Invalid Camera Configuration / facingMode contract error
+  if (
+    errMsg.includes("facingmode") ||
+    errMsg.includes("exact as key") ||
+    errMsg.includes("cameraidorconfig") ||
+    errMsg.includes("invalid-camera-configuration") ||
+    errMsg.includes("invalid 'facingmode'")
+  ) {
+    return {
+      code: "invalid_configuration",
+      title: "Invalid Camera Configuration",
+      message:
+        "Camera configuration format is rejected by the scanner library ('facingMode' must be string or { exact }).",
+      instructions: [
+        "Camera configuration must specify { facingMode: 'environment' } without invalid ideal wrappers.",
+        "Tap 'Try Again' to re-initialize with canonical camera constraints.",
+        "Use manual token entry below if camera initialization cannot proceed.",
+      ],
+      canRetry: true,
+      fallbackToManual: true,
+      isExpectedDenial: false,
+    };
+  }
+
   // 5. Insecure Context or SecurityError
   if (
     errName === "SecurityError" ||
@@ -367,7 +412,7 @@ export function classifyCameraError(err: unknown): CameraErrorInfo {
  */
 export async function probeCameraStream(
   constraints: MediaStreamConstraints = {
-    video: { facingMode: { ideal: "environment" } },
+    video: { facingMode: "environment" },
     audio: false,
   },
   customGetUserMedia?: (c: MediaStreamConstraints) => Promise<MediaStream>

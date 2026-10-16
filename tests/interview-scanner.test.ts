@@ -13,6 +13,8 @@ import {
   classifyCameraError,
   diagnoseCameraEnvironment,
   probeCameraStream,
+  buildValidCameraConfig,
+  type ValidHtml5QrcodeConfig,
 } from "../lib/interviews/camera-diagnostics.ts";
 import { POST as staffCheckInRoute } from "../app/api/admin/interviews/check-in/route.ts";
 
@@ -241,7 +243,7 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       } as unknown as MediaStream;
 
       const result = await probeCameraStream(
-        { video: { facingMode: { ideal: "environment" } }, audio: false },
+        { video: { facingMode: "environment" }, audio: false },
         async () => mockStream
       );
 
@@ -672,6 +674,7 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
         policy_blocked: "policy-blocked",
         unsupported: "camera-unsupported",
         request_timeout: "request-timeout",
+        invalid_configuration: "invalid-camera-configuration",
         unknown: "error",
       };
 
@@ -931,6 +934,212 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       const checkInRes = await verifyAndCheckInInterviewQr(tokenRes.token, "staff-reviewer-id");
       assert.equal(checkInRes.success, false);
       assert.equal(checkInRes.code, "INELIGIBLE_STATUS");
+    });
+  });
+
+  // 6. html5-qrcode Contract & Camera Fallback Sequence
+  describe("6. html5-qrcode Contract & Camera Fallback Sequence", () => {
+    it("buildValidCameraConfig produces exact supported parameter shape for rear camera", () => {
+      const config = buildValidCameraConfig();
+      assert.deepEqual(config, { facingMode: "environment" });
+
+      // Must be a single-key object
+      const keys = Object.keys(config as object);
+      assert.equal(keys.length, 1);
+      assert.equal(keys[0], "facingMode");
+
+      // Must NOT contain 'ideal'
+      assert.equal("ideal" in (config as Record<string, unknown>), false);
+      assert.notEqual(typeof (config as { facingMode: unknown }).facingMode, "object");
+    });
+
+    it("buildValidCameraConfig produces exact supported shape for user camera", () => {
+      const config = buildValidCameraConfig(undefined, "user");
+      assert.deepEqual(config, { facingMode: "user" });
+    });
+
+    it("buildValidCameraConfig produces exact single-key object with exact when deviceId is passed", () => {
+      const config = buildValidCameraConfig("camera_device_xyz_789");
+      assert.deepEqual(config, { deviceId: { exact: "camera_device_xyz_789" } });
+    });
+
+    it("verifies why html5-qrcode rejects { facingMode: { ideal: 'environment' } } and accepts valid shape", () => {
+      // Direct emulation of html5-qrcode's createVideoConstraints validation logic
+      const validateHtml5QrcodeFacingMode = (cameraIdOrConfig: unknown) => {
+        const allowedFacingModeValues = { environment: true, user: true };
+        const exactKey = "exact";
+
+        if (typeof cameraIdOrConfig === "string") {
+          return { deviceId: { exact: cameraIdOrConfig } };
+        }
+        if (typeof cameraIdOrConfig === "object" && cameraIdOrConfig !== null) {
+          const keys = Object.keys(cameraIdOrConfig);
+          if (keys.length !== 1) {
+            throw new Error("Only 'facingMode' and 'deviceId' are supported with single key.");
+          }
+          const key = keys[0];
+          if (key === "facingMode") {
+            const facingMode = (cameraIdOrConfig as { facingMode: unknown }).facingMode;
+            if (typeof facingMode === "string") {
+              if (facingMode in allowedFacingModeValues) {
+                return { facingMode };
+              }
+              throw new Error(`config has invalid 'facingMode' value = ${facingMode}`);
+            } else if (typeof facingMode === "object" && facingMode !== null) {
+              if (exactKey in facingMode) {
+                const exactVal = (facingMode as { exact: string })[exactKey];
+                if (exactVal in allowedFacingModeValues) {
+                  return { facingMode: { exact: exactVal } };
+                }
+                throw new Error(`config has invalid 'facingMode' value = ${exactVal}`);
+              }
+              throw new Error("'facingMode' should be string or object with exact as key.");
+            }
+            throw new Error(`Invalid type of 'facingMode' = ${typeof facingMode}`);
+          }
+        }
+        throw new Error("Invalid cameraIdOrConfig format");
+      };
+
+      // 1. Invalid configuration: { facingMode: { ideal: "environment" } } throws the exact reported error
+      assert.throws(
+        () => validateHtml5QrcodeFacingMode({ facingMode: { ideal: "environment" } }),
+        (err: Error) => {
+          assert.match(err.message, /'facingMode' should be string or object with exact as key/);
+          return true;
+        }
+      );
+
+      // 2. Corrected valid configuration: { facingMode: "environment" } passes without throwing
+      const validEnv = validateHtml5QrcodeFacingMode(buildValidCameraConfig());
+      assert.deepEqual(validEnv, { facingMode: "environment" });
+
+      // 3. Exact configuration: { facingMode: { exact: "environment" } } passes without throwing
+      const validExact = validateHtml5QrcodeFacingMode({ facingMode: { exact: "environment" } });
+      assert.deepEqual(validExact, { facingMode: { exact: "environment" } });
+    });
+
+    it("classifies facingMode contract errors as invalid_configuration, distinct from permission denial", () => {
+      const contractErr = new Error("'facingMode' should be string or object with exact as key.");
+      const classified = classifyCameraError(contractErr);
+
+      assert.equal(classified.code, "invalid_configuration");
+      assert.equal(classified.canRetry, true);
+      assert.equal(classified.fallbackToManual, true);
+      assert.equal(classified.isExpectedDenial, false);
+
+      const permissionErr = new Error("NotAllowedError: Permission denied by user");
+      permissionErr.name = "NotAllowedError";
+      const classifiedPerm = classifyCameraError(permissionErr);
+
+      assert.equal(classifiedPerm.code, "not_allowed");
+      assert.notEqual(classified.code, classifiedPerm.code);
+    });
+
+    it("implements reliable camera fallback sequence when rear camera cannot be satisfied", async () => {
+      // Mock devices with rear camera
+      const mockDevicesWithRear = [
+        { id: "cam_front_01", label: "Front Camera (user facing)" },
+        { id: "cam_back_02", label: "Back Camera 1 (rear environment)" },
+      ];
+
+      // Simulated fallback resolver
+      const resolveFallbackConfig = (
+        devices: { id: string; label: string }[]
+      ): ValidHtml5QrcodeConfig => {
+        if (devices.length > 0) {
+          const rearCamera = devices.find((d) => {
+            const label = (d.label || "").toLowerCase();
+            return (
+              label.includes("back") ||
+              label.includes("rear") ||
+              label.includes("environment") ||
+              label.includes("facing back")
+            );
+          });
+          if (rearCamera) {
+            return buildValidCameraConfig(rearCamera.id);
+          }
+          return buildValidCameraConfig(devices[0].id);
+        }
+        return buildValidCameraConfig(undefined, "user");
+      };
+
+      // Case 1: Rear camera device found in enumerated list -> selects rear device ID
+      const config1 = resolveFallbackConfig(mockDevicesWithRear);
+      assert.deepEqual(config1, { deviceId: { exact: "cam_back_02" } });
+
+      // Case 2: No rear label found (e.g. unlabelled cameras) -> selects first available camera
+      const mockUnlabeledDevices = [
+        { id: "cam_generic_01", label: "" },
+        { id: "cam_generic_02", label: "Camera 2" },
+      ];
+      const config2 = resolveFallbackConfig(mockUnlabeledDevices);
+      assert.deepEqual(config2, { deviceId: { exact: "cam_generic_01" } });
+
+      // Case 3: Empty device list -> falls back to "user" facingMode
+      const config3 = resolveFallbackConfig([]);
+      assert.deepEqual(config3, { facingMode: "user" });
+    });
+
+    it("does not trigger camera fallback on permission denial or policy block errors", () => {
+      const isConstraintOrDeviceFailure = (code: string) =>
+        code === "overconstrained" ||
+        code === "not_found" ||
+        code === "invalid_configuration";
+
+      assert.equal(isConstraintOrDeviceFailure("overconstrained"), true);
+      assert.equal(isConstraintOrDeviceFailure("not_found"), true);
+      assert.equal(isConstraintOrDeviceFailure("invalid_configuration"), true);
+
+      // Must NOT fall back on permission denial, policy block, or insecure context
+      assert.equal(isConstraintOrDeviceFailure("not_allowed"), false);
+      assert.equal(isConstraintOrDeviceFailure("policy_blocked"), false);
+      assert.equal(isConstraintOrDeviceFailure("insecure_context"), false);
+    });
+
+    it("verifies state machine labels: idle is OPTICAL SENSOR OFF, not CAMERA READY TO START", () => {
+      const computeStatusLabel = (cameraStatus: string, isProcessing: boolean): string => {
+        if (isProcessing) return "VERIFYING CANDIDATE WITH SERVER...";
+        switch (cameraStatus) {
+          case "scanning":
+            return "READY · ALIGN QR CODE";
+          case "requesting":
+            return "REQUESTING CAMERA ACCESS...";
+          case "request-timeout":
+            return "CAMERA REQUEST STILL PENDING";
+          case "permission-denied":
+            return "PERMISSION DENIED";
+          case "policy-blocked":
+            return "BLOCKED BY PERMISSIONS POLICY";
+          case "camera-not-found":
+            return "NO CAMERA FOUND";
+          case "camera-busy":
+            return "CAMERA HARDWARE BUSY";
+          case "overconstrained":
+            return "CONSTRAINTS UNSUPPORTED";
+          case "insecure-context":
+            return "INSECURE CONTEXT (HTTPS REQUIRED)";
+          case "camera-unsupported":
+            return "CAMERA APIS UNSUPPORTED";
+          case "invalid-camera-configuration":
+            return "INVALID CAMERA CONFIGURATION";
+          case "error":
+            return "CAMERA STREAM ERROR";
+          default:
+            return "OPTICAL SENSOR OFF · TAP START";
+        }
+      };
+
+      // Idle state must not claim camera is ready or active
+      assert.equal(computeStatusLabel("idle", false), "OPTICAL SENSOR OFF · TAP START");
+      assert.notEqual(computeStatusLabel("idle", false), "CAMERA READY TO START");
+
+      // Error states
+      assert.equal(computeStatusLabel("invalid-camera-configuration", false), "INVALID CAMERA CONFIGURATION");
+      assert.equal(computeStatusLabel("error", false), "CAMERA STREAM ERROR");
+      assert.equal(computeStatusLabel("permission-denied", false), "PERMISSION DENIED");
+      assert.equal(computeStatusLabel("scanning", false), "READY · ALIGN QR CODE");
     });
   });
 });

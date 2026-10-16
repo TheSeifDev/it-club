@@ -33,8 +33,10 @@ import { parseClientQrPayload, isValidQrTokenFormat } from "../../../../lib/inte
 import {
   classifyCameraError,
   diagnoseCameraEnvironment,
+  buildValidCameraConfig,
   type CameraErrorInfo,
   type CameraEnvironmentDiagnostic,
+  type ValidHtml5QrcodeConfig,
 } from "../../../../lib/interviews/camera-diagnostics.ts";
 import { TRACK_METADATA } from "../../../../lib/admin/transitions.ts";
 import type { CommitteeTrack } from "../../../../lib/admin/types.ts";
@@ -59,6 +61,7 @@ export type CameraStatus =
   | "overconstrained"
   | "insecure-context"
   | "policy-blocked"
+  | "invalid-camera-configuration"
   | "error";
 
 export type ResultType =
@@ -628,10 +631,8 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
         const scanner = new Html5Qrcode(containerId);
         html5QrCodeRef.current = scanner;
 
-        // Prefer environment (rear) camera on mobile without over-constraining resolution/labels
-        const cameraConfig: MediaTrackConstraints | string = cameraId
-          ? { deviceId: { exact: cameraId } }
-          : { facingMode: { ideal: "environment" } };
+        // Prefer environment (rear) camera on mobile using strictly valid html5-qrcode configuration shape
+        const initialConfig = buildValidCameraConfig(cameraId, "environment");
 
         const scannerConfig = {
           fps: 12,
@@ -653,22 +654,65 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
           // Continuous video frame polling — silent per frame
         };
 
+        // Fallback sequence:
+        // 1. Attempt to start scanner with valid rear-camera configuration { facingMode: "environment" } (or deviceId if provided)
         try {
-          await scanner.start(cameraConfig, scannerConfig, onScanSuccess, onScanFailure);
+          await scanner.start(initialConfig, scannerConfig, onScanSuccess, onScanFailure);
         } catch (initialErr: unknown) {
           const classified = classifyCameraError(initialErr);
-          // Only retry with user facingMode if constraints could not be satisfied or rear camera not found
-          // NEVER loop or retry on permission denials or policy blocks!
-          if (classified.code === "overconstrained" || classified.code === "not_found") {
-            console.info("[scanner] Retrying with generic user camera constraints...");
-            await scanner.start(
-              { facingMode: "user" },
-              scannerConfig,
-              onScanSuccess,
-              onScanFailure
-            );
-          } else {
+          // Only fall back if the error indicates that the selected camera or constraint is unavailable/unsupported
+          // Never retry or loop on permission denials, policy blocks, or insecure context!
+          const isConstraintOrDeviceFailure =
+            classified.code === "overconstrained" ||
+            classified.code === "not_found" ||
+            classified.code === "invalid_configuration";
+
+          if (!isConstraintOrDeviceFailure) {
             throw initialErr;
+          }
+
+          console.warn("[scanner] Primary camera configuration failed, attempting fallback sequence:", initialErr);
+
+          // 2. Enumerate available video devices
+          let devices: { id: string; label: string }[] = [];
+          try {
+            devices = await Html5Qrcode.getCameras();
+            if (isMountedRef.current && devices.length > 0) {
+              setAvailableCameras(devices);
+            }
+          } catch (enumErr) {
+            console.warn("[scanner] Camera enumeration failed during fallback:", enumErr);
+          }
+
+          // 3. Select suitable rear-camera device when label is available
+          let fallbackConfig: ValidHtml5QrcodeConfig | null = null;
+          if (devices.length > 0) {
+            const rearCamera = devices.find((d) => {
+              const label = (d.label || "").toLowerCase();
+              return (
+                label.includes("back") ||
+                label.includes("rear") ||
+                label.includes("environment") ||
+                label.includes("facing back")
+              );
+            });
+
+            if (rearCamera) {
+              fallbackConfig = buildValidCameraConfig(rearCamera.id);
+            } else {
+              // 4. If no rear camera labeled, use first available device from enumeration
+              fallbackConfig = buildValidCameraConfig(devices[0].id);
+            }
+          } else {
+            // 4 (alt). If no devices enumerated, fall back to "user" facingMode as last resort
+            fallbackConfig = buildValidCameraConfig(undefined, "user");
+          }
+
+          try {
+            await scanner.start(fallbackConfig, scannerConfig, onScanSuccess, onScanFailure);
+          } catch (fallbackErr: unknown) {
+            console.error("[scanner] Camera fallback failed:", fallbackErr);
+            throw fallbackErr;
           }
         }
 
@@ -747,6 +791,9 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
             break;
           case "request_timeout":
             setCameraStatus("request-timeout");
+            break;
+          case "invalid_configuration":
+            setCameraStatus("invalid-camera-configuration");
             break;
           default:
             setCameraStatus("error");
@@ -1077,9 +1124,15 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                           ? "bg-[#18c8ed] animate-ping"
                           : cameraStatus === "scanning"
                           ? "bg-[#00e599] animate-pulse"
-                          : cameraStatus === "permission-denied" || cameraStatus === "policy-blocked" || cameraStatus === "error"
+                          : cameraStatus === "permission-denied" ||
+                            cameraStatus === "policy-blocked" ||
+                            cameraStatus === "error" ||
+                            cameraStatus === "invalid-camera-configuration"
                           ? "bg-rose-500"
-                          : cameraStatus === "request-timeout" || cameraStatus === "camera-not-found" || cameraStatus === "camera-busy" || cameraStatus === "overconstrained"
+                          : cameraStatus === "request-timeout" ||
+                            cameraStatus === "camera-not-found" ||
+                            cameraStatus === "camera-busy" ||
+                            cameraStatus === "overconstrained"
                           ? "bg-amber-400"
                           : "bg-white/40"
                       }`}
@@ -1107,7 +1160,11 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         ? "INSECURE CONTEXT (HTTPS REQUIRED)"
                         : cameraStatus === "camera-unsupported"
                         ? "CAMERA APIS UNSUPPORTED"
-                        : "CAMERA READY TO START"}
+                        : cameraStatus === "invalid-camera-configuration"
+                        ? "INVALID CAMERA CONFIGURATION"
+                        : cameraStatus === "error"
+                        ? "CAMERA STREAM ERROR"
+                        : "OPTICAL SENSOR OFF · TAP START"}
                     </span>
                   </div>
 
@@ -1592,6 +1649,73 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={13} />
+                          <span>ENTER TOKEN MANUALLY</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 3e: INVALID CAMERA CONFIGURATION */}
+                  {cameraStatus === "invalid-camera-configuration" && (
+                    <div
+                      id="scanner-invalid-config-panel"
+                      className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <AlertTriangle size={24} />
+                      </div>
+
+                      <div className="space-y-1.5 max-w-sm">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          INVALID CAMERA CONFIGURATION
+                        </h3>
+                        <p className="text-xs text-white/70 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "The requested camera configuration or facing mode could not be applied."}
+                        </p>
+                      </div>
+
+                      {availableCameras.length > 1 && (
+                        <div className="w-full max-w-sm flex items-center gap-2">
+                          <label htmlFor="invalid-config-camera-select" className="text-[10px] font-mono text-white/50 uppercase whitespace-nowrap">
+                            CHOOSE CAMERA:
+                          </label>
+                          <select
+                            id="invalid-config-camera-select"
+                            value={selectedCameraId}
+                            onChange={(e) => {
+                              setSelectedCameraId(e.target.value);
+                              startCamera(e.target.value);
+                            }}
+                            className="w-full bg-[#050708] border border-white/15 text-xs font-mono text-white/90 px-2 py-1.5 focus:border-[#00e599] focus:outline-none"
+                          >
+                            <option value="">Default (Rear Camera)</option>
+                            {availableCameras.map((cam, idx) => (
+                              <option key={cam.id} value={cam.id}>
+                                {cam.label || `Camera ${idx + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
+                        <button
+                          type="button"
+                          id="btn-retry-invalid-config"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          <RefreshCw size={13} />
+                          <span>TRY AGAIN</span>
+                        </button>
+                        <button
+                          type="button"
+                          id="btn-invalid-config-use-manual"
                           onClick={() => handleSwitchMode("manual")}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
                         >

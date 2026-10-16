@@ -49,16 +49,16 @@ export type StationMode = "check_in" | "interview_lookup";
 
 export type CameraStatus =
   | "idle"
-  | "checking_environment"
-  | "requesting_permission"
+  | "requesting"
   | "scanning"
-  | "paused"
-  | "permission_denied"
-  | "no_cameras"
-  | "not_readable"
+  | "permission-denied"
+  | "request-timeout"
+  | "camera-not-found"
+  | "camera-busy"
+  | "camera-unsupported"
   | "overconstrained"
-  | "insecure_context"
-  | "policy_blocked"
+  | "insecure-context"
+  | "policy-blocked"
   | "error";
 
 export type ResultType =
@@ -217,6 +217,8 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
   const hasResultRef = useRef(false);
   const isStartingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const attemptGenRef = useRef<number>(0);
+  const timeoutTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check-in results
   const [result, setResult] = useState<ScanResultData | null>(null);
@@ -240,21 +242,21 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
       if (isMountedRef.current) {
         setEnvDiagnostic(diag);
         if (!diag.isSecureContext) {
-          setCameraStatus("insecure_context");
+          setCameraStatus("insecure-context");
           setCameraErrorInfo(
             classifyCameraError(
               new Error("Insecure context: Camera scanning requires HTTPS or localhost.")
             )
           );
         } else if (!diag.hasGetUserMedia) {
-          setCameraStatus("error");
+          setCameraStatus("camera-unsupported");
           setCameraErrorInfo(
             classifyCameraError(
               new Error("Unsupported browser: navigator.mediaDevices.getUserMedia is unavailable.")
             )
           );
         } else if (!diag.isPermissionsPolicyAllowed) {
-          setCameraStatus("policy_blocked");
+          setCameraStatus("policy-blocked");
           setCameraErrorInfo(
             classifyCameraError(
               new Error("Camera access is disallowed by Permissions Policy header.")
@@ -271,17 +273,24 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
 
   // Stop camera tracks cleanly
   const stopCamera = useCallback(async () => {
+    if (timeoutTimerRef.current) {
+      clearTimeout(timeoutTimerRef.current);
+      timeoutTimerRef.current = null;
+    }
+    isStartingRef.current = false;
+
     if (html5QrCodeRef.current) {
+      const scanner = html5QrCodeRef.current;
+      html5QrCodeRef.current = null;
       try {
-        if (html5QrCodeRef.current.isScanning) {
-          await html5QrCodeRef.current.stop();
+        if (scanner.isScanning) {
+          await scanner.stop();
         }
-        html5QrCodeRef.current.clear();
+        scanner.clear();
       } catch (err) {
         // Non-fatal cleanup warning
         console.warn("[scanner] Camera stream release warning:", err);
       }
-      html5QrCodeRef.current = null;
     }
   }, []);
 
@@ -532,14 +541,20 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
     [staffEmail, soundEnabled]
   );
 
-  // Explicit Start Camera with comprehensive diagnostics and error classification
+  // Explicit Start Camera with comprehensive diagnostics, single ownership, and bounded waiting state
   const startCamera = useCallback(
     async (cameraId?: string) => {
       if (typeof window === "undefined" || !isMountedRef.current) return;
-      if (isStartingRef.current) return;
 
+      // Concurrency guard: reject rapid multiple clicks while requesting
+      if (isStartingRef.current && cameraStatus === "requesting") return;
+
+      // Clean up previous camera session and any existing timeout
+      await stopCamera();
+
+      const currentAttempt = ++attemptGenRef.current;
       isStartingRef.current = true;
-      setCameraStatus("requesting_permission");
+      setCameraStatus("requesting");
       setCameraErrorInfo(null);
 
       // Pre-flight check: ensure container exists
@@ -553,18 +568,20 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
         return;
       }
 
-      // Pre-flight check: secure context
+      // Pre-flight check: secure context & permissions policy
       const diag = await diagnoseCameraEnvironment();
+      if (!isMountedRef.current || attemptGenRef.current !== currentAttempt) return;
+
       if (!diag.isSecureContext) {
         isStartingRef.current = false;
-        setCameraStatus("insecure_context");
+        setCameraStatus("insecure-context");
         setCameraErrorInfo(classifyCameraError(new Error("Insecure context")));
         return;
       }
 
       if (!diag.hasGetUserMedia) {
         isStartingRef.current = false;
-        setCameraStatus("error");
+        setCameraStatus("camera-unsupported");
         setCameraErrorInfo(
           classifyCameraError(
             new Error("Camera APIs not supported by this browser.")
@@ -575,7 +592,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
 
       if (!diag.isPermissionsPolicyAllowed) {
         isStartingRef.current = false;
-        setCameraStatus("policy_blocked");
+        setCameraStatus("policy-blocked");
         setCameraErrorInfo(
           classifyCameraError(
             new Error("Camera access is disallowed by Permissions Policy header.")
@@ -584,78 +601,37 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
         return;
       }
 
+      // Start 15-second bounded waiting state
+      timeoutTimerRef.current = setTimeout(() => {
+        if (!isMountedRef.current || attemptGenRef.current !== currentAttempt) return;
+        isStartingRef.current = false;
+        setCameraStatus("request-timeout");
+        setCameraErrorInfo({
+          code: "request_timeout",
+          title: "Camera Request Still Pending",
+          message:
+            "The browser or camera sensor has not responded yet. The browser may be waiting for your permission decision, camera access may be blocked in settings, or the sensor is taking too long to open.",
+          instructions: [
+            "Check for an active camera permission prompt in your browser window or notification shade.",
+            "On Android Chrome: open Chrome's three-dot menu (⋮) > Settings > Site settings > Camera, and ensure dev.itclub.one is not blocked.",
+            "On Android: open Android Settings > Apps > Chrome > Permissions and allow Camera access.",
+            "Tap 'Try Again' below to issue a fresh camera request, or use Manual Token Entry.",
+          ],
+          canRetry: true,
+          fallbackToManual: true,
+          isExpectedDenial: false,
+        });
+      }, 15000);
+
       try {
-        await stopCamera();
-
-        // 1. Invoke initial getUserMedia request directly inside the user's camera-start interaction
-        // Use a suitable initial constraint without requiring a specific resolution, device label, or camera ID
-        let initialStream: MediaStream | null = null;
-        try {
-          initialStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: "environment" },
-            },
-            audio: false,
-          });
-        } finally {
-          // Immediately release the initial stream tracks so it doesn't lock hardware or compete with html5-qrcode
-          if (initialStream) {
-            initialStream.getTracks().forEach((track) => {
-              try {
-                track.stop();
-              } catch {
-                // ignore
-              }
-            });
-          }
-        }
-
-        if (!isMountedRef.current) {
-          isStartingRef.current = false;
-          return;
-        }
-
-        // 2. Enumerate available video devices now that permission has been granted
-        let cameras: Array<{ id: string; label: string }> = [];
-        try {
-          cameras = await Html5Qrcode.getCameras();
-          if (isMountedRef.current && cameras.length > 0) {
-            setAvailableCameras(cameras);
-          }
-        } catch (camErr) {
-          console.warn("[scanner] Failed to enumerate cameras after permission grant:", camErr);
-        }
-
-        if (!isMountedRef.current) {
-          isStartingRef.current = false;
-          return;
-        }
-
+        // Sole Camera Owner: Html5Qrcode directly manages getUserMedia and scanning session
         const scanner = new Html5Qrcode(containerId);
         html5QrCodeRef.current = scanner;
 
-        // Config priority:
-        // 1. Explicit cameraId selected by staff
-        // 2. If availableCameras has a rear/back labeled camera, use its deviceId
-        // 3. Mobile rear camera { facingMode: "environment" }
-        // 4. Fallback to first enumerated camera id
-        let cameraConfig: string | { deviceId: { exact: string } } | { facingMode: string } = {
-          facingMode: "environment",
-        };
-
-        if (cameraId) {
-          cameraConfig = { deviceId: { exact: cameraId } };
-        } else {
-          const rearCam = cameras.find((c) =>
-            /back|rear|environment/i.test(c.label)
-          );
-          if (rearCam) {
-            cameraConfig = { deviceId: { exact: rearCam.id } };
-            setSelectedCameraId(rearCam.id);
-          } else {
-            cameraConfig = { facingMode: "environment" };
-          }
-        }
+        // Prefer environment (rear) camera on mobile without over-constraining resolution/labels
+        const cameraConfig: MediaTrackConstraints | string = cameraId
+          ? { deviceId: { exact: cameraId } }
+          : { facingMode: { ideal: "environment" } };
 
         const scannerConfig = {
           fps: 12,
@@ -681,13 +657,12 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
           await scanner.start(cameraConfig, scannerConfig, onScanSuccess, onScanFailure);
         } catch (initialErr: unknown) {
           const classified = classifyCameraError(initialErr);
-          // Only retry with generic fallback if constraint or device error occurred, NEVER on permission denial!
+          // Only retry with user facingMode if constraints could not be satisfied or rear camera not found
+          // NEVER loop or retry on permission denials or policy blocks!
           if (classified.code === "overconstrained" || classified.code === "not_found") {
-            console.info("[scanner] Retrying with generic camera constraints...");
-            const fallbackTarget =
-              cameras.length > 0 ? cameras[0].id : { facingMode: "user" };
+            console.info("[scanner] Retrying with generic user camera constraints...");
             await scanner.start(
-              fallbackTarget,
+              { facingMode: "user" },
               scannerConfig,
               onScanSuccess,
               onScanFailure
@@ -697,66 +672,100 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
           }
         }
 
-        if (isMountedRef.current) {
-          setCameraStatus("scanning");
-          setCameraErrorInfo(null);
-          setShowSettingsHelp(false);
+        // Clear timeout timer as scanner successfully started
+        if (timeoutTimerRef.current) {
+          clearTimeout(timeoutTimerRef.current);
+          timeoutTimerRef.current = null;
+        }
 
-          // Re-enumerate cameras to ensure any remaining labels are fresh
+        // Handle race condition: check if this attempt was superseded or unmounted while start was pending
+        if (!isMountedRef.current || attemptGenRef.current !== currentAttempt) {
+          // Attempt was abandoned or timed out; immediately release camera
           try {
-            const refreshedCameras = await Html5Qrcode.getCameras();
-            if (isMountedRef.current && refreshedCameras.length > 0) {
-              setAvailableCameras(refreshedCameras);
+            if (scanner.isScanning) {
+              await scanner.stop();
             }
-          } catch {
-            // ignore
+            scanner.clear();
+          } catch {}
+          if (html5QrCodeRef.current === scanner) {
+            html5QrCodeRef.current = null;
           }
+          return;
+        }
+
+        isStartingRef.current = false;
+        setCameraStatus("scanning");
+        setCameraErrorInfo(null);
+        setShowSettingsHelp(false);
+
+        // Enumerate video devices now that permission is granted
+        try {
+          const cameras = await Html5Qrcode.getCameras();
+          if (isMountedRef.current && attemptGenRef.current === currentAttempt && cameras.length > 0) {
+            setAvailableCameras(cameras);
+          }
+        } catch (camErr) {
+          console.warn("[scanner] Camera enumeration note:", camErr);
         }
       } catch (err: unknown) {
-        if (!isMountedRef.current) return;
+        if (timeoutTimerRef.current) {
+          clearTimeout(timeoutTimerRef.current);
+          timeoutTimerRef.current = null;
+        }
 
-        // Clean up scanner on failure
+        if (!isMountedRef.current || attemptGenRef.current !== currentAttempt) {
+          return; // Stale error from earlier abandoned attempt, ignore
+        }
+
         await stopCamera();
+        isStartingRef.current = false;
 
         const info = classifyCameraError(err);
         setCameraErrorInfo(info);
 
-        if (info.isExpectedDenial) {
-          console.info(
-            "[scanner] Camera permission denied by user or browser policy:",
-            info.message
-          );
-          setCameraStatus("permission_denied");
-        } else if (info.code === "policy_blocked") {
-          console.warn("[scanner] Camera blocked by Permissions-Policy:", info.message);
-          setCameraStatus("policy_blocked");
-        } else if (info.code === "not_found") {
-          console.warn("[scanner] No camera hardware found:", info.message);
-          setCameraStatus("no_cameras");
-        } else if (info.code === "not_readable") {
-          console.warn("[scanner] Camera hardware locked or in use:", info.message);
-          setCameraStatus("not_readable");
-        } else if (info.code === "overconstrained") {
-          console.warn("[scanner] Camera constraints unsupported:", info.message);
-          setCameraStatus("overconstrained");
-        } else if (info.code === "insecure_context") {
-          console.warn("[scanner] Insecure context:", info.message);
-          setCameraStatus("insecure_context");
-        } else {
-          console.error("[scanner] Unexpected camera initialization failure:", info.message);
-          setCameraStatus("error");
+        switch (info.code) {
+          case "not_allowed":
+            setCameraStatus("permission-denied");
+            break;
+          case "policy_blocked":
+            setCameraStatus("policy-blocked");
+            break;
+          case "not_found":
+            setCameraStatus("camera-not-found");
+            break;
+          case "not_readable":
+            setCameraStatus("camera-busy");
+            break;
+          case "overconstrained":
+            setCameraStatus("overconstrained");
+            break;
+          case "insecure_context":
+            setCameraStatus("insecure-context");
+            break;
+          case "unsupported":
+            setCameraStatus("camera-unsupported");
+            break;
+          case "request_timeout":
+            setCameraStatus("request-timeout");
+            break;
+          default:
+            setCameraStatus("error");
+            break;
         }
-      } finally {
-        isStartingRef.current = false;
       }
     },
-    [processCheckIn, stopCamera]
+    [cameraStatus, processCheckIn, stopCamera]
   );
 
   // Switch to manual mode cleanly releases camera stream
   const handleSwitchMode = useCallback(
     async (nextMode: ScanMode) => {
       if (nextMode === mode) return;
+      attemptGenRef.current++;
+      if (timeoutTimerRef.current) {
+        clearTimeout(timeoutTimerRef.current);
+        timeoutTimerRef.current = null;
+      }
       if (mode === "camera") {
         await stopCamera();
         setCameraStatus("idle");
@@ -769,14 +778,27 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
 
   // Explicit camera shutdown
   const handleStopCamera = useCallback(async () => {
+    attemptGenRef.current++;
+    if (timeoutTimerRef.current) {
+      clearTimeout(timeoutTimerRef.current);
+      timeoutTimerRef.current = null;
+    }
     await stopCamera();
     setCameraStatus("idle");
   }, [stopCamera]);
 
   // Clean unmount guaranteed
   useEffect(() => {
+    const timerRef = timeoutTimerRef;
+    const genRef = attemptGenRef;
+    const mountedRef = isMountedRef;
     return () => {
-      isMountedRef.current = false;
+      mountedRef.current = false;
+      genRef.current += 1;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
       stopCamera();
     };
   }, [stopCamera]);
@@ -1055,9 +1077,9 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                           ? "bg-[#18c8ed] animate-ping"
                           : cameraStatus === "scanning"
                           ? "bg-[#00e599] animate-pulse"
-                          : cameraStatus === "permission_denied" || cameraStatus === "policy_blocked" || cameraStatus === "error"
+                          : cameraStatus === "permission-denied" || cameraStatus === "policy-blocked" || cameraStatus === "error"
                           ? "bg-rose-500"
-                          : cameraStatus === "no_cameras" || cameraStatus === "not_readable" || cameraStatus === "overconstrained"
+                          : cameraStatus === "request-timeout" || cameraStatus === "camera-not-found" || cameraStatus === "camera-busy" || cameraStatus === "overconstrained"
                           ? "bg-amber-400"
                           : "bg-white/40"
                       }`}
@@ -1067,20 +1089,24 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         ? "VERIFYING CANDIDATE WITH SERVER..."
                         : cameraStatus === "scanning"
                         ? "READY · ALIGN QR CODE"
-                        : cameraStatus === "requesting_permission"
+                        : cameraStatus === "requesting"
                         ? "REQUESTING CAMERA ACCESS..."
-                        : cameraStatus === "permission_denied"
+                        : cameraStatus === "request-timeout"
+                        ? "CAMERA REQUEST STILL PENDING"
+                        : cameraStatus === "permission-denied"
                         ? "PERMISSION DENIED"
-                        : cameraStatus === "policy_blocked"
+                        : cameraStatus === "policy-blocked"
                         ? "BLOCKED BY PERMISSIONS POLICY"
-                        : cameraStatus === "no_cameras"
+                        : cameraStatus === "camera-not-found"
                         ? "NO CAMERA FOUND"
-                        : cameraStatus === "not_readable"
+                        : cameraStatus === "camera-busy"
                         ? "CAMERA HARDWARE BUSY"
                         : cameraStatus === "overconstrained"
                         ? "CONSTRAINTS UNSUPPORTED"
-                        : cameraStatus === "insecure_context"
+                        : cameraStatus === "insecure-context"
                         ? "INSECURE CONTEXT (HTTPS REQUIRED)"
+                        : cameraStatus === "camera-unsupported"
+                        ? "CAMERA APIS UNSUPPORTED"
                         : "CAMERA READY TO START"}
                     </span>
                   </div>
@@ -1200,7 +1226,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                   )}
 
                   {/* State 2: REQUESTING PERMISSION / INITIALIZING */}
-                  {cameraStatus === "requesting_permission" && (
+                  {cameraStatus === "requesting" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-3 bg-[#080a0c] p-6">
                       <RefreshCw size={28} className="text-[#00e599] animate-spin" />
                       <div className="space-y-1">
@@ -1214,8 +1240,100 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                     </div>
                   )}
 
-                  {/* State 3: PERMISSION DENIED (Comprehensive Mobile Instructions + Camera Settings Help + Try Again + Manual Entry) */}
-                  {cameraStatus === "permission_denied" && (
+                  {/* State 3a: REQUEST TIMEOUT / PENDING BOUNDED WAIT */}
+                  {cameraStatus === "request-timeout" && (
+                    <div
+                      id="scanner-request-timeout-panel"
+                      className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-amber-500/40 bg-amber-500/10 text-amber-400 shrink-0">
+                        <Clock size={24} />
+                      </div>
+
+                      <div className="space-y-1.5 max-w-sm">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA REQUEST STILL PENDING
+                        </h3>
+                        <p className="text-xs text-white/70 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "The browser or camera sensor has not responded yet. The browser may be waiting for your permission decision, access might be blocked in settings, or the sensor is taking too long to open."}
+                        </p>
+                      </div>
+
+                      {/* Expandable Camera Settings Help */}
+                      <div className="w-full max-w-sm text-left">
+                        <button
+                          type="button"
+                          id="btn-timeout-settings-help"
+                          onClick={() => setShowSettingsHelp(!showSettingsHelp)}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#050708] border border-white/10 hover:border-[#00e599]/40 text-left transition-colors font-mono text-xs text-[#00e599] cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 font-bold uppercase text-[11px]">
+                            <Sliders size={13} />
+                            <span>CAMERA SETTINGS HELP</span>
+                          </span>
+                          {showSettingsHelp ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
+
+                        {showSettingsHelp && (
+                          <div
+                            id="timeout-settings-help-content"
+                            className="p-3.5 bg-[#050708] border-x border-b border-white/10 space-y-3 text-[11px] font-mono text-white/70 leading-relaxed max-h-60 overflow-y-auto"
+                          >
+                            <div className="space-y-1.5">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Check Active Permission Dialog:
+                              </span>
+                              <p className="text-white/60">
+                                Check if your browser has an active permission pop-up or notification asking for camera access.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1.5 pt-2 border-t border-white/10">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Android Chrome Settings:
+                              </span>
+                              <p className="text-white/60">
+                                1. Open Chrome&apos;s three-dot menu (⋮) &gt; <strong>Settings</strong> &gt; <strong>Site settings</strong> &gt; <strong>Camera</strong>.
+                              </p>
+                              <p className="text-white/60">
+                                2. If <strong>dev.itclub.one</strong> is listed in Blocked, tap it and change it to <strong>Allow</strong>.
+                              </p>
+                              <p className="text-white/60">
+                                3. Android System: <strong>Settings</strong> &gt; <strong>Apps</strong> &gt; <strong>Chrome</strong> &gt; <strong>Permissions</strong> &gt; <strong>Camera</strong> &gt; select &quot;Allow only while using the app&quot;.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Primary Actions */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full max-w-sm">
+                        <button
+                          type="button"
+                          id="btn-retry-timeout"
+                          onClick={() => startCamera(selectedCameraId || undefined)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                        >
+                          <RefreshCw size={13} />
+                          <span>TRY AGAIN</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          id="btn-timeout-use-manual"
+                          onClick={() => handleSwitchMode("manual")}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/15 bg-white/5 text-white hover:bg-white/10 font-mono text-xs uppercase cursor-pointer min-h-[44px]"
+                        >
+                          <Keyboard size={13} />
+                          <span>ENTER TOKEN MANUALLY</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* State 3b: PERMISSION DENIED (Comprehensive Mobile Instructions + Camera Settings Help + Try Again + Manual Entry) */}
+                  {cameraStatus === "permission-denied" && (
                     <div
                       id="scanner-permission-denied-panel"
                       className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
@@ -1230,7 +1348,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                         </h3>
                         <p className="text-xs text-white/70 leading-relaxed">
                           {cameraErrorInfo?.message ||
-                            "Browser or operating-system camera permission was denied."}
+                            "Camera access was denied by your browser or operating system settings."}
                         </p>
                       </div>
 
@@ -1254,36 +1372,63 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                             id="camera-settings-help-content"
                             className="p-3.5 bg-[#050708] border-x border-b border-white/10 space-y-3 text-[11px] font-mono text-white/70 leading-relaxed max-h-60 overflow-y-auto"
                           >
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                               <span className="text-[#00e599] font-bold block uppercase text-[10px]">
-                                • Mobile Chrome (Android &amp; iOS):
+                                • Android Chrome (Browser Settings):
                               </span>
                               <p className="text-white/60">
-                                1. Tap the page controls icon (tune / sliders or lock icon) beside the address bar, or tap menu (⋮) &gt; Settings &gt; Site settings &gt; Camera.
+                                1. Tap Chrome&apos;s three-dot menu (⋮) in the top-right corner.
                               </p>
                               <p className="text-white/60">
-                                2. Set Camera to <strong>Allow</strong> for this site.
+                                2. Open <strong>Settings</strong> &gt; <strong>Site settings</strong> &gt; <strong>Camera</strong>.
                               </p>
                               <p className="text-white/60">
-                                3. <strong>Android System Permission:</strong> If Chrome lacks device permission, open Android Settings &gt; Apps &gt; Chrome &gt; Permissions &gt; Camera &gt; select &quot;Allow only while using the app&quot;.
+                                3. Ensure &quot;Sites can ask to use your camera&quot; is turned on.
+                              </p>
+                              <p className="text-white/60">
+                                4. Check the <strong>Blocked</strong> list. If <strong>dev.itclub.one</strong> is listed, tap it and select <strong>Allow</strong> (or <strong>Clear &amp; reset</strong>).
                               </p>
                             </div>
 
-                            <div className="space-y-1 pt-1 border-t border-white/10">
+                            <div className="space-y-1.5 pt-2 border-t border-white/10">
+                              <span className="text-[#00e599] font-bold block uppercase text-[10px]">
+                                • Android System Settings (App Permission):
+                              </span>
+                              <p className="text-white/60">
+                                1. Open your device&apos;s <strong>Android Settings</strong>.
+                              </p>
+                              <p className="text-white/60">
+                                2. Go to <strong>Apps</strong> &gt; <strong>Chrome</strong> &gt; <strong>Permissions</strong> &gt; <strong>Camera</strong>.
+                              </p>
+                              <p className="text-white/60">
+                                3. Select <strong>&quot;Allow only while using the app&quot;</strong>.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1 pt-2 border-t border-white/10 bg-amber-500/10 p-2 border border-amber-500/20 text-amber-300">
+                              <span className="font-bold block uppercase text-[10px]">
+                                ℹ Address Bar Notice:
+                              </span>
+                              <p className="text-[10px] text-amber-200/80 leading-normal">
+                                In mobile Chrome, clicking the lock or tune icon beside the URL opens the TLS connection details (certificate info) and does not show camera permission controls. Please use Chrome&apos;s 3-dot menu or Android Settings above.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1 pt-2 border-t border-white/10">
                               <span className="text-[#00e599] font-bold block uppercase text-[10px]">
                                 • Mobile Safari (iOS):
                               </span>
                               <p className="text-white/60">
-                                1. Tap the <strong>aA</strong> or page settings icon in the address bar &gt; Website Settings &gt; Camera &gt; <strong>Allow</strong>.
+                                1. Tap the <strong>aA</strong> icon in the address bar &gt; <strong>Website Settings</strong> &gt; <strong>Camera</strong> &gt; <strong>Allow</strong>.
                               </p>
                               <p className="text-white/60">
-                                2. In iOS Settings: open Settings &gt; Safari &gt; Camera &gt; set to <strong>Ask</strong> or <strong>Allow</strong>.
+                                2. In iOS Settings: open <strong>Settings</strong> &gt; <strong>Safari</strong> &gt; <strong>Camera</strong> &gt; <strong>Allow</strong>.
                               </p>
                             </div>
 
-                            <div className="space-y-1 pt-1 border-t border-white/10">
+                            <div className="space-y-1 pt-2 border-t border-white/10">
                               <span className="text-[#00e599] font-bold block uppercase text-[10px]">
-                                • Desktop Chrome / Edge / Brave:
+                                • Desktop Browsers:
                               </span>
                               <p className="text-white/60">
                                 Click the site controls icon beside the URL in the address bar and switch Camera to <strong>Allow</strong>.
@@ -1343,8 +1488,8 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                     </div>
                   )}
 
-                  {/* State 3b: POLICY BLOCKED */}
-                  {cameraStatus === "policy_blocked" && (
+                  {/* State 3c: POLICY BLOCKED */}
+                  {cameraStatus === "policy-blocked" && (
                     <div
                       id="scanner-policy-blocked-panel"
                       className="absolute inset-0 p-5 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c] overflow-y-auto"
@@ -1392,7 +1537,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                     </div>
                   )}
 
-                  {/* State 3c: OVERCONSTRAINED */}
+                  {/* State 3d: OVERCONSTRAINED */}
                   {cameraStatus === "overconstrained" && (
                     <div
                       id="scanner-overconstrained-panel"
@@ -1458,7 +1603,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                   )}
 
                   {/* State 4: NO CAMERA FOUND */}
-                  {cameraStatus === "no_cameras" && (
+                  {cameraStatus === "camera-not-found" && (
                     <div
                       id="scanner-no-cameras-panel"
                       className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
@@ -1495,7 +1640,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                   )}
 
                   {/* State 5: CAMERA HARDWARE BUSY (NotReadableError) */}
-                  {cameraStatus === "not_readable" && (
+                  {cameraStatus === "camera-busy" && (
                     <div
                       id="scanner-camera-busy-panel"
                       className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
@@ -1532,7 +1677,7 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                   )}
 
                   {/* State 6: INSECURE CONTEXT */}
-                  {cameraStatus === "insecure_context" && (
+                  {cameraStatus === "insecure-context" && (
                     <div
                       id="scanner-insecure-context-panel"
                       className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
@@ -1558,7 +1703,35 @@ export default function ScannerClient({ staffEmail, staffRole = "interviewer" }:
                     </div>
                   )}
 
-                  {/* State 7: GENERAL CAMERA ERROR */}
+                  {/* State 7: CAMERA APIS UNSUPPORTED */}
+                  {cameraStatus === "camera-unsupported" && (
+                    <div
+                      id="scanner-unsupported-panel"
+                      className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-[#080a0c]"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center border border-rose-500/40 bg-rose-500/10 text-rose-400 shrink-0">
+                        <CameraOff size={24} />
+                      </div>
+                      <div className="space-y-1 max-w-xs">
+                        <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                          CAMERA APIS NOT SUPPORTED
+                        </h3>
+                        <p className="text-xs text-white/60 leading-relaxed">
+                          {cameraErrorInfo?.message ||
+                            "Your browser does not support optical video capture APIs."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchMode("manual")}
+                        className="px-5 py-2.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] hover:bg-[#00e599]/20 font-mono text-xs uppercase font-semibold cursor-pointer min-h-[44px]"
+                      >
+                        CONTINUE WITH MANUAL ENTRY
+                      </button>
+                    </div>
+                  )}
+
+                  {/* State 8: GENERAL CAMERA ERROR */}
                   {cameraStatus === "error" && (
                     <div
                       id="scanner-general-error-panel"

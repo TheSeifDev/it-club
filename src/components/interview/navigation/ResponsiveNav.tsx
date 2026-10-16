@@ -73,6 +73,9 @@ export default function ResponsiveNav() {
             className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
             priority
           />
+          <span className="font-sans font-black tracking-[-0.02em]">
+            IT<span className="text-[#00e599] ml-1">CLUB</span>
+          </span>
         </Link>
 
         {/* Links + button — right */}

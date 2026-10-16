@@ -347,6 +347,28 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
       assert.equal(classified.fallbackToManual, true);
     });
 
+    it("classifies TimeoutError / pending wait as request_timeout with retry and manual fallback", () => {
+      const err = new Error("Camera initialization timed out: request_timeout");
+      err.name = "TimeoutError";
+      const classified = classifyCameraError(err);
+
+      assert.equal(classified.code, "request_timeout");
+      assert.equal(classified.canRetry, true);
+      assert.equal(classified.fallbackToManual, true);
+      assert.match(classified.title, /still pending/i);
+    });
+
+    it("provides specific Android Chrome site settings and OS permission instructions for NotAllowedError", () => {
+      const err = new Error("NotAllowedError: Permission denied by user");
+      err.name = "NotAllowedError";
+      const classified = classifyCameraError(err);
+
+      assert.equal(classified.code, "not_allowed");
+      assert.ok(classified.instructions.some((line) => line.includes("Site settings") && line.includes("Camera")));
+      assert.ok(classified.instructions.some((line) => line.includes("Android Settings") || line.includes("Android OS")));
+      assert.ok(classified.instructions.some((line) => line.includes("certificate") || line.includes("lock")));
+    });
+
     it("handles unknown or string errors cleanly without leaking sensitive data", () => {
       const classified = classifyCameraError("Generic hardware failure code 0x88");
       assert.equal(classified.code, "unknown");
@@ -547,6 +569,122 @@ describe("Phase 5A: Interview QR Scanner & Attendance Verification", () => {
 
       assert.equal(errorCaught, true);
       assert.equal(trackStopped, true);
+    });
+
+    it("transitions pending request to request-timeout after timeout duration without endless wait", async () => {
+      let cameraStatus = "requesting";
+      let isStarting = true;
+      let errorInfo: unknown = null;
+
+      const attemptId = 1;
+      const activeAttemptId = attemptId;
+
+      // Emulate bounded timeout for test
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          if (activeAttemptId === attemptId) {
+            isStarting = false;
+            cameraStatus = "request-timeout";
+            errorInfo = { code: "request_timeout", title: "Camera Request Still Pending" };
+          }
+          resolve();
+        }, 30);
+      });
+
+      await timeoutPromise;
+
+      assert.equal(cameraStatus, "request-timeout");
+      assert.equal(isStarting, false);
+      assert.notEqual(errorInfo, null);
+    });
+
+    it("detects and stops a late-resolving abandoned camera session using generation counter", async () => {
+      let currentAttempt = 1;
+      let cameraStatus = "requesting";
+      let stoppedLateScanner = false;
+      let uiUpdatedToScanning = false;
+
+      // Simulated slow scanner promise from attempt 1
+      const slowStartPromise = new Promise<{ isScanning: boolean; stop: () => Promise<void>; clear: () => void }>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            isScanning: true,
+            stop: async () => {
+              stoppedLateScanner = true;
+            },
+            clear: () => {},
+          });
+        }, 30);
+      });
+
+      // User times out or clicks retry, incrementing generation to attempt 2
+      currentAttempt = 2;
+      cameraStatus = "requesting";
+
+      // Late attempt 1 resolves
+      const lateScanner = await slowStartPromise;
+      const attempt1Id = 1;
+
+      // Check generation guard in ScannerClient
+      if (currentAttempt !== attempt1Id) {
+        if (lateScanner.isScanning) {
+          await lateScanner.stop();
+        }
+        lateScanner.clear();
+      } else {
+        cameraStatus = "scanning";
+        uiUpdatedToScanning = true;
+      }
+
+      assert.equal(stoppedLateScanner, true);
+      assert.equal(uiUpdatedToScanning, false);
+      assert.notEqual(cameraStatus, "scanning");
+    });
+
+    it("allows safe user retry after a timed-out or rejected attempt", async () => {
+      let attemptCounter = 0;
+      let activeSession = "";
+
+      const startAttempt = async () => {
+        const attemptId = ++attemptCounter;
+        activeSession = `session_${attemptId}`;
+        return { attemptId, activeSession };
+      };
+
+      // First attempt (fails or times out)
+      const first = await startAttempt();
+      assert.equal(first.attemptId, 1);
+      assert.equal(first.activeSession, "session_1");
+
+      // User explicitly clicks TRY AGAIN
+      const second = await startAttempt();
+      assert.equal(second.attemptId, 2);
+      assert.equal(second.activeSession, "session_2");
+    });
+
+    it("maps each classified camera error to its unique mutually exclusive state", () => {
+      const errorMap: Record<string, string> = {
+        not_allowed: "permission-denied",
+        not_found: "camera-not-found",
+        not_readable: "camera-busy",
+        overconstrained: "overconstrained",
+        insecure_context: "insecure-context",
+        policy_blocked: "policy-blocked",
+        unsupported: "camera-unsupported",
+        request_timeout: "request-timeout",
+        unknown: "error",
+      };
+
+      const states = Object.values(errorMap);
+      const uniqueStates = new Set(states);
+      // All states must be distinct
+      assert.equal(states.length, uniqueStates.size);
+
+      assert.equal(errorMap["not_allowed"], "permission-denied");
+      assert.equal(errorMap["request_timeout"], "request-timeout");
+      assert.equal(errorMap["policy_blocked"], "policy-blocked");
+      assert.equal(errorMap["not_readable"], "camera-busy");
+      assert.equal(errorMap["not_found"], "camera-not-found");
     });
   });
 

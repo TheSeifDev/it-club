@@ -11,6 +11,7 @@ export type CameraErrorCode =
   | "insecure_context"
   | "policy_blocked"
   | "unsupported"
+  | "request_timeout"
   | "unknown";
 
 export interface CameraErrorInfo {
@@ -183,7 +184,31 @@ export function classifyCameraError(err: unknown): CameraErrorInfo {
     };
   }
 
-  // 1. NotAllowedError / Permission Denied
+  // 1a. Request Timeout / Pending Bounded Wait
+  if (
+    errName === "TimeoutError" ||
+    errMsg.includes("request_timeout") ||
+    errMsg.includes("still pending") ||
+    errMsg.includes("timed out")
+  ) {
+    return {
+      code: "request_timeout",
+      title: "Camera Request Still Pending",
+      message:
+        "The browser or camera sensor has not responded yet. The browser may be waiting for your permission decision, camera access may be blocked in settings, or the sensor is taking too long to open.",
+      instructions: [
+        "Check for an active camera permission prompt in your browser window or notification shade.",
+        "On Android Chrome: open Chrome's three-dot menu (⋮) > Settings > Site settings > Camera, and ensure dev.itclub.one is not blocked.",
+        "On Android: open Android Settings > Apps > Chrome > Permissions and allow Camera access.",
+        "Tap 'Try Again' below to issue a fresh camera request, or use Manual Token Entry.",
+      ],
+      canRetry: true,
+      fallbackToManual: true,
+      isExpectedDenial: false,
+    };
+  }
+
+  // 1b. NotAllowedError / Permission Denied
   if (
     errName === "NotAllowedError" ||
     errName === "PermissionDeniedError" ||
@@ -197,11 +222,11 @@ export function classifyCameraError(err: unknown): CameraErrorInfo {
       title: "Camera Permission Denied",
       message: "Camera access was denied by your browser or operating system settings.",
       instructions: [
-        "In mobile Chrome: tap the page controls icon (tune / sliders or lock) beside the address bar, or tap menu (⋮) > Settings > Site settings > Camera.",
-        "Set Camera permission to 'Allow' for dev.itclub.one.",
-        "On Android: if Chrome itself lacks system camera permission, open Android Settings > Apps > Chrome > Permissions > Camera and select 'Allow only while using the app'.",
-        "On iOS Safari: tap 'aA' or page settings in the address bar > Website Settings > Camera > select 'Allow'.",
-        "Return to the scanner and tap 'Try Again'.",
+        "In Android Chrome: Open Chrome's three-dot menu (⋮) > Settings > Site settings > Camera. Ensure sites are allowed to ask, and if dev.itclub.one is in Blocked, change it to Allow.",
+        "In Android OS: Open Android Settings > Apps > Chrome > Permissions > Camera, and select 'Allow only while using the app'.",
+        "Note: In mobile Chrome, tapping the lock or tune icon beside the URL opens TLS connection details (certificate info) and does not show camera controls when blocked. Use Chrome's 3-dot menu or Android Settings above.",
+        "In iOS Safari: tap 'aA' in address bar > Website Settings > Camera > select 'Allow'.",
+        "Then return to the site, reload the page if needed, and explicitly tap 'Try Again'.",
       ],
       canRetry: true,
       fallbackToManual: true,

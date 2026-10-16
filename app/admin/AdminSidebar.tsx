@@ -83,6 +83,12 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
+  const isInterviewer = userRole === "interviewer";
+  const homeHref = isInterviewer ? "/admin/interviews/scan" : "/admin";
+  const visibleNavItems = isInterviewer
+    ? navItems.filter((item) => item.href === "/admin/interviews/scan")
+    : navItems;
+
   const sidebar = (
     <aside
       data-sidebar-compact={compact}
@@ -92,7 +98,7 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
     >
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
         <Link
-          href="/admin"
+          href={homeHref}
           onClick={() => setMobileOpen(false)}
           className="flex min-w-0 items-center gap-3 text-white transition-colors hover:text-[#00e599]"
         >
@@ -132,7 +138,7 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
           Operations
         </p>
         <div className="space-y-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, "exact" in item ? item.exact : false);
             return (
@@ -141,11 +147,10 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 title={compact ? item.label : undefined}
-                className={`flex items-center gap-3 border px-3 py-2.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e599] ${
-                  active
+                className={`flex items-center gap-3 border px-3 py-2.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00e599] ${active
                     ? "border-[#00e599]/35 bg-[#00e599]/10 text-[#00e599]"
                     : "border-transparent text-white/62 hover:border-white/10 hover:bg-white/[0.035] hover:text-white"
-                } ${compact ? "justify-center" : ""}`}
+                  } ${compact ? "justify-center" : ""}`}
               >
                 <Icon size={17} />
                 {!compact && <span>{item.label}</span>}
@@ -158,11 +163,10 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
               href="/admin/audit-logs"
               onClick={() => setMobileOpen(false)}
               title={compact ? "Audit Logs" : undefined}
-              className={`flex items-center gap-3 border px-3 py-2.5 text-sm font-bold transition-colors ${
-                isActive("/admin/audit-logs")
+              className={`flex items-center gap-3 border px-3 py-2.5 text-sm font-bold transition-colors ${isActive("/admin/audit-logs")
                   ? "border-[#9b7cff]/35 bg-[#9b7cff]/10 text-[#b49dff]"
                   : "border-transparent text-white/62 hover:border-white/10 hover:bg-white/[0.035] hover:text-white"
-              } ${compact ? "justify-center" : ""}`}
+                } ${compact ? "justify-center" : ""}`}
             >
               <ClipboardList size={17} />
               {!compact && (
@@ -177,7 +181,7 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
           )}
         </div>
 
-        {!compact && (
+        {!compact && !isInterviewer && (
           <div className="mt-6 border-t border-white/10 pt-4">
             <p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">
               Track filters
@@ -213,6 +217,8 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
               <p className={`mt-1 inline-flex border px-2 py-0.5 text-[10px] font-bold uppercase ${
                 userRole === "owner"
                   ? "border-[#9b7cff]/35 bg-[#9b7cff]/10 text-[#b49dff]"
+                  : userRole === "interviewer"
+                  ? "border-[#38bdf8]/35 bg-[#38bdf8]/10 text-[#38bdf8]"
                   : "border-[#00e599]/35 bg-[#00e599]/10 text-[#00e599]"
               }`}>
                 {userRole || "staff"}
@@ -256,7 +262,7 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-[#080a0c]/95 px-4 backdrop-blur lg:hidden">
-        <Link href="/admin" className="flex items-center gap-2.5 text-sm font-black uppercase tracking-[0.12em] text-white">
+        <Link href={homeHref} className="flex items-center gap-2.5 text-sm font-black uppercase tracking-[0.12em] text-white">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#00e599]/40 bg-[#00e599]/10 p-0.5">
             <Image
               src="/logo.webp"

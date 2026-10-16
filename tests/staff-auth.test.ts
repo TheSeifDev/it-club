@@ -37,9 +37,10 @@ describe("Staff Authentication & Role Foundation (Phase 1)", () => {
 
   // 2. Staff Role Type Guards & Role Model
   describe("2. Staff Role Validation & Guards", () => {
-    it("accepts valid roles ('owner', 'admin') and rejects arbitrary or spoofed roles", () => {
+    it("accepts valid roles ('owner', 'admin', 'interviewer') and rejects arbitrary or spoofed roles", () => {
       assert.equal(isStaffRole("owner"), true);
       assert.equal(isStaffRole("admin"), true);
+      assert.equal(isStaffRole("interviewer"), true);
       assert.equal(isStaffRole("student"), false);
       assert.equal(isStaffRole("applicant"), false);
       assert.equal(isStaffRole("superuser"), false);

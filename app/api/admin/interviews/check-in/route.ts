@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   // 1. Staff authentication enforcement
-  const auth = await verifyStaffApiRequest(request, ["owner", "admin"]);
-  if (!auth.authorized || !auth.user) {
+  const auth = await verifyStaffApiRequest(request, ["owner", "admin", "interviewer"]);
+  if (!auth.authorized || !auth.user || !auth.role) {
     return NextResponse.json(
       { error: auth.error, code: auth.code },
       { status: auth.status }
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Verify token and atomically record check-in
-  const result = await verifyAndCheckInInterviewQr(rawToken, auth.user.id);
+  const result = await verifyAndCheckInInterviewQr(rawToken, auth.user.id, auth.role);
 
   if (!result.success) {
     let httpStatus = 400;

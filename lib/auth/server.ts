@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "../../utils/supabase/server.ts";
 import { getServiceRoleClient } from "./service-role.ts";
 import type { StaffRole } from "./roles.ts";
+import { isStaffRole } from "./roles.ts";
 
 export interface StaffContext {
   user: User;
@@ -43,7 +44,7 @@ export async function getStaffRole(userId: string): Promise<StaffRole | null> {
       return null;
     }
 
-    if (data.role === "owner" || data.role === "admin") {
+    if (isStaffRole(data.role)) {
       return data.role;
     }
 

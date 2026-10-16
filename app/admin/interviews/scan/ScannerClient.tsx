@@ -20,6 +20,11 @@ import {
   Lock,
   Power,
   ShieldAlert,
+  Users,
+  Award,
+  FileText,
+  Save,
+  Check,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { parseClientQrPayload, isValidQrTokenFormat } from "../../../../lib/interviews/qr-client.ts";
@@ -34,9 +39,11 @@ import type { CommitteeTrack } from "../../../../lib/admin/types.ts";
 
 export interface ScannerClientProps {
   staffEmail: string;
+  staffRole?: string;
 }
 
 export type ScanMode = "camera" | "manual";
+export type StationMode = "check_in" | "interview_lookup";
 
 export type CameraStatus =
   | "idle"
@@ -54,20 +61,44 @@ export type CameraStatus =
 export type ResultType =
   | "success"
   | "already_checked_in"
+  | "not_checked_in"
+  | "lookup_success"
   | "invalid"
   | "revoked_or_expired"
   | "ineligible"
   | "network_error";
 
 export interface CandidateInfo {
+  applicationId?: string;
   applicationReference: string;
   fullName: string;
   academicId: string;
   primaryTrack: string;
+  secondaryTrack?: string | null;
   academicYear: string;
   department: string;
+  experienceLevel?: string;
+  skills?: string | null;
+  experienceDetails?: string | null;
+  volunteerExperience?: string | null;
+  motivation?: string;
+  learningGoal?: string;
   status: string;
   checkedInAt: string;
+  interviewDate?: string | null;
+  interviewTime?: string | null;
+  interviewLocation?: string | null;
+}
+
+export interface EvaluationInfo {
+  id: string;
+  applicationId: string;
+  interviewerId: string;
+  evaluationNotes: string;
+  rating: string | null;
+  recommendation: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ScanResultData {
@@ -78,6 +109,8 @@ export interface ScanResultData {
   candidate?: CandidateInfo;
   checkedInAt?: string;
   recordedBy?: string;
+  evaluation?: EvaluationInfo | null;
+  allEvaluations?: EvaluationInfo[];
 }
 
 export interface SessionScanLog {
@@ -143,10 +176,27 @@ function triggerHaptic(type: "success" | "duplicate" | "error") {
   }
 }
 
-export default function ScannerClient({ staffEmail }: ScannerClientProps) {
-  // Navigation & mode
+export default function ScannerClient({ staffEmail, staffRole = "interviewer" }: ScannerClientProps) {
+  // Station Mode: Station 1 (Check-In) vs Station 2 (Interview Candidate Lookup)
+  const [stationMode, setStationMode] = useState<StationMode>("check_in");
+  const stationModeRef = useRef<StationMode>("check_in");
+
+  // Keep ref synchronized for camera callbacks without stream tears
+  useEffect(() => {
+    stationModeRef.current = stationMode;
+  }, [stationMode]);
+
+  // Navigation & input mode
   const [mode, setMode] = useState<ScanMode>("camera");
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Interview Evaluation form state (Station Two)
+  const [evalNotes, setEvalNotes] = useState("");
+  const [evalRating, setEvalRating] = useState<string | null>(null);
+  const [evalRecommendation, setEvalRecommendation] = useState("");
+  const [isSavingEval, setIsSavingEval] = useState(false);
+  const [evalSaveMessage, setEvalSaveMessage] = useState<string | null>(null);
+  const [evalSaveError, setEvalSaveError] = useState<string | null>(null);
 
   // Environment diagnostics
   const [envDiagnostic, setEnvDiagnostic] = useState<CameraEnvironmentDiagnostic | null>(null);
@@ -224,7 +274,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     }
   }, []);
 
-  // Submit token to server check-in API
+  // Submit token to server check-in or interview lookup API based on current station mode
   const processCheckIn = useCallback(
     async (rawPayload: string) => {
       if (isProcessingRef.current || hasResultRef.current) return;
@@ -236,9 +286,15 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
       isProcessingRef.current = true;
       setIsProcessing(true);
+      const currentStation = stationModeRef.current;
 
       try {
-        const response = await fetch("/api/admin/interviews/check-in", {
+        const endpoint =
+          currentStation === "check_in"
+            ? "/api/admin/interviews/check-in"
+            : "/api/admin/interviews/lookup";
+
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
@@ -246,8 +302,8 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
         const data = await response.json();
 
-        // 1. Success check-in (HTTP 200)
-        if (response.status === 200 && data.ok) {
+        // Station 1: Attendance Check-In Success (HTTP 200)
+        if (currentStation === "check_in" && response.status === 200 && data.ok) {
           hasResultRef.current = true;
           const candidate = data.candidate as CandidateInfo;
 
@@ -284,7 +340,71 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           return;
         }
 
-        // 2. Already checked in (HTTP 409)
+        // Station 2: Interview Lookup Success (HTTP 200)
+        if (currentStation === "interview_lookup" && response.status === 200 && data.ok) {
+          hasResultRef.current = true;
+          const candidate = data.candidate as CandidateInfo;
+
+          if (soundEnabled) playFeedbackSound("success");
+          triggerHaptic("success");
+
+          // Pre-populate evaluation form
+          setEvalNotes(data.evaluation?.evaluationNotes || "");
+          setEvalRating(data.evaluation?.rating || null);
+          setEvalRecommendation(data.evaluation?.recommendation || "");
+          setEvalSaveMessage(null);
+          setEvalSaveError(null);
+
+          const resultPayload: ScanResultData = {
+            type: "lookup_success",
+            title: "CANDIDATE VERIFIED FOR INTERVIEW",
+            message: "Candidate attendance verified. Interview evaluation form ready.",
+            code: "LOOKUP_SUCCESS",
+            candidate,
+            checkedInAt: candidate.checkedInAt,
+            evaluation: data.evaluation || null,
+            allEvaluations: data.allEvaluations || undefined,
+          };
+
+          setResult(resultPayload);
+          setStats((prev) => ({ ...prev, total: prev.total + 1, verified: prev.verified + 1 }));
+          setSessionLogs((prev) => [
+            {
+              id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+              timestamp: new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
+              reference: candidate.applicationReference,
+              name: candidate.fullName,
+              track: candidate.primaryTrack,
+              type: "success",
+            },
+            ...prev.slice(0, 49),
+          ]);
+          return;
+        }
+
+        // Station 2: Candidate has not checked in at Station 1 yet (HTTP 409 NOT_CHECKED_IN)
+        if (response.status === 409 && data.code === "NOT_CHECKED_IN") {
+          hasResultRef.current = true;
+          if (soundEnabled) playFeedbackSound("duplicate");
+          triggerHaptic("duplicate");
+
+          setResult({
+            type: "not_checked_in",
+            title: "CANDIDATE NOT CHECKED IN YET",
+            message:
+              data.error ||
+              "Candidate has not completed check-in at Station 1 yet. Attendance check-in is required before starting the interview.",
+            code: "NOT_CHECKED_IN",
+          });
+          setStats((prev) => ({ ...prev, total: prev.total + 1, rejected: prev.rejected + 1 }));
+          return;
+        }
+
+        // Station 1: Already checked in (HTTP 409)
         if (response.status === 409 || data.code === "ALREADY_CHECKED_IN") {
           hasResultRef.current = true;
           const candidate = data.candidate as CandidateInfo | undefined;
@@ -321,7 +441,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           return;
         }
 
-        // 3. Invalid token (HTTP 404)
+        // Invalid token (HTTP 404)
         if (response.status === 404 || data.code === "INVALID_TOKEN") {
           hasResultRef.current = true;
           if (soundEnabled) playFeedbackSound("error");
@@ -337,7 +457,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           return;
         }
 
-        // 4. Revoked or Expired token (HTTP 400)
+        // Revoked or Expired token (HTTP 400)
         if (data.code === "REVOKED_TOKEN" || data.code === "EXPIRED_TOKEN") {
           hasResultRef.current = true;
           if (soundEnabled) playFeedbackSound("error");
@@ -353,7 +473,7 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           return;
         }
 
-        // 5. Ineligible status (HTTP 400)
+        // Ineligible status (HTTP 400)
         if (data.code === "INELIGIBLE_STATUS") {
           hasResultRef.current = true;
           if (soundEnabled) playFeedbackSound("error");
@@ -369,15 +489,15 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
           return;
         }
 
-        // 6. Generic bad request or database error
+        // Generic error
         hasResultRef.current = true;
         if (soundEnabled) playFeedbackSound("error");
         triggerHaptic("error");
 
         setResult({
           type: "network_error",
-          title: "CHECK-IN ERROR",
-          message: data.error || "Unable to complete check-in request.",
+          title: "SCANNER ERROR",
+          message: data.error || "Unable to complete request.",
           code: data.code || "ERROR",
         });
         setStats((prev) => ({ ...prev, total: prev.total + 1, rejected: prev.rejected + 1 }));
@@ -593,11 +713,20 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     isProcessingRef.current = false;
     setManualToken("");
     setManualInputError(null);
+    setEvalNotes("");
+    setEvalRating(null);
+    setEvalRecommendation("");
+    setEvalSaveMessage(null);
+    setEvalSaveError(null);
   }, []);
 
   // Keyboard shortcut: Press Space, Enter, or Escape to dismiss result and scan next
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
+        return;
+      }
       if (result && (e.key === "Enter" || e.key === " " || e.key === "Escape")) {
         e.preventDefault();
         resumeScanning();
@@ -606,6 +735,43 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [result, resumeScanning]);
+
+  // Handle saving interview evaluation
+  const handleSaveEvaluation = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!result?.candidate?.applicationId) return;
+
+    setIsSavingEval(true);
+    setEvalSaveMessage(null);
+    setEvalSaveError(null);
+
+    try {
+      const response = await fetch("/api/admin/interviews/evaluations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicationId: result.candidate.applicationId,
+          evaluationNotes: evalNotes,
+          rating: evalRating,
+          recommendation: evalRecommendation,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setEvalSaveError(data.error || "Failed to save evaluation.");
+        if (soundEnabled) playFeedbackSound("error");
+      } else {
+        setEvalSaveMessage(`Saved at ${new Date().toLocaleTimeString("en-GB")}`);
+        if (soundEnabled) playFeedbackSound("success");
+      }
+    } catch (err) {
+      setEvalSaveError(err instanceof Error ? err.message : "Network communication error.");
+      if (soundEnabled) playFeedbackSound("error");
+    } finally {
+      setIsSavingEval(false);
+    }
+  };
 
   // Manual submit handler
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -659,6 +825,69 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
 
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
+      {/* Station Selector Bar: Station 1 (Check-In) vs Station 2 (Interview Lookup) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border border-white/10 bg-[#080a0c] p-3">
+        <button
+          type="button"
+          id="station-mode-checkin"
+          onClick={() => {
+            setStationMode("check_in");
+            setResult(null);
+            hasResultRef.current = false;
+          }}
+          className={`p-3 text-left border transition-all cursor-pointer ${
+            stationMode === "check_in"
+              ? "border-[#00e599] bg-[#00e599]/10 shadow-[0_0_15px_rgba(0,229,153,0.15)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+              <CheckCircle2 size={16} className={stationMode === "check_in" ? "text-[#00e599]" : "text-white/40"} />
+              <span>Station 1: Attendance Check-In</span>
+            </span>
+            {stationMode === "check_in" && (
+              <span className="text-[10px] font-mono px-2 py-0.5 border border-[#00e599]/40 bg-[#00e599]/20 text-[#00e599] uppercase font-bold">
+                Active
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-white/50 mt-1 font-mono">
+            Record candidate attendance once with atomic duplicate detection.
+          </p>
+        </button>
+
+        <button
+          type="button"
+          id="station-mode-lookup"
+          onClick={() => {
+            setStationMode("interview_lookup");
+            setResult(null);
+            hasResultRef.current = false;
+          }}
+          className={`p-3 text-left border transition-all cursor-pointer ${
+            stationMode === "interview_lookup"
+              ? "border-[#38bdf8] bg-[#38bdf8]/10 shadow-[0_0_15px_rgba(56,189,248,0.15)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+              <Users size={16} className={stationMode === "interview_lookup" ? "text-[#38bdf8]" : "text-white/40"} />
+              <span>Station 2: Interview Candidate Lookup</span>
+            </span>
+            {stationMode === "interview_lookup" && (
+              <span className="text-[10px] font-mono px-2 py-0.5 border border-[#38bdf8]/40 bg-[#38bdf8]/20 text-[#38bdf8] uppercase font-bold">
+                Active
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-white/50 mt-1 font-mono">
+            Inspect verified candidate interview profile and record evaluation notes.
+          </p>
+        </button>
+      </div>
+
       {/* Top Controls & Status Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10 bg-[#080a0c] p-3 sm:p-4">
         {/* Mode Selector Tabs */}
@@ -1205,7 +1434,9 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
               className={`border p-5 sm:p-6 transition-all animate-fadeIn ${
                 result.type === "success"
                   ? "border-[#00e599]/60 bg-[#00e599]/[0.05]"
-                  : result.type === "already_checked_in"
+                  : result.type === "lookup_success"
+                  ? "border-[#38bdf8]/60 bg-[#38bdf8]/[0.05]"
+                  : result.type === "already_checked_in" || result.type === "not_checked_in"
                   ? "border-amber-500/60 bg-amber-500/[0.05]"
                   : "border-rose-500/60 bg-rose-500/[0.05]"
               }`}
@@ -1217,16 +1448,22 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                     className={`w-10 h-10 flex items-center justify-center border shrink-0 ${
                       result.type === "success"
                         ? "border-[#00e599]/60 bg-[#00e599]/20 text-[#00e599]"
-                        : result.type === "already_checked_in"
+                        : result.type === "lookup_success"
+                        ? "border-[#38bdf8]/60 bg-[#38bdf8]/20 text-[#38bdf8]"
+                        : result.type === "already_checked_in" || result.type === "not_checked_in"
                         ? "border-amber-500/60 bg-amber-500/20 text-amber-400"
                         : "border-rose-500/60 bg-rose-500/20 text-rose-400"
                     }`}
                   >
                     {result.type === "success" && <CheckCircle2 size={20} />}
-                    {result.type === "already_checked_in" && <AlertTriangle size={20} />}
-                    {result.type !== "success" && result.type !== "already_checked_in" && (
-                      <XCircle size={20} />
+                    {result.type === "lookup_success" && <Users size={20} />}
+                    {(result.type === "already_checked_in" || result.type === "not_checked_in") && (
+                      <AlertTriangle size={20} />
                     )}
+                    {result.type !== "success" &&
+                      result.type !== "lookup_success" &&
+                      result.type !== "already_checked_in" &&
+                      result.type !== "not_checked_in" && <XCircle size={20} />}
                   </div>
 
                   <div>
@@ -1234,7 +1471,9 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                       className={`font-mono text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 border ${
                         result.type === "success"
                           ? "border-[#00e599]/40 bg-[#00e599]/15 text-[#00e599]"
-                          : result.type === "already_checked_in"
+                          : result.type === "lookup_success"
+                          ? "border-[#38bdf8]/40 bg-[#38bdf8]/15 text-[#38bdf8]"
+                          : result.type === "already_checked_in" || result.type === "not_checked_in"
                           ? "border-amber-500/40 bg-amber-500/15 text-amber-400"
                           : "border-rose-500/40 bg-rose-500/15 text-rose-400"
                       }`}
@@ -1266,7 +1505,14 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                       <span className="font-mono text-[10px] tracking-wider text-white/40 uppercase">
                         CANDIDATE PROFILE
                       </span>
-                      {getTrackBadge(result.candidate.primaryTrack)}
+                      <div className="flex items-center gap-1.5">
+                        {getTrackBadge(result.candidate.primaryTrack)}
+                        {result.candidate.secondaryTrack && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 border border-white/15 bg-white/5 text-white/60 uppercase">
+                            2ND: {result.candidate.secondaryTrack}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1311,7 +1557,9 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                     <div className="flex items-center gap-2 text-white/60">
                       <Clock size={13} className="text-[#00e599]" />
                       <span>
-                        {result.type === "success" ? "CHECKED IN AT:" : "PREVIOUS CHECK-IN:"}{" "}
+                        {result.type === "success"
+                          ? "CHECKED IN AT:"
+                          : "ATTENDANCE TIMESTAMP:"}{" "}
                         {result.checkedInAt
                           ? new Date(result.checkedInAt).toLocaleTimeString("en-GB", {
                               hour: "2-digit",
@@ -1328,6 +1576,225 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                       </span>
                     )}
                   </div>
+
+                  {/* Station Two: Interview Profile & Dedicated Evaluation Form */}
+                  {result.type === "lookup_success" && (
+                    <div className="border-t border-white/10 pt-4 space-y-4">
+                      {/* Interview Extended Details */}
+                      {(result.candidate.skills ||
+                        result.candidate.motivation ||
+                        result.candidate.learningGoal ||
+                        result.candidate.experienceDetails) && (
+                        <div className="bg-[#050708] border border-white/10 p-4 space-y-3 text-xs">
+                          <div className="flex items-center gap-2 text-white/50 font-mono text-[11px] uppercase">
+                            <FileText size={14} className="text-[#38bdf8]" />
+                            <span className="font-bold text-white">Interview Profile Details</span>
+                          </div>
+
+                          {result.candidate.skills && (
+                            <div className="pt-2 border-t border-white/5">
+                              <span className="font-mono text-[10px] text-white/40 uppercase block">
+                                Technical Skills
+                              </span>
+                              <p className="text-white/80 mt-1 leading-relaxed">
+                                {result.candidate.skills}
+                              </p>
+                            </div>
+                          )}
+
+                          {result.candidate.motivation && (
+                            <div className="pt-2 border-t border-white/5">
+                              <span className="font-mono text-[10px] text-white/40 uppercase block">
+                                Candidate Motivation
+                              </span>
+                              <p className="text-white/80 mt-1 leading-relaxed text-[11px]">
+                                {result.candidate.motivation}
+                              </p>
+                            </div>
+                          )}
+
+                          {result.candidate.learningGoal && (
+                            <div className="pt-2 border-t border-white/5">
+                              <span className="font-mono text-[10px] text-white/40 uppercase block">
+                                Learning Goals
+                              </span>
+                              <p className="text-white/80 mt-1 leading-relaxed text-[11px]">
+                                {result.candidate.learningGoal}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Evaluation Form */}
+                      <form
+                        onSubmit={handleSaveEvaluation}
+                        className="bg-[#050708] border border-[#38bdf8]/40 p-4 space-y-4"
+                      >
+                        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                          <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#38bdf8] flex items-center gap-2">
+                            <Award size={15} />
+                            <span>Interviewer Evaluation &amp; Notes</span>
+                          </span>
+                          <span className="font-mono text-[10px] text-white/40">
+                            Attributed to: {staffEmail} ({staffRole})
+                          </span>
+                        </div>
+
+                        {/* Predefined Ratings */}
+                        <div>
+                          <label className="block font-mono text-[10px] text-white/60 uppercase tracking-wider mb-2">
+                            Candidate Assessment Rating
+                          </label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {(
+                              [
+                                {
+                                  value: "STRONG_HIRE",
+                                  label: "Strong Hire",
+                                  color: "border-emerald-500 text-emerald-400 bg-emerald-500/10",
+                                },
+                                {
+                                  value: "HIRE",
+                                  label: "Hire",
+                                  color: "border-teal-500 text-teal-300 bg-teal-500/10",
+                                },
+                                {
+                                  value: "NEUTRAL",
+                                  label: "Neutral",
+                                  color: "border-amber-500 text-amber-300 bg-amber-500/10",
+                                },
+                                {
+                                  value: "NO_HIRE",
+                                  label: "No Hire",
+                                  color: "border-rose-500 text-rose-400 bg-rose-500/10",
+                                },
+                              ] as const
+                            ).map((item) => (
+                              <button
+                                key={item.value}
+                                type="button"
+                                onClick={() => setEvalRating(item.value)}
+                                className={`py-2 px-3 border text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                                  evalRating === item.value
+                                    ? `${item.color} shadow-sm ring-1 ring-white/20`
+                                    : "border-white/10 text-white/40 hover:text-white hover:border-white/25"
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Evaluation Notes */}
+                        <div>
+                          <label
+                            htmlFor="eval-notes-input"
+                            className="block font-mono text-[10px] text-white/60 uppercase tracking-wider mb-1.5"
+                          >
+                            Evaluation Notes &amp; Observations
+                          </label>
+                          <textarea
+                            id="eval-notes-input"
+                            rows={4}
+                            value={evalNotes}
+                            onChange={(e) => setEvalNotes(e.target.value)}
+                            placeholder="Enter evaluation notes regarding technical problem solving, teamwork, communication, strengths, and fit for the track..."
+                            className="w-full bg-[#080a0c] border border-white/15 px-3 py-2 text-xs text-white placeholder-white/25 focus:border-[#38bdf8] focus:outline-none transition-colors"
+                          />
+                        </div>
+
+                        {/* Recommendation */}
+                        <div>
+                          <label
+                            htmlFor="eval-recommendation-input"
+                            className="block font-mono text-[10px] text-white/60 uppercase tracking-wider mb-1.5"
+                          >
+                            Recommended Role or Focus (Optional)
+                          </label>
+                          <input
+                            id="eval-recommendation-input"
+                            type="text"
+                            value={evalRecommendation}
+                            onChange={(e) => setEvalRecommendation(e.target.value)}
+                            placeholder="e.g. Recommended for Technical Workshop Mentor"
+                            className="w-full bg-[#080a0c] border border-white/15 px-3 py-2 text-xs text-white placeholder-white/25 focus:border-[#38bdf8] focus:outline-none transition-colors"
+                          />
+                        </div>
+
+                        {/* Form Submission */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                          <button
+                            type="submit"
+                            id="btn-save-evaluation"
+                            disabled={isSavingEval}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#38bdf8] text-[#050708] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#60a5fa] disabled:opacity-50 transition-colors cursor-pointer min-h-[40px]"
+                          >
+                            {isSavingEval ? (
+                              <>
+                                <RefreshCw size={13} className="animate-spin" />
+                                <span>SAVING EVALUATION...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save size={13} />
+                                <span>SAVE EVALUATION</span>
+                              </>
+                            )}
+                          </button>
+
+                          {evalSaveMessage && (
+                            <span className="text-xs font-mono text-[#00e599] flex items-center gap-1.5 animate-fadeIn">
+                              <Check size={14} />
+                              <span>{evalSaveMessage}</span>
+                            </span>
+                          )}
+
+                          {evalSaveError && (
+                            <span className="text-xs font-mono text-rose-400 flex items-center gap-1.5 animate-fadeIn">
+                              <AlertTriangle size={14} />
+                              <span>{evalSaveError}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Committee Review Roster (Only for owner/admin with other evaluations) */}
+                        {result.allEvaluations && result.allEvaluations.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+                            <p className="font-mono text-[11px] font-bold uppercase text-white/50 tracking-wider">
+                              All Committee Evaluations ({result.allEvaluations.length})
+                            </p>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {result.allEvaluations.map((ev) => (
+                                <div
+                                  key={ev.id}
+                                  className="border border-white/10 bg-[#080a0c] p-2.5 text-xs font-mono space-y-1"
+                                >
+                                  <div className="flex items-center justify-between text-[10px] text-white/40">
+                                    <span>INTERVIEWER ID: {ev.interviewerId}</span>
+                                    <span className="font-bold text-white">
+                                      {ev.rating || "NO RATING"}
+                                    </span>
+                                  </div>
+                                  {ev.evaluationNotes && (
+                                    <p className="text-white/80 text-[11px] whitespace-pre-wrap">
+                                      {ev.evaluationNotes}
+                                    </p>
+                                  )}
+                                  {ev.recommendation && (
+                                    <p className="text-[#38bdf8] text-[10px]">
+                                      Fit: {ev.recommendation}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </form>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Non-candidate Error Message */
@@ -1347,13 +1814,15 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                   className={`inline-flex items-center gap-2 px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[44px] ${
                     result.type === "success"
                       ? "bg-[#00e599] text-[#050708] hover:bg-[#00ffaa]"
-                      : result.type === "already_checked_in"
+                      : result.type === "lookup_success"
+                      ? "bg-[#38bdf8] text-[#050708] hover:bg-[#60a5fa]"
+                      : result.type === "already_checked_in" || result.type === "not_checked_in"
                       ? "bg-amber-400 text-[#050708] hover:bg-amber-300"
                       : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
                   }`}
                 >
                   <span>
-                    {result.type === "success"
+                    {result.type === "success" || result.type === "lookup_success"
                       ? "SCAN NEXT CANDIDATE (SPACE)"
                       : result.type === "already_checked_in"
                       ? "DISMISS & CONTINUE (SPACE)"
@@ -1361,6 +1830,33 @@ export default function ScannerClient({ staffEmail }: ScannerClientProps) {
                   </span>
                   <ArrowRight size={14} />
                 </button>
+
+                {/* Seamless transitions between stations */}
+                {result.type === "not_checked_in" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStationMode("check_in");
+                      resumeScanning();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-3 border border-[#00e599] bg-[#00e599]/10 text-[#00e599] font-mono text-xs uppercase font-bold hover:bg-[#00e599]/20 transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    <span>SWITCH TO STATION 1 (CHECK-IN)</span>
+                  </button>
+                )}
+
+                {result.type === "already_checked_in" && stationMode === "check_in" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStationMode("interview_lookup");
+                      resumeScanning();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-3 border border-[#38bdf8] bg-[#38bdf8]/10 text-[#38bdf8] font-mono text-xs uppercase font-bold hover:bg-[#38bdf8]/20 transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    <span>OPEN IN STATION 2 (INTERVIEW LOOKUP)</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

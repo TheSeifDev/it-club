@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   CalendarClock,
@@ -99,7 +100,10 @@ const kpis: Array<{
 ];
 
 export default async function AdminPage() {
-  await requireStaffRole(["owner", "admin"]);
+  const { role } = await requireStaffRole(["owner", "admin", "interviewer"]);
+  if (role === "interviewer") {
+    redirect("/admin/interviews/scan");
+  }
 
   let metrics: DashboardMetrics | null = null;
   let metricsError: string | null = null;

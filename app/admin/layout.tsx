@@ -13,7 +13,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, role } = await requireStaffRole(["owner", "admin"]);
+  const { user, role } = await requireStaffRole(["owner", "admin", "interviewer"]);
 
   return (
     <div className="admin-shell min-h-screen bg-[#050708] text-white selection:bg-[#00e599] selection:text-[#050708]">

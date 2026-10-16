@@ -35,6 +35,9 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   INTERVIEW_QR_REVOKED: { label: "QR Revoked", color: "#ef4444" },
   INTERVIEW_CHECK_IN_SUCCESS: { label: "Check-In Verified", color: "#00e599" },
   INTERVIEW_CHECK_IN_DUPLICATE: { label: "Duplicate Check-In", color: "#f59e0b" },
+  INTERVIEW_CANDIDATE_LOOKUP: { label: "Interview Lookup", color: "#38bdf8" },
+  INTERVIEW_EVALUATION_CREATED: { label: "Evaluation Created", color: "#a855f7" },
+  INTERVIEW_EVALUATION_UPDATED: { label: "Evaluation Updated", color: "#c084fc" },
   STAFF_ROLE_ASSIGNED: { label: "Staff Role Assigned", color: "#9b7cff" },
   OWNER_BOOTSTRAP: { label: "Owner Bootstrapped", color: "#9b7cff" },
 };

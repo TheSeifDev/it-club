@@ -15,6 +15,9 @@ export type AuditAction =
   | "INTERVIEW_QR_REVOKED"
   | "INTERVIEW_CHECK_IN_SUCCESS"
   | "INTERVIEW_CHECK_IN_DUPLICATE"
+  | "INTERVIEW_CANDIDATE_LOOKUP"
+  | "INTERVIEW_EVALUATION_CREATED"
+  | "INTERVIEW_EVALUATION_UPDATED"
   // Staff actions
   | "STAFF_ROLE_ASSIGNED"
   | "OWNER_BOOTSTRAP";
@@ -25,9 +28,11 @@ export type AuditEntityType =
   | "student_account"
   | "interview_qr"
   | "staff_member"
-  | "system";
+  | "system"
+  | "interview_evaluation";
 
-export type AuditActorRole = "owner" | "admin" | "student" | "applicant" | "system" | "anonymous";
+export type AuditActorRole = "owner" | "admin" | "interviewer" | "student" | "applicant" | "system" | "anonymous";
+
 
 export type AuditOutcome = "SUCCESS" | "FAILURE";
 

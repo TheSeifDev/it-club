@@ -25,6 +25,32 @@ export async function GET(request: Request) {
     );
   }
 
+  if (student.isTempPasswordExpired) {
+    return NextResponse.json(
+      {
+        error: "Your temporary credentials have expired. Access is locked.",
+        code: "CREDENTIAL_EXPIRED",
+      },
+      {
+        status: 403,
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      }
+    );
+  }
+
+  if (student.passwordChangeRequired) {
+    return NextResponse.json(
+      {
+        error: "You must change your temporary password before accessing QR credentials.",
+        code: "PASSWORD_CHANGE_REQUIRED",
+      },
+      {
+        status: 403,
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      }
+    );
+  }
+
   const { application } = student;
 
   // 2. Enforce QR eligibility server-side

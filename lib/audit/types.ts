@@ -9,6 +9,9 @@ export type AuditAction =
   | "NOTIFICATION_FAILED"
   // Student account actions
   | "STUDENT_ACCOUNT_ACTIVATED"
+  | "STUDENT_ACCOUNT_PROVISIONED"
+  | "STUDENT_CREDENTIAL_REISSUED"
+  | "STUDENT_PASSWORD_CHANGED"
   // Interview actions
   | "INTERVIEW_SCHEDULED"
   | "INTERVIEW_QR_ISSUED"

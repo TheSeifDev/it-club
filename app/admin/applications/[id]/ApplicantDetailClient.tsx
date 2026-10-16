@@ -18,6 +18,11 @@ import {
   FileText,
   Loader2,
   Lock,
+  KeyRound,
+  Copy,
+  Check,
+  Clock,
+  ShieldAlert,
 } from "lucide-react";
 import type { ApplicationDetail, ApplicationStatus, InvitationNotificationSummary } from "../../../../lib/admin/types";
 import {
@@ -26,14 +31,21 @@ import {
   ACADEMIC_YEAR_METADATA,
   VALID_STATUS_TRANSITIONS,
 } from "../../../../lib/admin/transitions";
+import { isStudentPortalAllowedStatus } from "../../../../lib/auth/student";
 
 interface Props {
   application: ApplicationDetail;
   latestInvitation: InvitationNotificationSummary | null;
   currentStaffRole: string;
+  serverTimestamp?: string;
 }
 
-export default function ApplicantDetailClient({ application: initialApp, currentStaffRole, latestInvitation }: Props) {
+export default function ApplicantDetailClient({
+  application: initialApp,
+  currentStaffRole,
+  latestInvitation,
+  serverTimestamp,
+}: Props) {
   const router = useRouter();
   const [app, setApp] = useState<ApplicationDetail>(initialApp);
   const [revealNid, setRevealNid] = useState(false);
@@ -54,6 +66,72 @@ export default function ApplicantDetailClient({ application: initialApp, current
   const [isReissuingInvite, setIsReissuingInvite] = useState(false);
   const [reissueMessage, setReissueMessage] = useState("");
   const [reissueError, setReissueError] = useState("");
+
+  // Direct Account Provisioning & In-Person Credential State
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState("");
+  const [provisionSuccessMsg, setProvisionSuccessMsg] = useState("");
+  const [credentialModal, setCredentialModal] = useState<{
+    temporaryPassword: string;
+    expiresAt: string;
+    issuedAt: string;
+    universityEmail: string;
+    isReissue: boolean;
+  } | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  const handleProvisionOrReissue = async (isReissue: boolean) => {
+    setIsProvisioning(true);
+    setProvisionError("");
+    setProvisionSuccessMsg("");
+    setCopiedPassword(false);
+
+    try {
+      const res = await fetch(`/api/admin/applications/${app.id}/provision-account`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reissue: isReissue }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setProvisionError(json.error || "Failed to provision student account.");
+        setIsProvisioning(false);
+        return;
+      }
+
+      if (json.studentAccount) {
+        setApp((prev) => ({
+          ...prev,
+          user_id: json.userId || prev.user_id,
+          activated_at: json.studentAccount.activated_at || prev.activated_at,
+          student_account: json.studentAccount,
+        }));
+      }
+
+      setProvisionSuccessMsg(json.message);
+      setCredentialModal({
+        temporaryPassword: json.temporaryPassword,
+        expiresAt: json.expiresAt,
+        issuedAt: json.issuedAt,
+        universityEmail: json.universityEmail || app.university_email,
+        isReissue: Boolean(json.isReissue),
+      });
+      router.refresh();
+    } catch {
+      setProvisionError("Network error while provisioning account. Please retry.");
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    if (!credentialModal?.temporaryPassword) return;
+    navigator.clipboard.writeText(credentialModal.temporaryPassword);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2500);
+  };
 
   const trackMeta = TRACK_METADATA[app.primary_track] || {
     name: app.primary_track,
@@ -182,6 +260,15 @@ export default function ApplicantDetailClient({ application: initialApp, current
   };
 
   const sanitizedWaNumber = app.whatsapp.replace(/[^0-9]/g, "");
+
+  const isEligibleForPortal = isStudentPortalAllowedStatus(app.status);
+
+  const isAccountExpired = Boolean(
+    app.student_account?.password_change_required &&
+    app.student_account?.temp_password_expires_at &&
+    new Date(serverTimestamp || app.updated_at).getTime() >
+      new Date(app.student_account.temp_password_expires_at).getTime()
+  );
 
   return (
     <div className="space-y-6">
@@ -612,6 +699,149 @@ export default function ApplicantDetailClient({ application: initialApp, current
             </div>
           </div>
 
+          {/* Direct Account Provisioning & In-Person Credentials Card */}
+          <div className="border border-white/10 bg-[#080a0c] p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <KeyRound size={14} className="text-[#00e599]" />
+                <span>IN-PERSON ACCOUNT PROVISIONING</span>
+              </span>
+              {app.student_account?.password_change_required ? (
+                isAccountExpired ? (
+                  <span className="px-2 py-0.5 border border-rose-500/40 bg-rose-500/10 text-rose-300 font-mono text-[10px] font-bold uppercase">
+                    CREDENTIAL EXPIRED
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 border border-amber-500/40 bg-amber-500/10 text-amber-300 font-mono text-[10px] font-bold uppercase">
+                    TEMP PASSWORD ACTIVE
+                  </span>
+                )
+              ) : app.student_account ? (
+                <span className="px-2 py-0.5 border border-[#00e599]/40 bg-[#00e599]/10 text-[#00e599] font-mono text-[10px] font-bold uppercase">
+                  PASSWORD VERIFIED
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 border border-white/20 bg-white/5 text-white/50 font-mono text-[10px] font-bold uppercase">
+                  NOT PROVISIONED
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3 font-mono text-xs">
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase">UNIVERSITY LOGIN EMAIL</span>
+                <span className="text-white font-semibold">{app.university_email}</span>
+                <span className="text-[10px] text-white/40 block mt-0.5">
+                  (Canonical Supabase Auth login identity)
+                </span>
+              </div>
+
+              <div>
+                <span className="text-white/40 block text-[10px] uppercase">PROVISIONING STATUS</span>
+                <span
+                  className={
+                    app.student_account?.password_change_required
+                      ? isAccountExpired
+                        ? "text-rose-400 font-semibold"
+                        : "text-amber-300 font-semibold"
+                      : app.student_account
+                      ? "text-[#00e599] font-semibold"
+                      : "text-white/50"
+                  }
+                >
+                  {app.student_account
+                    ? app.student_account.password_change_required
+                      ? isAccountExpired
+                        ? "Temporary credential expired (24h limit). Student access locked."
+                        : "Temporary password active. Mandatory change pending."
+                      : app.student_account.password_changed_at
+                      ? `Password changed and verified on ${new Date(
+                          app.student_account.password_changed_at
+                        ).toLocaleString()}`
+                      : "Account provisioned and active."
+                    : "No Student Portal account provisioned yet."}
+                </span>
+              </div>
+
+              {app.student_account?.temp_password_issued_at && (
+                <div>
+                  <span className="text-white/40 block text-[10px] uppercase">
+                    TEMPORARY CREDENTIAL ISSUED AT
+                  </span>
+                  <span className="text-white/80">
+                    {new Date(app.student_account.temp_password_issued_at).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {app.student_account?.temp_password_expires_at && (
+                <div>
+                  <span className="text-white/40 block text-[10px] uppercase">
+                    TEMPORARY CREDENTIAL EXPIRATION (24H)
+                  </span>
+                  <span
+                    className={
+                      isAccountExpired && app.student_account.password_change_required
+                        ? "text-rose-400 font-bold"
+                        : "text-amber-300 font-semibold"
+                    }
+                  >
+                    {new Date(app.student_account.temp_password_expires_at).toLocaleString()}
+                    {isAccountExpired && app.student_account.password_change_required
+                      ? " (EXPIRED)"
+                      : ""}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="pt-3 border-t border-white/5 space-y-2">
+              {isEligibleForPortal ? (
+                <button
+                  type="button"
+                  disabled={isProvisioning}
+                  onClick={() => handleProvisionOrReissue(Boolean(app.student_account))}
+                  className="w-full py-2.5 px-3 border border-[#00e599]/40 hover:border-[#00e599] bg-[#00e599]/15 hover:bg-[#00e599]/25 text-[#00e599] font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                >
+                  {isProvisioning ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>GENERATING CREDENTIALS...</span>
+                    </>
+                  ) : app.student_account ? (
+                    <>
+                      <KeyRound size={13} />
+                      <span>REISSUE TEMPORARY PASSWORD</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound size={13} />
+                      <span>PROVISION ACCOUNT (IN-PERSON CREDENTIAL)</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="p-2.5 border border-white/10 bg-white/[0.02] text-center font-mono text-[11px] text-white/40">
+                  Provisioning available once candidate is Shortlisted or Accepted.
+                </div>
+              )}
+
+              {provisionSuccessMsg && (
+                <p className="font-mono text-[11px] leading-relaxed text-[#00e599]">
+                  {provisionSuccessMsg}
+                </p>
+              )}
+
+              {provisionError && (
+                <div className="p-2.5 border border-rose-500/40 bg-rose-500/10 font-mono text-[11px] leading-relaxed text-rose-300 flex items-start gap-1.5">
+                  <AlertCircle size={13} className="shrink-0 mt-0.5 text-rose-400" />
+                  <span>{provisionError}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Student Invitation & Portal Activation Card */}
           <div className="border border-white/10 bg-[#080a0c] p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -842,6 +1072,122 @@ export default function ApplicantDetailClient({ application: initialApp, current
                 ) : (
                   <span>CONFIRM DECISION</span>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================================= */}
+      {/* ONE-TIME IN-PERSON CREDENTIAL HANDOFF MODAL               */}
+      {/* ========================================================= */}
+      {credentialModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+        >
+          <div className="border border-[#00e599]/40 bg-[#080a0c] w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div className="h-1 w-full absolute top-0 left-0 bg-gradient-to-r from-[#00e599] via-[#18c8ed] to-[#9b7cff]" />
+
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound size={20} className="text-[#00e599]" />
+                <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-white">
+                  {credentialModal.isReissue
+                    ? "TEMPORARY PASSWORD REISSUED"
+                    : "STUDENT ACCOUNT PROVISIONED"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCredentialModal(null)}
+                className="text-white/40 hover:text-white text-lg font-mono p-1 cursor-pointer"
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* In-Person Instruction Notice */}
+            <div className="p-3.5 border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 font-sans space-y-1">
+              <p className="font-mono font-bold text-amber-300 text-[11px] flex items-center gap-1.5">
+                <Clock size={13} />
+                <span>IN-PERSON CREDENTIAL HANDOFF REQUIRED</span>
+              </p>
+              <p>
+                Provide this temporary password to the student securely in person. The student must sign in with their university email and will be forced to change their password within 24 hours.
+              </p>
+            </div>
+
+            {/* Applicant Identity Card */}
+            <div className="p-3.5 border border-white/10 bg-white/[0.02] font-mono text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-white/40">APPLICANT:</span>
+                <span className="text-white font-bold">{app.full_name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white/40">LOGIN EMAIL:</span>
+                <span className="text-[#00e599] select-all font-semibold">{credentialModal.universityEmail}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white/40">APPLICATION REF:</span>
+                <span className="text-white/80 font-bold">{app.application_reference}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-white/40">DEADLINE (24H):</span>
+                <span className="text-amber-300 font-semibold">
+                  {new Date(credentialModal.expiresAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* One-Time Temporary Password Display */}
+            <div>
+              <span className="font-mono text-[10px] uppercase text-white/50 block mb-1.5 tracking-wider">
+                TEMPORARY PASSWORD (ONE-TIME VIEW)
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-[#050708] border border-[#00e599]/50 px-4 py-3 font-mono text-lg font-bold tracking-widest text-[#00e599] select-all break-all text-center">
+                  {credentialModal.temporaryPassword}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyPassword}
+                  className="h-full px-4 py-3.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                >
+                  {copiedPassword ? (
+                    <>
+                      <Check size={14} className="text-[#00e599]" />
+                      <span className="text-[#00e599]">COPIED</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>COPY</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Security Guarantee Notice */}
+            <div className="p-3 border border-white/5 bg-white/[0.01] text-[11px] text-white/50 space-y-1">
+              <p className="font-semibold text-white/70 flex items-center gap-1">
+                <ShieldAlert size={12} className="text-amber-400" />
+                <span>Security Notice:</span>
+              </p>
+              <p>
+                This plaintext temporary password will <strong className="text-white/80">NEVER be shown again</strong>. It is not saved in database plaintext fields, audit logs, or query URLs. If lost, you must reissue a new temporary credential.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-white/10 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCredentialModal(null)}
+                className="px-5 py-2.5 bg-[#00e599] hover:bg-[#00c985] text-[#050708] font-mono font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                DONE · SECURELY CLOSE
               </button>
             </div>
           </div>

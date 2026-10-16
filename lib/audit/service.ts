@@ -120,7 +120,11 @@ export async function recordAuditEvent(
 
     const sanitizedMetadata = sanitizeAuditMetadata(input.metadata || {});
 
-    const actorId = input.actor?.id ?? input.actorId ?? null;
+    const rawActorId = input.actor?.id ?? input.actorId ?? null;
+    const isActorUuid =
+      typeof rawActorId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawActorId);
+    const actorId = isActorUuid ? rawActorId : null;
     const actorEmail = input.actor?.email ?? input.actorEmail ?? null;
     const actorRole = input.actor?.role ?? input.actorRole ?? "system";
 

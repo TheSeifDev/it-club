@@ -71,6 +71,7 @@ export default async function ApplicantDetailPage(props: {
       application={application}
       latestInvitation={latestInvitation}
       currentStaffRole={role}
+      serverTimestamp={new Date().toISOString()}
     />
   );
 }

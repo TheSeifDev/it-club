@@ -66,9 +66,21 @@ export interface ApplicationDetail {
   interview_location?: string | null;
   user_id?: string | null;
   activated_at?: string | null;
+  student_account?: StudentAccountSummary | null;
   consented_at: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface StudentAccountSummary {
+  user_id: string;
+  application_id: string;
+  university_email: string;
+  activated_at: string | null;
+  password_change_required: boolean;
+  temp_password_issued_at: string | null;
+  temp_password_expires_at: string | null;
+  password_changed_at: string | null;
 }
 
 export interface InvitationNotificationSummary {

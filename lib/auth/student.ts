@@ -9,6 +9,11 @@ export interface StudentContext {
   user: User;
   application: ApplicationDetail;
   activatedAt: string;
+  passwordChangeRequired: boolean;
+  tempPasswordIssuedAt: string | null;
+  tempPasswordExpiresAt: string | null;
+  passwordChangedAt: string | null;
+  isTempPasswordExpired: boolean;
 }
 
 /**
@@ -31,10 +36,12 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
 
     const serviceClient = getServiceRoleClient();
 
-    // Query the mapping table to verify authorized linkage
+    // Query the mapping table to verify authorized linkage and password lifecycle
     const { data: account, error: accountErr } = await serviceClient
       .from("student_accounts")
-      .select("application_id, university_email, activated_at")
+      .select(
+        "application_id, university_email, activated_at, password_change_required, temp_password_issued_at, temp_password_expires_at, password_changed_at"
+      )
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -63,17 +70,50 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
       return null;
     }
 
+    const passwordChangeRequired = Boolean(account.password_change_required);
+    const tempPasswordIssuedAt = account.temp_password_issued_at || null;
+    const tempPasswordExpiresAt = account.temp_password_expires_at || null;
+    const passwordChangedAt = account.password_changed_at || null;
+    const isTempPasswordExpired = Boolean(
+      passwordChangeRequired &&
+      tempPasswordExpiresAt &&
+      Date.now() > new Date(tempPasswordExpiresAt).getTime()
+    );
+
     return {
       user,
       application: {
         ...app,
         national_id_masked: maskNationalId(app.national_id),
+        student_account: {
+          user_id: user.id,
+          application_id: account.application_id,
+          university_email: account.university_email,
+          activated_at: account.activated_at,
+          password_change_required: passwordChangeRequired,
+          temp_password_issued_at: tempPasswordIssuedAt,
+          temp_password_expires_at: tempPasswordExpiresAt,
+          password_changed_at: passwordChangedAt,
+        },
       },
       activatedAt: account.activated_at,
+      passwordChangeRequired,
+      tempPasswordIssuedAt,
+      tempPasswordExpiresAt,
+      passwordChangedAt,
+      isTempPasswordExpired,
     };
   } catch {
     return null;
   }
+}
+
+export function isStudentPasswordChangeRequired(student: StudentContext): boolean {
+  return student.passwordChangeRequired;
+}
+
+export function isStudentCredentialExpired(student: StudentContext): boolean {
+  return student.isTempPasswordExpired;
 }
 
 /**

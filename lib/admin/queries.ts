@@ -284,9 +284,16 @@ export async function getApplicationById(
 
   if (!data) return null;
 
+  const { data: studentAccount } = await serviceClient
+    .from("student_accounts")
+    .select("user_id, application_id, university_email, activated_at, password_change_required, temp_password_issued_at, temp_password_expires_at, password_changed_at")
+    .eq("application_id", data.id)
+    .maybeSingle();
+
   return {
     ...data,
     national_id_masked: maskNationalId(data.national_id),
+    student_account: studentAccount || null,
   };
 }
 

@@ -19,6 +19,14 @@ export default async function StudentPortalPage() {
     redirect("/student/login");
   }
 
+  if (student.isTempPasswordExpired) {
+    redirect("/student/change-password?error=expired");
+  }
+
+  if (student.passwordChangeRequired) {
+    redirect("/student/change-password");
+  }
+
   const { application } = student;
   const isEligible = isQrEligibleStatus(application.status);
 

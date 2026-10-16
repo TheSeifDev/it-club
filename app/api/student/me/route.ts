@@ -23,6 +23,36 @@ export async function GET() {
     );
   }
 
+  if (student.isTempPasswordExpired) {
+    return NextResponse.json(
+      {
+        error: "Your temporary credentials have expired (24-hour deadline exceeded). Access is locked. Please contact an administrator to reissue a fresh password.",
+        code: "CREDENTIAL_EXPIRED",
+        requiresPasswordChange: true,
+        expired: true,
+      },
+      {
+        status: 403,
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      }
+    );
+  }
+
+  if (student.passwordChangeRequired) {
+    return NextResponse.json(
+      {
+        error: "You must change your temporary password before accessing the student dashboard.",
+        code: "PASSWORD_CHANGE_REQUIRED",
+        requiresPasswordChange: true,
+        expired: false,
+      },
+      {
+        status: 403,
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      }
+    );
+  }
+
   const { application } = student;
   const isEligible = isQrEligibleStatus(application.status);
 

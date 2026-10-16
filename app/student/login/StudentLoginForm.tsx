@@ -61,6 +61,24 @@ export default function StudentLoginForm() {
       // Verify the authenticated user is an activated student member
       const verifyRes = await fetch("/api/student/me");
       if (!verifyRes.ok) {
+        const verifyJson = await verifyRes.json().catch(() => ({}));
+
+        if (verifyJson.code === "PASSWORD_CHANGE_REQUIRED") {
+          setSuccessMessage("Sign in successful. Temporary credential detected — redirecting to password update...");
+          setTimeout(() => {
+            router.push("/student/change-password");
+          }, 800);
+          return;
+        }
+
+        if (verifyJson.code === "CREDENTIAL_EXPIRED") {
+          setErrorMessage(
+            "Your temporary password has expired (24-hour deadline exceeded). Access is locked. Please contact the IT Club administration in person to reissue a fresh temporary password."
+          );
+          setLoading(false);
+          return;
+        }
+
         setErrorMessage("No active student account found for this user. If you received an invitation email, please complete account activation first.");
         setShowActivationGuidance(true);
         setLoading(false);

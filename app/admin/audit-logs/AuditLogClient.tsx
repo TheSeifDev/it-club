@@ -27,7 +27,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   APPLICATION_STATUS_UPDATED: { label: "Status Updated", color: "#00e599" },
   APPLICATION_REVIEW_NOTE_UPDATED: { label: "Reviewer Note Saved", color: "#eab308" },
   NOTIFICATION_ATTEMPTED: { label: "Notification Queued", color: "#a855f7" },
-  NOTIFICATION_DELIVERED: { label: "Email Delivered", color: "#00e599" },
+  NOTIFICATION_DELIVERED: { label: "SMTP Accepted", color: "#00e599" },
   NOTIFICATION_FAILED: { label: "Email Failed", color: "#f43f5e" },
   STUDENT_ACCOUNT_ACTIVATED: { label: "Account Activated", color: "#10b981" },
   INTERVIEW_SCHEDULED: { label: "Interview Scheduled", color: "#14b8a6" },

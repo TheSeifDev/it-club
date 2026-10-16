@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --env-file=.env.local --test --experimental-strip-types tests/**/*.test.ts"
+    "test": "node --env-file=.env.local --env-file=config/test.env --test --experimental-strip-types tests/**/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

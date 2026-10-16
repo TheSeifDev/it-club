@@ -125,7 +125,7 @@ export default function StudentLoginForm() {
               First time signing in?
             </p>
             <p className="text-xs text-white/70 leading-relaxed">
-              Shortlisted and accepted applicants must first activate their portal account by clicking the secure activation link sent to their official university email (<span className="text-[#00e599] font-mono">@batechu.com</span>) to set their password.
+              Shortlisted and accepted applicants receive their activation invitation at the personal notification email supplied during registration. Complete activation and create a password first, then sign in here with your official <span className="text-[#00e599] font-mono">@batechu.com</span> university email.
             </p>
             <div>
               <Link

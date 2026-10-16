@@ -216,7 +216,7 @@ export async function PATCH(
         if (shortRes.status === "sent") {
           shortlistDelivery = {
             status: "sent",
-            message: `Shortlisted notification email dispatched to ${shortRes.recipientEmail || result.application.google_email || result.application.university_email} with account activation link.`,
+            message: `Gmail SMTP accepted the shortlisted invitation for ${shortRes.recipientEmail || result.application.google_email || result.application.university_email}. This does not confirm receipt or opening.`,
           };
         } else if (shortRes.status === "already_sent") {
           shortlistDelivery = {
@@ -265,7 +265,7 @@ export async function PATCH(
         if (invRes.status === "sent") {
           invitationDelivery = {
             status: "sent",
-            message: `Acceptance invitation email dispatched to ${invRes.recipientEmail || result.application.google_email || result.application.university_email} with activation link.`,
+            message: `Gmail SMTP accepted the acceptance invitation for ${invRes.recipientEmail || result.application.google_email || result.application.university_email}. This does not confirm receipt or opening.`,
           };
         } else if (invRes.status === "already_sent") {
           invitationDelivery = {

@@ -21,6 +21,8 @@ export interface SendMailOptions {
 export interface MailerResult {
   success: boolean;
   messageId?: string;
+  /** Whether Nodemailer reported that the SMTP server accepted this recipient. */
+  acceptedRecipient?: boolean;
   safeCategory?: MailerSafeCategory;
   errorMessage?: string;
 }
@@ -56,6 +58,18 @@ export function getTransporter(): Transporter<SentMessageInfo> | null {
   const config = getEmailConfig();
   if (!config.gmailUser || !config.gmailAppPassword) {
     return null;
+  }
+
+  // Test runs opt into an in-memory transport through config/test.env. Keep
+  // this after the configuration guard so missing-config tests remain honest.
+  if (process.env.EMAIL_TRANSPORT === "mock") {
+    return {
+      sendMail: async (message: { to?: string | string[] }) => ({
+        messageId: `<mock-${Date.now()}@itclub.test>`,
+        accepted: [String(message.to)],
+        rejected: [],
+      }),
+    } as unknown as Transporter<SentMessageInfo>;
   }
 
   const currentKey = `${config.smtpHost}:${config.smtpPort}:${config.secure}:${config.gmailUser}:${config.gmailAppPassword}`;
@@ -229,11 +243,17 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const info = await transporter.sendMail(mailPayload);
+      const acceptedRecipient = Array.isArray(info?.accepted)
+        ? info.accepted.some(
+            (recipient) => recipient.toLowerCase() === cleanRecipient
+          )
+        : undefined;
 
       // Verify SMTP accepted the message
       if (info && Array.isArray(info.rejected) && info.rejected.length > 0) {
         return {
           success: false,
+          acceptedRecipient: false,
           safeCategory: "REJECTED_RECIPIENT",
           errorMessage: "Recipient rejected by destination mail server.",
         };
@@ -243,6 +263,7 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
         return {
           success: true,
           messageId: info.messageId,
+          acceptedRecipient,
         };
       }
 

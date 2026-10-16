@@ -36,7 +36,6 @@ export async function POST(request: Request) {
 
   // 2. Body parsing and input validation
   let body: {
-    applicationReference?: string;
     password?: string;
     confirmPassword?: string;
   };
@@ -50,19 +49,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const reference = body.applicationReference?.trim().toUpperCase();
   const password = body.password;
   const confirmPassword = body.confirmPassword;
-
-  if (!reference || !/^ITC-[A-Z0-9]{8}$/.test(reference)) {
-    return NextResponse.json(
-      {
-        error: "Please enter a valid 8-character application reference code (e.g. ITC-XXXXXXXX).",
-        code: "INVALID_REFERENCE_FORMAT",
-      },
-      { status: 400 }
-    );
-  }
 
   if (!password || password.length < 8) {
     return NextResponse.json(
@@ -84,19 +72,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Database-backed application matching & verification
+  // 3. Database-backed application matching. The verified Supabase identity,
+  // not the public application reference, authorizes activation.
   const serviceClient = getServiceRoleClient();
 
   const { data: app, error: appErr } = await serviceClient
     .from("applications")
     .select("id, application_reference, status, university_email, user_id")
-    .eq("application_reference", reference)
+    .eq("university_email", user.email.trim().toLowerCase())
     .maybeSingle();
 
   if (appErr || !app) {
     return NextResponse.json(
       {
-        error: "The provided reference code does not match an eligible application.",
+        error: "No eligible application is associated with your verified university identity.",
         code: "APPLICATION_NOT_FOUND",
       },
       { status: 400 }
@@ -237,7 +226,7 @@ export async function POST(request: Request) {
     action: "STUDENT_ACCOUNT_ACTIVATED",
     entityType: "student_account",
     entityId: user.id,
-    entityReference: reference,
+    entityReference: app.application_reference,
     outcome: "SUCCESS",
     metadata: {
       applicationId: app.id,
@@ -247,6 +236,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     message: "Your IT Club student account has been successfully activated! You can now log in.",
-    redirect: "/student/login?activated=true",
+    redirect: "/student",
   });
 }

@@ -7,6 +7,26 @@ import { renderShortlistedInvitationEmail } from "./templates/shortlisted-invita
 import { renderInterviewScheduledEmail } from "./templates/interview-scheduled.ts";
 import { recordAuditEvent } from "../audit/service.ts";
 import { validatePersonalEmail } from "../validation/university-email.ts";
+import { randomUUID } from "node:crypto";
+
+const REISSUE_COOLDOWN_MS = 10 * 60 * 1000;
+
+async function mayCreateFreshInvitation(
+  applicationId: string,
+  notificationType: "SHORTLISTED_INVITATION" | "ACCEPTANCE_INVITATION"
+): Promise<boolean> {
+  const { data } = await getServiceRoleClient()
+    .from("application_notifications")
+    .select("attempted_at")
+    .eq("application_id", applicationId)
+    .eq("notification_type", notificationType)
+    .order("attempted_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  const attemptedAt = data?.attempted_at ? Date.parse(data.attempted_at) : NaN;
+  return !Number.isFinite(attemptedAt) || Date.now() - attemptedAt >= REISSUE_COOLDOWN_MS;
+}
 
 export interface ResolvedRecipient {
   recipientEmail: string;
@@ -527,7 +547,13 @@ export async function sendAcceptanceInvitation(
   options?: NotificationOptions & { forceReissue?: boolean }
 ): Promise<NotificationSendResult> {
   const serviceClient = getServiceRoleClient();
-  const idempotencyKey = `acceptance_invitation_${input.applicationId}`;
+  const baseIdempotencyKey = `acceptance_invitation_${input.applicationId}`;
+  if (options?.forceReissue && !(await mayCreateFreshInvitation(input.applicationId, "ACCEPTANCE_INVITATION"))) {
+    return { success: true, status: "already_sent", safeReason: "REISSUE_COOLDOWN" };
+  }
+  const idempotencyKey = options?.forceReissue
+    ? `${baseIdempotencyKey}_${randomUUID()}`
+    : baseIdempotencyKey;
   const now = new Date().toISOString();
 
   let notificationId: string | undefined;
@@ -891,7 +917,16 @@ export async function sendShortlistedInvitation(
   options?: NotificationOptions & { forceReissue?: boolean }
 ): Promise<NotificationSendResult> {
   const serviceClient = getServiceRoleClient();
-  const idempotencyKey = `shortlisted_invitation_${input.applicationId}`;
+  const baseIdempotencyKey = `shortlisted_invitation_${input.applicationId}`;
+  // A forced, staff-authorized reissue gets a new immutable notification row,
+  // preserving prior SMTP attempts and audit history. The cooldown prevents a
+  // click-loop from becoming an email relay.
+  if (options?.forceReissue && !(await mayCreateFreshInvitation(input.applicationId, "SHORTLISTED_INVITATION"))) {
+    return { success: true, status: "already_sent", safeReason: "REISSUE_COOLDOWN" };
+  }
+  const idempotencyKey = options?.forceReissue
+    ? `${baseIdempotencyKey}_${randomUUID()}`
+    : baseIdempotencyKey;
   const now = new Date().toISOString();
 
   let notificationId: string | undefined;
@@ -1778,9 +1813,9 @@ export async function reissueInvitation(
     authEmail: res.authEmail || resolved.authEmail,
     isFallback: res.isFallback ?? resolved.isFallback,
     message: res.status === "sent"
-      ? `Invitation successfully dispatched to ${targetEmail}.`
+      ? `SMTP accepted an activation invitation for ${targetEmail}.`
       : res.status === "already_sent"
-      ? "An active invitation has already been sent to this student within the 24-hour window."
+      ? "An activation invitation was sent recently; reissue is temporarily rate-limited."
       : res.status === "unconfigured"
       ? "Gmail SMTP credentials are not configured on the server."
       : "Failed to dispatch email invitation.",

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock,
-  FileCheck2,
   AlertCircle,
   CheckCircle2,
   ArrowRight,
@@ -27,7 +26,6 @@ export default function ActivateClient({
 }: Props) {
   const router = useRouter();
 
-  const [applicationReference, setApplicationReference] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,15 +85,15 @@ export default function ActivateClient({
         <p className="text-sm text-white/70 mb-6 leading-relaxed">
           {urlError === "invalid_or_expired"
             ? "Your account activation link has expired or has already been used. Please check your invitation email or request a new link from IT Club organizers."
-            : "To activate your student account, please open the personalized activation link sent to your university email address."}
+            : "To activate your student account, please open the personalized activation link sent to the personal notification email you supplied during registration."}
         </p>
 
         <div className="space-y-3">
           <Link
-            href="/student/login"
+            href="/student/login?activation=help"
             className="w-full h-12 inline-flex items-center justify-center gap-2 border border-white/15 bg-white/[0.03] text-white hover:bg-white/10 font-mono text-xs tracking-wider uppercase transition-colors"
           >
-            STUDENT LOGIN
+            ACTIVATION HELP
           </Link>
           <Link
             href="/"
@@ -114,11 +112,6 @@ export default function ActivateClient({
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!applicationReference.trim()) {
-      setErrorMessage("Please enter your application reference code.");
-      return;
-    }
-
     if (password.length < 8) {
       setErrorMessage("Password must be at least 8 characters long.");
       return;
@@ -136,7 +129,6 @@ export default function ActivateClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          applicationReference: applicationReference.trim(),
           password,
           confirmPassword,
         }),
@@ -152,7 +144,7 @@ export default function ActivateClient({
 
       setSuccessMessage(json.message || "Account activated! Redirecting to sign in...");
       setTimeout(() => {
-        router.push(json.redirect || "/student/login?activated=true");
+        router.push(json.redirect || "/student");
       }, 1500);
     } catch {
       setErrorMessage("Network error during activation. Please retry.");
@@ -181,7 +173,7 @@ export default function ActivateClient({
           Activate Your Account
         </h2>
         <p className="text-xs text-white/50 mt-1">
-          Confirm your application reference code and establish your member password.
+          Your verified university identity is shown below. Create a password to finish activation.
         </p>
       </div>
 
@@ -210,31 +202,6 @@ export default function ActivateClient({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Application Reference Field */}
-        <div>
-          <label className="block font-mono text-[10px] tracking-wider uppercase text-white/60 mb-1.5">
-            APPLICATION REFERENCE CODE
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              required
-              placeholder="ITC-XXXXXXXX"
-              value={applicationReference}
-              onChange={(e) => setApplicationReference(e.target.value.toUpperCase())}
-              disabled={loading}
-              className="w-full bg-[#050708] border border-white/10 focus:border-[#00e599] text-white px-3.5 py-2.5 text-sm font-mono tracking-wider focus:outline-none placeholder:text-white/20 transition-colors uppercase"
-            />
-            <FileCheck2
-              size={16}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
-            />
-          </div>
-          <p className="text-[11px] text-white/40 mt-1">
-            Found in your application confirmation receipt email.
-          </p>
-        </div>
-
         {/* New Password Field */}
         <div>
           <label className="block font-mono text-[10px] tracking-wider uppercase text-white/60 mb-1.5">

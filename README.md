@@ -586,8 +586,24 @@ EMAIL_DISPATCH_TIMEOUT_MS=3500
 
 ### Delivery Guarantees & Quotas
 - **Bounded Dispatch Timeout**: When a candidate registers, SMTP dispatch is capped at 3.5 seconds. If Gmail SMTP takes longer or fails, the registration succeeds, the student receives their reference code, and the email is marked `PENDING` in `public.application_notifications`.
+- **Honest status semantics**: `PENDING` means waiting for dispatch, `SENT` means Gmail SMTP accepted the message, and `FAILED` means the attempt failed. None of these states prove the recipient received or opened an email.
 - **Gmail Quota Limitations**: Free Gmail accounts enforce a daily sending limit of 500 emails/day; Google Workspace accounts allow up to 2,000 emails/day. For high-volume burst recruitment, set `EMAIL_DELIVERY_MODE=outbox` and run the background processor via cron.
 - **Outbox Processor**: `POST /api/admin/notifications/process` drains pending notifications in batches. Protect this endpoint in production using `Authorization: Bearer <CRON_SECRET>`.
+
+### SMTP Self-Test
+
+Run one server-only branded message to the configured `GMAIL_USER` mailbox; the recipient cannot be changed by the command:
+
+```powershell
+node --env-file=.env.local --experimental-strip-types scripts/email-self-test.ts
+```
+
+The output contains only authentication state, SMTP acceptance, sender, recipient, a safe error category, and a provider message ID. For the deployed environment, first authenticate the Vercel CLI, pull the Production variables into a temporary local env file, run the same command with that file, then remove the temporary file:
+
+```powershell
+vercel env pull .env.production.local --environment=production
+node --env-file=.env.production.local --experimental-strip-types scripts/email-self-test.ts
+```
 
 ---
 

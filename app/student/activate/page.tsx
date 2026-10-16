@@ -11,7 +11,7 @@ import ActivateClient from "./ActivateClient";
 
 export const metadata: Metadata = {
   title: "Student Account Activation — IT Club Recruitment",
-  description: "Activate your official IT Club student account using your application reference code.",
+  description: "Activate your official IT Club student account using your secure invitation.",
   robots: { index: false, follow: false },
 };
 

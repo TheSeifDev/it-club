@@ -6,6 +6,20 @@ import { createClient } from "../../../utils/supabase/server.ts";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function activationDestination(rawNext: string | null): string {
+  // Auth redirects must remain inside this application. The activation endpoint
+  // does not need arbitrary query parameters or external destinations.
+  return rawNext === "/student/activate" ? rawNext : "/student/activate";
+}
+
+function activationError(request: NextRequest, code: string) {
+  const response = NextResponse.redirect(
+    new URL(`/student/activate?error=${code}`, request.url)
+  );
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
 /**
  * Server-side Supabase Auth verification route.
  * Handles both token_hash (verifyOtp) and code (exchangeCodeForSession) flows.
@@ -16,13 +30,11 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/student/activate";
+  const next = activationDestination(searchParams.get("next"));
 
   // Fast check: Fallback if neither token_hash nor code is provided
   if (!tokenHash && !code) {
-    return NextResponse.redirect(
-      new URL("/student/activate?error=missing_credentials", request.url)
-    );
+    return activationError(request, "missing_credentials");
   }
 
   let supabase: SupabaseClient | null = null;
@@ -47,30 +59,28 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      const response = NextResponse.redirect(new URL(next, request.url));
+      response.headers.set("Cache-Control", "private, no-store");
+      return response;
     }
 
     console.warn("[auth/confirm] OTP verification failed:", error.message);
-    return NextResponse.redirect(
-      new URL("/student/activate?error=invalid_or_expired", request.url)
-    );
+    return activationError(request, "invalid_or_expired");
   }
 
   // 2. PKCE code exchange (Supabase standard redirect)
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      const response = NextResponse.redirect(new URL(next, request.url));
+      response.headers.set("Cache-Control", "private, no-store");
+      return response;
     }
 
     console.warn("[auth/confirm] Code exchange failed:", error.message);
-    return NextResponse.redirect(
-      new URL("/student/activate?error=invalid_or_expired", request.url)
-    );
+    return activationError(request, "invalid_or_expired");
   }
 
   // Fallback if neither token_hash nor code is provided
-  return NextResponse.redirect(
-    new URL("/student/activate?error=missing_credentials", request.url)
-  );
+  return activationError(request, "missing_credentials");
 }

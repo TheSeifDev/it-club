@@ -141,7 +141,7 @@ export default function ApplicantDetailClient({ application: initialApp, current
       if (!res.ok) {
         setReissueError(json.error || "Failed to reissue invitation.");
       } else {
-        setReissueMessage(json.message || "Invitation dispatched successfully.");
+        setReissueMessage(json.message || "SMTP accepted the invitation for sending.");
         setTimeout(() => setReissueMessage(""), 8000);
       }
     } catch {
@@ -665,7 +665,7 @@ export default function ApplicantDetailClient({ application: initialApp, current
                   {app.activated_at
                     ? `Activated on ${new Date(app.activated_at).toLocaleString()}`
                     : app.status === "SHORTLISTED" || app.status === "ACCEPTED"
-                    ? "Pending activation — invitation dispatched to notification recipient"
+                    ? "Pending activation — check the SMTP notification record; sending does not prove receipt"
                     : "Not activated (Eligible after shortlisting or acceptance)"}
                 </span>
               </div>

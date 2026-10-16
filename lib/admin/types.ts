@@ -71,6 +71,17 @@ export interface ApplicationDetail {
   updated_at: string;
 }
 
+export interface InvitationNotificationSummary {
+  notification_type: "SHORTLISTED_INVITATION" | "ACCEPTANCE_INVITATION";
+  recipient_email: string;
+  delivery_status: "PENDING" | "SENT" | "FAILED";
+  attempted_at: string | null;
+  completed_at: string | null;
+  attempt_count: number;
+  provider_message_id: string | null;
+  safe_error_category: string | null;
+}
+
 export interface TrackDistributionMetrics {
   byPrimary: Record<CommitteeTrack, number>;
   bySecondary: Record<CommitteeTrack, number>;

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { requireStaffRole } from "../../../../lib/auth/page-guard";
-import { getApplicationById } from "../../../../lib/admin/queries";
+import { getApplicationById, getLatestInvitationNotification } from "../../../../lib/admin/queries";
 import ApplicantDetailClient from "./ApplicantDetailClient";
 
 export async function generateMetadata(props: {
@@ -23,10 +23,12 @@ export default async function ApplicantDetailPage(props: {
   const { id } = await props.params;
 
   let application = null;
+  let latestInvitation = null;
   let loadError = null;
 
   try {
     application = await getApplicationById(id);
+    if (application) latestInvitation = await getLatestInvitationNotification(application.id);
   } catch (err: unknown) {
     loadError = err instanceof Error ? err.message : "Failed to query database.";
   }
@@ -67,6 +69,7 @@ export default async function ApplicantDetailPage(props: {
   return (
     <ApplicantDetailClient
       application={application}
+      latestInvitation={latestInvitation}
       currentStaffRole={role}
     />
   );

@@ -7,6 +7,7 @@ import type {
   PaginatedApplications,
   ApplicationListItem,
   ApplicationDetail,
+  InvitationNotificationSummary,
 } from "./types.ts";
 import {
   COMMITTEE_TRACKS,
@@ -131,6 +132,22 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       count: byStatus[status],
     })),
   };
+}
+
+/** Latest persisted SMTP attempt; SENT means SMTP accepted, never mailbox delivery. */
+export async function getLatestInvitationNotification(
+  applicationId: string
+): Promise<InvitationNotificationSummary | null> {
+  const { data, error } = await getServiceRoleClient()
+    .from("application_notifications")
+    .select("notification_type, recipient_email, delivery_status, attempted_at, completed_at, attempt_count, provider_message_id, safe_error_category")
+    .eq("application_id", applicationId)
+    .in("notification_type", ["SHORTLISTED_INVITATION", "ACCEPTANCE_INVITATION"])
+    .order("attempted_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Failed to load invitation notification: ${error.message}`);
+  return data as InvitationNotificationSummary | null;
 }
 
 /**

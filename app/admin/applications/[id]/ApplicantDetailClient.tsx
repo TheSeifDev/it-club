@@ -19,7 +19,7 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
-import type { ApplicationDetail, ApplicationStatus } from "../../../../lib/admin/types";
+import type { ApplicationDetail, ApplicationStatus, InvitationNotificationSummary } from "../../../../lib/admin/types";
 import {
   STATUS_METADATA,
   TRACK_METADATA,
@@ -29,10 +29,11 @@ import {
 
 interface Props {
   application: ApplicationDetail;
+  latestInvitation: InvitationNotificationSummary | null;
   currentStaffRole: string;
 }
 
-export default function ApplicantDetailClient({ application: initialApp, currentStaffRole }: Props) {
+export default function ApplicantDetailClient({ application: initialApp, currentStaffRole, latestInvitation }: Props) {
   const router = useRouter();
   const [app, setApp] = useState<ApplicationDetail>(initialApp);
   const [revealNid, setRevealNid] = useState(false);
@@ -668,6 +669,18 @@ export default function ApplicantDetailClient({ application: initialApp, current
                     ? "Pending activation — check the SMTP notification record; sending does not prove receipt"
                     : "Not activated (Eligible after shortlisting or acceptance)"}
                 </span>
+              </div>
+              <div className="border-t border-white/5 pt-3">
+                <span className="text-white/40 block text-[10px] uppercase">LAST INVITATION SMTP RESULT</span>
+                {latestInvitation ? (
+                  <>
+                    <span className={latestInvitation.delivery_status === "SENT" ? "text-[#00e599]" : latestInvitation.delivery_status === "FAILED" ? "text-red-400" : "text-amber-300"}>
+                      {latestInvitation.delivery_status === "SENT" ? "SMTP accepted — receipt/opening not verified" : latestInvitation.delivery_status}
+                    </span>
+                    <span className="text-[10px] text-white/40 block mt-0.5">To: {latestInvitation.recipient_email} · Attempts: {latestInvitation.attempt_count} · {latestInvitation.attempted_at ? new Date(latestInvitation.attempted_at).toLocaleString() : "No attempt timestamp"}</span>
+                    {latestInvitation.safe_error_category && <span className="text-[10px] text-red-400 block">Safe error: {latestInvitation.safe_error_category}</span>}
+                  </>
+                ) : <span className="text-white/50">No invitation attempt recorded.</span>}
               </div>
             </div>
 

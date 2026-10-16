@@ -12,6 +12,12 @@ function activationDestination(rawNext: string | null): string {
   return rawNext === "/student/activate" ? rawNext : "/student/activate";
 }
 
+function isSupportedActivationVerificationType(
+  type: EmailOtpType | null
+): type is "invite" | "recovery" {
+  return type === "invite" || type === "recovery";
+}
+
 function activationError(request: NextRequest, code: string) {
   const response = NextResponse.redirect(
     new URL(`/student/activate?error=${code}`, request.url)
@@ -52,7 +58,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 1. Token Hash verification (custom email provider link)
-  if (tokenHash && type) {
+  if (tokenHash && isSupportedActivationVerificationType(type)) {
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash: tokenHash,
@@ -66,6 +72,10 @@ export async function GET(request: NextRequest) {
 
     console.warn("[auth/confirm] OTP verification failed:", error.message);
     return activationError(request, "invalid_or_expired");
+  }
+
+  if (tokenHash) {
+    return activationError(request, "invalid_verification_type");
   }
 
   // 2. PKCE code exchange (Supabase standard redirect)

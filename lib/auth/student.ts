@@ -58,6 +58,11 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
       return null;
     }
 
+    // Ensure application status permits student portal access
+    if (!isStudentPortalAllowedStatus(app.status)) {
+      return null;
+    }
+
     return {
       user,
       application: {
@@ -69,6 +74,22 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Statuses that permit an activated student to access their Student Dashboard.
+ * Shortlisted, scheduled, interviewed, and accepted candidates have active self-service access.
+ */
+export const STUDENT_PORTAL_ALLOWED_STATUSES = [
+  "SHORTLISTED",
+  "INTERVIEW_SCHEDULED",
+  "INTERVIEWED",
+  "ACCEPTED",
+] as const;
+
+export function isStudentPortalAllowedStatus(status: string | null | undefined): boolean {
+  if (!status) return false;
+  return (STUDENT_PORTAL_ALLOWED_STATUSES as readonly string[]).includes(status);
 }
 
 /**

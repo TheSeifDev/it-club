@@ -103,12 +103,19 @@ export async function POST(request: Request) {
     );
   }
 
-  // Must be in ACCEPTED lifecycle state
-  if (app.status !== "ACCEPTED") {
+  // Must be in an eligible recruitment lifecycle state
+  const ACTIVATION_ELIGIBLE_STATUSES = [
+    "SHORTLISTED",
+    "INTERVIEW_SCHEDULED",
+    "INTERVIEWED",
+    "ACCEPTED",
+  ];
+
+  if (!ACTIVATION_ELIGIBLE_STATUSES.includes(app.status)) {
     return NextResponse.json(
       {
-        error: "This application has not been accepted for membership.",
-        code: "APPLICATION_NOT_ACCEPTED",
+        error: "This application is not currently eligible for account activation.",
+        code: "APPLICATION_NOT_ELIGIBLE",
       },
       { status: 403 }
     );

@@ -3,6 +3,7 @@ import { getEmailConfig } from "./config.ts";
 import { sendMail, isEmailProviderActive } from "./mailer.ts";
 import { renderRegistrationReceiptEmail } from "./templates/registration-receipt.ts";
 import { renderAcceptanceInvitationEmail } from "./templates/acceptance-invitation.ts";
+import { renderShortlistedInvitationEmail } from "./templates/shortlisted-invitation.ts";
 import { renderInterviewScheduledEmail } from "./templates/interview-scheduled.ts";
 import { recordAuditEvent } from "../audit/service.ts";
 
@@ -31,6 +32,14 @@ export interface SendRegistrationReceiptInput {
 }
 
 export interface SendAcceptanceInvitationInput {
+  applicationId: string;
+  applicationReference: string;
+  recipientEmail: string;
+  fullName: string;
+  primaryTrack: string;
+}
+
+export interface SendShortlistedInvitationInput {
   applicationId: string;
   applicationReference: string;
   recipientEmail: string;
@@ -716,6 +725,319 @@ export async function sendAcceptanceInvitation(
 }
 
 /**
+ * Dispatches an account activation invitation to a shortlisted candidate.
+ * Strictly idempotent: prevents duplicate notifications for the same shortlisted application.
+ * Securely provisions a Supabase Auth invitation/recovery link with single-use / 24-hour expiry semantics.
+ */
+export async function sendShortlistedInvitation(
+  input: SendShortlistedInvitationInput
+): Promise<NotificationSendResult> {
+  const serviceClient = getServiceRoleClient();
+  const idempotencyKey = `shortlisted_invitation_${input.applicationId}`;
+  const now = new Date().toISOString();
+
+  let notificationId: string | undefined;
+  let attemptCount = 1;
+
+  try {
+    // 1. Idempotency Check
+    const { data: existing, error: lookupErr } = await serviceClient
+      .from("application_notifications")
+      .select("id, delivery_status, attempt_count, provider_message_id")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (lookupErr) {
+      console.error(
+        `[notification-service] Failed to query existing shortlisted invitation for ${input.applicationReference}:`,
+        lookupErr.message
+      );
+    }
+
+    if (existing) {
+      notificationId = existing.id;
+      attemptCount = (existing.attempt_count || 1) + 1;
+
+      if (existing.delivery_status === "SENT") {
+        return {
+          success: true,
+          status: "already_sent",
+          notificationId: existing.id,
+          providerMessageId: existing.provider_message_id,
+        };
+      }
+
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          attempt_count: attemptCount,
+          attempted_at: now,
+          delivery_status: "PENDING",
+        })
+        .eq("id", existing.id);
+    } else {
+      const { data: inserted, error: insertErr } = await serviceClient
+        .from("application_notifications")
+        .insert({
+          application_id: input.applicationId,
+          notification_type: "SHORTLISTED_INVITATION",
+          idempotency_key: idempotencyKey,
+          recipient_email: input.recipientEmail.trim().toLowerCase(),
+          delivery_status: "PENDING",
+          attempt_count: 1,
+          attempted_at: now,
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) {
+        if (insertErr.code === "23505") {
+          return {
+            success: true,
+            status: "already_sent",
+            safeReason: "CONCURRENT_INVITATION_ATTEMPT",
+          };
+        }
+        console.error(
+          `[notification-service] Failed to create shortlisted invitation log for ${input.applicationReference}:`,
+          insertErr.message
+        );
+      } else if (inserted) {
+        notificationId = inserted.id;
+      }
+    }
+
+    // 2. Generate Secure Activation Link via Supabase Auth Admin
+    const config = getEmailConfig();
+    const cleanEmail = input.recipientEmail.trim().toLowerCase();
+    const redirectUrl = `${config.appBaseUrl}/auth/confirm?next=/student/activate`;
+
+    let actionLink: string | null = null;
+    let hashedToken: string | null = null;
+    let verificationType = "invite";
+
+    const linkRes = await serviceClient.auth.admin.generateLink({
+      type: "invite",
+      email: cleanEmail,
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+
+    if (linkRes.error) {
+      if (
+        linkRes.error.message.includes("already been registered") ||
+        linkRes.error.code === "email_exists"
+      ) {
+        // If user already exists, verify they aren't linked to a conflicting application
+        const { data: conflictingAccount } = await serviceClient
+          .from("student_accounts")
+          .select("application_id")
+          .eq("university_email", cleanEmail)
+          .maybeSingle();
+
+        if (conflictingAccount && conflictingAccount.application_id !== input.applicationId) {
+          const errMsg = "Auth account already linked to another recruitment application.";
+          if (notificationId) {
+            await serviceClient
+              .from("application_notifications")
+              .update({
+                delivery_status: "FAILED",
+                safe_error_category: "ACCOUNT_CONFLICT",
+                error_message: errMsg,
+              })
+              .eq("id", notificationId);
+          }
+          return {
+            success: false,
+            status: "failed",
+            notificationId,
+            safeReason: "ACCOUNT_CONFLICT",
+          };
+        }
+
+        // Account is unlinked or already belongs to this application: generate recovery link
+        verificationType = "recovery";
+        const recoveryRes = await serviceClient.auth.admin.generateLink({
+          type: "recovery",
+          email: cleanEmail,
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
+
+        if (recoveryRes.error) {
+          throw new Error(`Failed to generate recovery link: ${recoveryRes.error.message}`);
+        }
+
+        actionLink = recoveryRes.data.properties.action_link;
+        hashedToken = recoveryRes.data.properties.hashed_token;
+      } else {
+        throw new Error(`Failed to generate invitation link: ${linkRes.error.message}`);
+      }
+    } else {
+      actionLink = linkRes.data.properties.action_link;
+      hashedToken = linkRes.data.properties.hashed_token;
+      verificationType = linkRes.data.properties.verification_type || "invite";
+    }
+
+    const activationUrl = hashedToken
+      ? `${config.appBaseUrl}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=${encodeURIComponent(verificationType)}&next=${encodeURIComponent("/student/activate")}`
+      : actionLink;
+
+    if (!activationUrl) {
+      throw new Error("Unable to construct valid activation URL.");
+    }
+
+    // 3. Provider Configuration Check
+    if (!isEmailProviderActive()) {
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "PROVIDER_NOT_CONFIGURED",
+            error_message:
+              "Gmail SMTP credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured.",
+          })
+          .eq("id", notificationId);
+      }
+      return {
+        success: false,
+        status: "unconfigured",
+        notificationId,
+        safeReason: "PROVIDER_NOT_CONFIGURED",
+      };
+    }
+
+    // 4. Render Shortlisted Email Template
+    const { subject, html, text } = renderShortlistedInvitationEmail({
+      fullName: input.fullName,
+      referenceCode: input.applicationReference,
+      primaryTrack: input.primaryTrack,
+      activationUrl,
+      appBaseUrl: config.appBaseUrl,
+    });
+
+    // 5. Dispatch via Gmail SMTP
+    const mailResult = await sendMail({
+      from: config.from,
+      to: cleanEmail,
+      subject,
+      html,
+      text,
+    });
+
+    if (!mailResult.success) {
+      const safeReason = mailResult.safeCategory || "PROVIDER_ERROR";
+      const safeMsg =
+        mailResult.errorMessage || "Gmail SMTP delivery failed.";
+
+      console.error(
+        `[notification-service] Gmail SMTP dispatch failed for shortlisted invitation to ${input.applicationReference}: ${safeReason}`
+      );
+      if (notificationId) {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: safeReason,
+            error_message: safeMsg,
+          })
+          .eq("id", notificationId);
+      }
+
+      await recordAuditEvent({
+        actor: { role: "system" },
+        action: "NOTIFICATION_FAILED",
+        entityType: "notification",
+        entityId: input.applicationId,
+        entityReference: input.applicationReference,
+        metadata: {
+          notificationType: "SHORTLISTED_INVITATION",
+          recipient: cleanEmail,
+        },
+        outcome: "FAILURE",
+        errorCategory: safeReason,
+      });
+
+      return {
+        success: false,
+        status: "failed",
+        notificationId,
+        safeReason,
+      };
+    }
+
+    // 6. Record Success
+    const providerMessageId = mailResult.messageId;
+    if (notificationId) {
+      await serviceClient
+        .from("application_notifications")
+        .update({
+          delivery_status: "SENT",
+          provider_message_id: providerMessageId,
+          completed_at: new Date().toISOString(),
+          error_message: null,
+          safe_error_category: null,
+        })
+        .eq("id", notificationId);
+    }
+
+    await recordAuditEvent({
+      actor: { role: "system" },
+      action: "NOTIFICATION_DELIVERED",
+      entityType: "notification",
+      entityId: input.applicationId,
+      entityReference: input.applicationReference,
+      metadata: {
+        notificationType: "SHORTLISTED_INVITATION",
+        recipient: cleanEmail,
+        providerMessageId,
+      },
+      outcome: "SUCCESS",
+    });
+
+    return {
+      success: true,
+      status: "sent",
+      notificationId,
+      providerMessageId,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    console.error(
+      `[notification-service] Unexpected shortlisted invitation dispatch failure for ${input.applicationReference}:`,
+      errorMsg
+    );
+
+    if (notificationId) {
+      try {
+        await serviceClient
+          .from("application_notifications")
+          .update({
+            delivery_status: "FAILED",
+            safe_error_category: "UNEXPECTED_ERROR",
+            error_message: errorMsg,
+          })
+          .eq("id", notificationId);
+      } catch {
+        // Suppress secondary logging error
+      }
+    }
+
+    return {
+      success: false,
+      status: "failed",
+      notificationId,
+      safeReason: "UNEXPECTED_ERROR",
+    };
+  }
+}
+
+
+
+/**
  * Sends an interview scheduling or rescheduling notification with confirmed appointment details.
  * Strictly idempotent: will not send duplicate notifications for the same confirmed schedule.
  * Does not invent fake dates or times — data must be sourced from the actual saved application record.
@@ -1011,6 +1333,14 @@ export async function processPendingNotifications(
 
       if (notif.notification_type === "ACCEPTANCE_INVITATION") {
         res = await sendAcceptanceInvitation({
+          applicationId: notif.application_id,
+          applicationReference: app.application_reference,
+          recipientEmail: notif.recipient_email,
+          fullName: app.full_name,
+          primaryTrack: app.primary_track,
+        });
+      } else if (notif.notification_type === "SHORTLISTED_INVITATION") {
+        res = await sendShortlistedInvitation({
           applicationId: notif.application_id,
           applicationReference: app.application_reference,
           recipientEmail: notif.recipient_email,

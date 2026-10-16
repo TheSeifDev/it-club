@@ -376,13 +376,16 @@ function drawCardField(
 
 function nextStepForStatus(status: string, fallback: string) {
   if (status === "ACCEPTED") {
-    return "Your application is accepted. Keep your information card and QR credential ready for check-in and orientation.";
+    return "Congratulations! You have been accepted into IT Club. Keep your information card and QR credential ready for onboarding and orientation.";
+  }
+  if (status === "INTERVIEWED") {
+    return "Your personal interview is complete. The committee is conducting final evaluations. Decision updates will be posted here.";
   }
   if (status === "INTERVIEW_SCHEDULED") {
-    return "Your interview has been scheduled. Bring this portal credential and arrive early enough for QR check-in.";
+    return "Your interview appointment has been confirmed. Bring your information card and QR credential for check-in on interview day.";
   }
   if (status === "SHORTLISTED") {
-    return "You are shortlisted. Watch this portal and your university email for interview scheduling updates.";
+    return "You have been shortlisted for the interview stage! Prepare your materials. Your interview appointment details and check-in QR pass will appear here once scheduled by the committee.";
   }
   if (status === "PENDING_REVIEW" || status === "UNDER_REVIEW") {
     return "Your application is being reviewed. No action is required right now.";

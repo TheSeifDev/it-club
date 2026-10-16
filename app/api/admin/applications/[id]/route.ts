@@ -7,6 +7,7 @@ import {
 } from "../../../../../lib/admin/queries.ts";
 import {
   sendAcceptanceInvitation,
+  sendShortlistedInvitation,
   sendInterviewScheduled,
 } from "../../../../../lib/email/notification-service.ts";
 import { recordAuditEvent } from "../../../../../lib/audit/service.ts";
@@ -194,6 +195,54 @@ export async function PATCH(
 
     let invitationDelivery: { status: string; message: string } | undefined;
     let interviewDelivery: { status: string; message: string } | undefined;
+    let shortlistDelivery: { status: string; message: string } | undefined;
+
+    // Trigger shortlisted invitation ONLY when transitioned to SHORTLISTED
+    if (
+      result.application?.status === "SHORTLISTED" &&
+      result.previousStatus !== "SHORTLISTED"
+    ) {
+      try {
+        const shortRes = await sendShortlistedInvitation({
+          applicationId: result.application.id,
+          applicationReference: result.application.application_reference,
+          recipientEmail: result.application.university_email,
+          fullName: result.application.full_name,
+          primaryTrack: result.application.primary_track,
+        });
+
+        if (shortRes.status === "sent") {
+          shortlistDelivery = {
+            status: "sent",
+            message: "Shortlisted notification email dispatched with account activation link.",
+          };
+        } else if (shortRes.status === "already_sent") {
+          shortlistDelivery = {
+            status: "already_sent",
+            message: "Shortlisted notification was previously sent.",
+          };
+        } else if (shortRes.status === "unconfigured") {
+          shortlistDelivery = {
+            status: "unconfigured",
+            message: "Email provider unconfigured. Notification queued.",
+          };
+        } else {
+          shortlistDelivery = {
+            status: "failed",
+            message: "Notification delivery queued or delayed.",
+          };
+        }
+      } catch (shortErr: unknown) {
+        console.error(
+          "Shortlisted invitation dispatch failed:",
+          shortErr instanceof Error ? shortErr.message : shortErr
+        );
+        shortlistDelivery = {
+          status: "failed",
+          message: "Notification delivery encountered an unexpected error.",
+        };
+      }
+    }
 
     // Trigger acceptance invitation ONLY when transitioned to ACCEPTED
     if (
@@ -301,6 +350,7 @@ export async function PATCH(
       application: result.application,
       invitationDelivery,
       interviewDelivery,
+      shortlistDelivery,
       message: `Application status updated to ${result.application?.status}.`,
     });
   } catch (err: unknown) {

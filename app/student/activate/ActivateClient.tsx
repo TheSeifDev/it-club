@@ -53,7 +53,7 @@ export default function ActivateClient({
         </div>
 
         <p className="text-sm text-white/70 mb-6 leading-relaxed">
-          Your IT Club student account for <strong className="text-white">{userEmail}</strong> is already active and linked to your accepted application.
+          Your IT Club student account for <strong className="text-white">{userEmail}</strong> is already active and linked to your recruitment application.
         </p>
 
         <Link

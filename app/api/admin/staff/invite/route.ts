@@ -69,8 +69,16 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(result, {
-    status: 201,
-    headers: { "Cache-Control": "no-store, max-age=0" },
-  });
+  return NextResponse.json(
+    {
+      ...result,
+      accountCreated: true,
+      emailSent: result.emailDelivery?.sent ?? false,
+      emailDeliveryStatus: result.emailDelivery?.status ?? "CONFIG_ERROR",
+    },
+    {
+      status: 201,
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    }
+  );
 }

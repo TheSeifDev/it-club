@@ -8,6 +8,7 @@ import { renderInterviewScheduledEmail } from "./templates/interview-scheduled.t
 import { recordAuditEvent } from "../audit/service.ts";
 import { validatePersonalEmail } from "../validation/university-email.ts";
 import { randomUUID } from "node:crypto";
+import { generateSecureTemporaryPassword } from "../auth/provisioning.ts";
 
 const REISSUE_COOLDOWN_MS = 10 * 60 * 1000;
 
@@ -279,11 +280,12 @@ export async function sendRegistrationReceipt(
       }
     }
 
-    // 2. Check if outbox queue mode is active (non-blocking delivery for burst readiness)
+    // 2. Check if outbox queue mode is active (requires explicit queue dispatchMode or active outbox worker)
     const isQueueMode =
       options?.dispatchMode === "queue" ||
-      process.env.EMAIL_DELIVERY_MODE === "outbox" ||
-      process.env.BURST_MODE === "true";
+      (options?.dispatchMode !== "sync" &&
+        process.env.EMAIL_DELIVERY_MODE === "outbox" &&
+        process.env.OUTBOX_WORKER_ENABLED === "true");
 
     if (isQueueMode) {
       return {
@@ -772,12 +774,79 @@ export async function sendAcceptanceInvitation(
       };
     }
 
+    // 3b. Provision student temporary password in Supabase Auth & enforce first-login password change
+    const temporaryPassword = generateSecureTemporaryPassword(input.applicationReference);
+    let studentAuthUserId: string | null = null;
+
+    try {
+      const { data: createdAuth, error: createAuthErr } = await serviceClient.auth.admin.createUser({
+        email: cleanAuthEmail,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: {
+          university_email: cleanAuthEmail,
+          application_reference: input.applicationReference,
+        },
+      });
+
+      if (createAuthErr || !createdAuth?.user) {
+        const isExistingUser =
+          createAuthErr?.message?.toLowerCase().includes("already") ||
+          (createAuthErr as { status?: number })?.status === 422;
+
+        if (isExistingUser) {
+          const { data: usersData } = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          const existingUser = usersData?.users?.find(
+            (u) => u.email?.trim().toLowerCase() === cleanAuthEmail.trim().toLowerCase()
+          );
+          if (existingUser) {
+            studentAuthUserId = existingUser.id;
+            await serviceClient.auth.admin.updateUserById(existingUser.id, {
+              password: temporaryPassword,
+              email_confirm: true,
+            });
+          }
+        }
+      } else {
+        studentAuthUserId = createdAuth.user.id;
+      }
+
+      if (studentAuthUserId && input.applicationId) {
+        const issuedAt = new Date().toISOString();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        await serviceClient.from("student_accounts").upsert(
+          {
+            user_id: studentAuthUserId,
+            application_id: input.applicationId,
+            university_email: cleanAuthEmail,
+            password_change_required: true,
+            temp_password_issued_at: issuedAt,
+            temp_password_expires_at: expiresAt,
+            activated_at: issuedAt,
+          },
+          { onConflict: "user_id" }
+        );
+
+        await serviceClient
+          .from("applications")
+          .update({ user_id: studentAuthUserId, updated_at: issuedAt })
+          .eq("id", input.applicationId);
+      }
+    } catch (authErr) {
+      console.warn("[notification-service] Student credential provisioning notice:", authErr);
+    }
+
     // 4. Render Acceptance Email
     const { subject, html, text } = renderAcceptanceInvitationEmail({
       fullName: input.fullName,
       referenceCode: input.applicationReference,
       primaryTrack: input.primaryTrack,
       activationUrl,
+      loginUrl: `${config.appBaseUrl}/student/login`,
+      temporaryPassword,
+      expiresInHours: 24,
+      authEmail: cleanAuthEmail,
       appBaseUrl: config.appBaseUrl,
     });
 
@@ -1147,12 +1216,79 @@ export async function sendShortlistedInvitation(
       };
     }
 
+    // 3b. Provision student temporary password in Supabase Auth & enforce first-login password change
+    const temporaryPassword = generateSecureTemporaryPassword(input.applicationReference);
+    let studentAuthUserId: string | null = null;
+
+    try {
+      const { data: createdAuth, error: createAuthErr } = await serviceClient.auth.admin.createUser({
+        email: cleanAuthEmail,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: {
+          university_email: cleanAuthEmail,
+          application_reference: input.applicationReference,
+        },
+      });
+
+      if (createAuthErr || !createdAuth?.user) {
+        const isExistingUser =
+          createAuthErr?.message?.toLowerCase().includes("already") ||
+          (createAuthErr as { status?: number })?.status === 422;
+
+        if (isExistingUser) {
+          const { data: usersData } = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          const existingUser = usersData?.users?.find(
+            (u) => u.email?.trim().toLowerCase() === cleanAuthEmail.trim().toLowerCase()
+          );
+          if (existingUser) {
+            studentAuthUserId = existingUser.id;
+            await serviceClient.auth.admin.updateUserById(existingUser.id, {
+              password: temporaryPassword,
+              email_confirm: true,
+            });
+          }
+        }
+      } else {
+        studentAuthUserId = createdAuth.user.id;
+      }
+
+      if (studentAuthUserId && input.applicationId) {
+        const issuedAt = new Date().toISOString();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        await serviceClient.from("student_accounts").upsert(
+          {
+            user_id: studentAuthUserId,
+            application_id: input.applicationId,
+            university_email: cleanAuthEmail,
+            password_change_required: true,
+            temp_password_issued_at: issuedAt,
+            temp_password_expires_at: expiresAt,
+            activated_at: issuedAt,
+          },
+          { onConflict: "user_id" }
+        );
+
+        await serviceClient
+          .from("applications")
+          .update({ user_id: studentAuthUserId, updated_at: issuedAt })
+          .eq("id", input.applicationId);
+      }
+    } catch (authErr) {
+      console.warn("[notification-service] Student credential provisioning notice:", authErr);
+    }
+
     // 4. Render Shortlisted Email Template
     const { subject, html, text } = renderShortlistedInvitationEmail({
       fullName: input.fullName,
       referenceCode: input.applicationReference,
       primaryTrack: input.primaryTrack,
       activationUrl,
+      loginUrl: `${config.appBaseUrl}/student/login`,
+      temporaryPassword,
+      expiresInHours: 24,
+      authEmail: cleanAuthEmail,
       appBaseUrl: config.appBaseUrl,
     });
 

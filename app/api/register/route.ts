@@ -514,10 +514,11 @@ export async function POST(request: Request) {
   if (applicationId) {
     const emailStartTime = performance.now();
     try {
-      // Non-blocking outbox delivery when EMAIL_DELIVERY_MODE=outbox or BURST_MODE=true
+      // Non-blocking outbox delivery only when an outbox worker is actively enabled.
+      // Default to inline sync dispatch so confirmation emails are guaranteed to be sent immediately.
       const isOutboxMode =
-        process.env.EMAIL_DELIVERY_MODE === "outbox" ||
-        process.env.BURST_MODE === "true";
+        process.env.EMAIL_DELIVERY_MODE === "outbox" &&
+        process.env.OUTBOX_WORKER_ENABLED === "true";
 
       const notifyRes = await sendRegistrationReceipt(
         {

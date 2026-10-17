@@ -9,8 +9,12 @@ export interface ShortlistedEmailData {
   fullName: string;
   referenceCode: string;
   primaryTrack: string;
-  activationUrl: string;
+  activationUrl?: string;
+  loginUrl?: string;
+  temporaryPassword?: string;
+  expiresInHours?: number;
   appBaseUrl: string;
+  authEmail?: string;
 }
 
 export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
@@ -20,8 +24,12 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
 } {
   const safeFullName = escapeHtml(data.fullName);
   const safeReference = escapeHtml(data.referenceCode);
-  const safeActivationUrl = escapeHtml(data.activationUrl);
+  const safeActivationUrl = data.activationUrl ? escapeHtml(data.activationUrl) : "";
   const safeBaseUrl = escapeHtml(data.appBaseUrl);
+  const loginUrl = data.loginUrl || `${data.appBaseUrl}/student/login`;
+  const safeLoginUrl = escapeHtml(loginUrl);
+  const safeAuthEmail = data.authEmail ? escapeHtml(data.authEmail) : "";
+  const hours = data.expiresInHours || 24;
 
   const primaryMeta = isCommitteeTrack(data.primaryTrack)
     ? TRACK_METADATA[data.primaryTrack as CommitteeTrack]
@@ -31,6 +39,9 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
     : escapeHtml(data.primaryTrack);
 
   const subject = `You've Been Shortlisted! IT Club Recruitment 2026 — ${data.referenceCode}`;
+
+  const ctaUrl = data.temporaryPassword ? safeLoginUrl : (safeActivationUrl || safeLoginUrl);
+  const ctaLabel = data.temporaryPassword ? "SIGN IN TO STUDENT PORTAL &rarr;" : "ACTIVATE STUDENT ACCOUNT &rarr;";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -114,7 +125,7 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
 
               <!-- Arabic Greeting & Summary -->
               <div dir="rtl" style="margin: 0 0 24px 0; padding: 14px 18px; background-color: #0c1017; border-right: 3px solid #9b7cff; font-family: 'Alexandria', Arial, sans-serif; font-size: 13px; line-height: 1.7; color: #cbd5e1; text-align: right;">
-                يسعدنا إبلاغك باجتياز مرحلة الفرز الأولي لطلب انضمامك. يرجى تفعيل حسابك الآن على بوابة الطالب لتعيين كلمة المرور الخاصة بك ومتابعة موعد مقابلتك الشخصية.
+                يسعدنا إبلاغك باجتياز مرحلة الفرز الأولي لطلب انضمامك. يرجى تسجيل الدخول إلى بوابة الطالب لمتابعة موعد مقابلتك الشخصية وتأكيد حضورك.
               </div>
 
               <!-- Application Reference Card -->
@@ -157,27 +168,44 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
                 </tr>
               </table>
 
+              <!-- Temporary Credential Box (if provided) -->
+              ${data.temporaryPassword ? `
+              <div style="margin-bottom: 24px; background-color: #0c1017; border: 1px solid #1a232f; padding: 20px; border-radius: 6px;">
+                <span style="font-family: 'Montserrat', monospace, sans-serif; font-size: 10px; letter-spacing: 2px; color: #18c8ed; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 8px;">
+                  STUDENT PORTAL LOGIN CREDENTIALS
+                </span>
+                <p style="margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+                  Sign in using your official university email ${safeAuthEmail ? `(<strong style="color: #00e599;">${safeAuthEmail}</strong>)` : "(e.g. 2024XXXX@batechu.com)"} and your one-time temporary credential:
+                </p>
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: 800; color: #00e599; letter-spacing: 2px; padding: 12px 18px; background-color: #080b0e; border: 1px dashed #00e599; border-radius: 4px; display: inline-block;">
+                  ${escapeHtml(data.temporaryPassword)}
+                </div>
+                <div style="margin-top: 12px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+                  Valid for <strong>${hours} hours</strong>. You must change your temporary credential immediately upon your first sign in.
+                </div>
+              </div>` : ""}
+
               <!-- Next Steps Instructions -->
               <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
-                Required Next Step: Activate Your Student Account
+                Required Next Step: ACTIVATE STUDENT ACCOUNT &amp; SIGN IN
               </h3>
               
               <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6; color: #94a3b8;">
-                To complete your interview onboarding, please activate your account on the IT Club Student Dashboard. You will set your own secure password and link your verified university email. Your interview appointment details and check-in QR pass will appear on your dashboard as soon as the committee finalizes the schedule.
+                To complete your interview onboarding, please sign in to the IT Club Student Dashboard. Your interview appointment details and check-in QR pass will appear on your dashboard as soon as the committee finalizes the schedule.
               </p>
 
-              <!-- Activation CTA Button -->
+              <!-- CTA Button -->
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0 24px 0;">
                 <tr>
                   <td align="center">
-                    <a href="${safeActivationUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 14px 28px; border-radius: 4px; border: 1px solid #00e599;">
-                      ACTIVATE STUDENT ACCOUNT &rarr;
+                    <a href="${ctaUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 14px 28px; border-radius: 4px; border: 1px solid #00e599;">
+                      ${ctaLabel}
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Security & Single-Use Notice -->
+              <!-- Security Notice -->
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background-color: #0c1017; border-left: 3px solid #18c8ed; border-radius: 0 4px 4px 0;">
                 <tr>
                   <td style="padding: 12px 16px;">
@@ -185,19 +213,20 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
                       Security Notice
                     </p>
                     <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8;">
-                      This activation link is personalized, single-use, and valid for 24 hours. Your application reference code (<strong style="color: #ffffff;">${safeReference}</strong>) is your permanent identifier and will never be used as your account password.
+                      This notification is personalized, valid for 24 hours, and confidential. Your application reference code (<strong style="color: #ffffff;">${safeReference}</strong>) is your permanent identifier. You must set your own permanent password on first login.
                     </p>
                   </td>
                 </tr>
               </table>
 
-              <!-- Fallback Direct URL -->
+              <!-- Fallback Direct URL (if activationUrl provided) -->
+              ${safeActivationUrl ? `
               <p style="margin: 0 0 6px 0; font-size: 11px; color: #64748b;">
-                If the button above does not work, copy and paste this secure link directly into your browser:
+                Alternatively, you can activate your account directly via this link:
               </p>
               <p style="margin: 0; font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #18c8ed; word-break: break-all; line-height: 1.4;">
-                ${safeActivationUrl}
-              </p>
+                <a href="${safeActivationUrl}" style="color: #18c8ed; text-decoration: underline;">${safeActivationUrl}</a>
+              </p>` : ""}
             </td>
           </tr>
 
@@ -223,6 +252,22 @@ export function renderShortlistedInvitationEmail(data: ShortlistedEmailData): {
 </body>
 </html>`;
 
+  const textCredSection = data.temporaryPassword
+    ? `
+STUDENT PORTAL LOGIN CREDENTIALS:
+Portal URL:         ${loginUrl}
+Temporary Password: ${data.temporaryPassword}
+Credential Expiry:  Valid for ${hours} hours
+
+MANDATORY FIRST-LOGIN REQUIREMENT:
+You must change this temporary password immediately upon your first sign in.
+`
+    : `
+REQUIRED NEXT STEP:
+Please activate your official Student Dashboard account using the secure link below:
+${data.activationUrl || loginUrl}
+`;
+
   const text = `IT CLUB RECRUITMENT 2026 — SHORTLISTED INVITATION
 ================================================================================
 
@@ -234,16 +279,13 @@ Application Reference: ${data.referenceCode}
 Shortlisted Track:     ${primaryTrackLabel}
 Current Stage:         Stage 2: Candidate Interview Preparation
 
-REQUIRED NEXT STEP:
-Please activate your official Student Dashboard account using the secure link below to set your own password and prepare for your interview:
-
-${data.activationUrl}
-
-Note: This activation link is personalized, single-use, and valid for 24 hours. Your application reference code is your permanent identifier and will never be used as your account password.
-
+${textCredSection}
+Note: Your application reference code is your permanent identifier and will never be used as your account password.
 Being shortlisted confirms advancement to the interview stage and is distinct from final cohort acceptance.
 
 Official Portal: ${data.appBaseUrl}
+Student Login:   ${loginUrl}
+${data.activationUrl ? `Direct Activation Link:\n${data.activationUrl}\n` : ""}
 IT Club Recruitment • Benha University
 `;
 

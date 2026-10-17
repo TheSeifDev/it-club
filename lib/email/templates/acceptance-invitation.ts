@@ -9,8 +9,12 @@ export interface AcceptanceEmailData {
   fullName: string;
   referenceCode: string;
   primaryTrack: string;
-  activationUrl: string;
+  activationUrl?: string;
+  loginUrl?: string;
+  temporaryPassword?: string;
+  expiresInHours?: number;
   appBaseUrl: string;
+  authEmail?: string;
 }
 
 export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
@@ -20,8 +24,12 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
 } {
   const safeFullName = escapeHtml(data.fullName);
   const safeReference = escapeHtml(data.referenceCode);
-  const safeActivationUrl = escapeHtml(data.activationUrl);
+  const safeActivationUrl = data.activationUrl ? escapeHtml(data.activationUrl) : "";
   const safeBaseUrl = escapeHtml(data.appBaseUrl);
+  const loginUrl = data.loginUrl || `${data.appBaseUrl}/student/login`;
+  const safeLoginUrl = escapeHtml(loginUrl);
+  const safeAuthEmail = data.authEmail ? escapeHtml(data.authEmail) : "";
+  const hours = data.expiresInHours || 24;
 
   const primaryMeta = isCommitteeTrack(data.primaryTrack)
     ? TRACK_METADATA[data.primaryTrack as CommitteeTrack]
@@ -31,6 +39,9 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
     : escapeHtml(data.primaryTrack);
 
   const subject = `Welcome to IT Club! Acceptance & Account Activation — ${data.referenceCode}`;
+
+  const ctaUrl = data.temporaryPassword ? safeLoginUrl : (safeActivationUrl || safeLoginUrl);
+  const ctaLabel = data.temporaryPassword ? "SIGN IN TO STUDENT PORTAL &rarr;" : "ACTIVATE STUDENT ACCOUNT &rarr;";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -139,19 +150,41 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
             </td>
           </tr>
 
-          <!-- Next Step: Account Activation -->
+          <!-- Temporary Credential Box (if provided) -->
+          ${data.temporaryPassword ? `
+          <tr>
+            <td class="body-pad" style="padding: 0 32px 24px 32px;">
+              <div style="background-color: #040608; border: 1px solid #1b2834; padding: 20px; border-radius: 6px;">
+                <span style="font-family: 'Montserrat', monospace, sans-serif; font-size: 10px; letter-spacing: 2px; color: #18c8ed; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 8px;">
+                  STUDENT PORTAL LOGIN CREDENTIALS
+                </span>
+                <p style="margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+                  Sign in using your official university email ${safeAuthEmail ? `(<strong style="color: #00e599;">${safeAuthEmail}</strong>)` : "(e.g. 2024XXXX@batechu.com)"} and your one-time temporary credential:
+                </p>
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: 800; color: #00e599; letter-spacing: 2px; padding: 12px 18px; background-color: #080b0e; border: 1px dashed #00e599; border-radius: 4px; display: inline-block;">
+                  ${escapeHtml(data.temporaryPassword)}
+                </div>
+                <div style="margin-top: 12px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+                  Valid for <strong>${hours} hours</strong>. You must change your temporary credential immediately upon your first sign in.
+                </div>
+              </div>
+            </td>
+          </tr>` : ""}
+
+          <!-- Next Step: Account Activation Header -->
           <tr>
             <td class="body-pad" style="padding: 0 32px 20px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
-              To confirm your membership and access internal club resources, workshops, and cohort onboarding, please activate your official student account.
-              You will be prompted to verify your application reference code (<strong style="color: #00e599; font-family: monospace;">${safeReference}</strong>) and choose your own secure password.
+              <strong style="color: #ffffff; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">ACTIVATE STUDENT ACCOUNT &amp; ACCESS DASHBOARD</strong><br />
+              To confirm your membership and access internal club resources, workshops, and cohort onboarding, please sign in to the IT Club Student Dashboard.
+              Confirm your application reference code (<strong style="color: #00e599; font-family: monospace;">${safeReference}</strong>) and proceed.
             </td>
           </tr>
 
           <!-- Call to Action Button -->
           <tr>
             <td align="center" style="padding: 0 32px 28px 32px;">
-              <a href="${safeActivationUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: 'Montserrat', monospace, sans-serif; font-size: 13px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 15px 32px; border-radius: 4px;">
-                ACTIVATE STUDENT ACCOUNT &rarr;
+              <a href="${ctaUrl}" target="_blank" style="display: inline-block; background-color: #00e599; color: #050708; font-family: 'Montserrat', monospace, sans-serif; font-size: 13px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 15px 32px; border-radius: 4px;">
+                ${ctaLabel}
               </a>
             </td>
           </tr>
@@ -165,9 +198,9 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
                     <strong style="color: #00e599; text-transform: uppercase; font-family: 'Montserrat', monospace, sans-serif; font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 4px;">
                       SECURITY &amp; EXPIRATION
                     </strong>
-                    This activation link is personalized for your university email and expires in 24 hours. Do not share or forward this link. If your link expires, contact recruitment organizers to request a fresh activation invitation.
+                    This credential is personalized for your university email and expires in 24 hours. Do not share or forward this notice. First sign-in requires an immediate password update.
                     <div dir="rtl" style="margin-top: 8px; font-family: 'Alexandria', Arial, sans-serif; color: #86efac; text-align: right;">
-                      هذا الرابط مخصص لبريدك الجامعي وصالح لمدة 24 ساعة. يرجى عدم مشاركة الرابط مع أي شخص آخر حفاظاً على أمان حسابك.
+                      هذه البيانات مخصصة لبريدك الجامعي وصالحة لمدة 24 ساعة. يرجى تغيير كلمة المرور عند أول تسجيل دخول للحفاظ على أمان حسابك.
                     </div>
                   </td>
                 </tr>
@@ -175,13 +208,14 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
             </td>
           </tr>
 
-          <!-- Direct Link Fallback -->
+          <!-- Direct Link Fallback (if activationUrl is present) -->
+          ${safeActivationUrl ? `
           <tr>
             <td class="body-pad" style="padding: 0 32px 28px 32px; font-size: 11px; line-height: 1.5; color: #6b7280;">
-              If the button above does not work, copy and paste this secure URL into your browser:<br />
+              Alternatively, you can activate your account directly using this link:<br />
               <a href="${safeActivationUrl}" style="color: #18c8ed; word-break: break-all; text-decoration: none;">${safeActivationUrl}</a>
             </td>
-          </tr>
+          </tr>` : ""}
 
           <!-- Footer -->
           <tr>
@@ -204,6 +238,21 @@ export function renderAcceptanceInvitationEmail(data: AcceptanceEmailData): {
 </body>
 </html>`;
 
+  const textCredSection = data.temporaryPassword
+    ? `
+STUDENT PORTAL LOGIN CREDENTIALS:
+Portal URL:         ${loginUrl}
+Temporary Password: ${data.temporaryPassword}
+Credential Expiry:  Valid for ${hours} hours
+
+MANDATORY FIRST-LOGIN REQUIREMENT:
+You must change this temporary password immediately upon your first sign in.
+`
+    : `
+ACTIVATE STUDENT ACCOUNT:
+${data.activationUrl || loginUrl}
+`;
+
   const text = `=====================================================
 IT CLUB RECRUITMENT 2026 — ACCEPTANCE & ACCOUNT ACTIVATION
 =====================================================
@@ -214,17 +263,15 @@ Congratulations! We are delighted to inform you that your application has been A
 Track: ${primaryTrackLabel}
 Application Reference: ${data.referenceCode}
 
-To confirm your spot and complete your onboarding, activate your official student account using the secure link below:
-
-${data.activationUrl}
-
+${textCredSection}
 IMPORTANT INSTRUCTIONS:
-- You will need to confirm your application reference code (${data.referenceCode}) and set your own secure password.
-- This activation link is personalized for your university email and expires in 24 hours.
-- Do not forward or share this link.
+- You will need to confirm your application reference code (${data.referenceCode}).
+- This notification is personalized for your university email and expires in 24 hours.
+- Do not forward or share these credentials.
 
 Portal: ${data.appBaseUrl}
-
+Student Login: ${loginUrl}
+${data.activationUrl ? `Direct Activation Link: ${data.activationUrl}\n` : ""}
 -----------------------------------------------------
 IT Club Recruitment. Automated notification.
 `;

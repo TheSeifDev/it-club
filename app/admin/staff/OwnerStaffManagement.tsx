@@ -493,6 +493,25 @@ export default function OwnerStaffManagement({
                 <h3 className="mt-1 text-base font-bold text-white">One-Time Temporary Credential</h3>
               </div>
 
+              {/* Account Creation & Email Status Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5 pb-1">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#00e599]/15 border border-[#00e599]/40 text-[#00e599] font-mono text-[11px] font-bold">
+                  <CheckCircle2 size={12} />
+                  Account Created
+                </span>
+                {issuedCredential.emailDelivery?.sent ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#18c8ed]/15 border border-[#18c8ed]/40 text-[#18c8ed] font-mono text-[11px] font-bold">
+                    <CheckCircle2 size={12} />
+                    Accepted by mail provider
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-500/15 border border-amber-500/40 text-amber-300 font-mono text-[11px] font-bold">
+                    <AlertTriangle size={12} />
+                    Email Acceptance Pending / Failed
+                  </span>
+                )}
+              </div>
+
               {/* Password Display Box */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded border border-[#00e599]/30 bg-[#050708]">
                 <div className="space-y-0.5">

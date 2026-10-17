@@ -299,6 +299,8 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
         recipientEmail: rawEmail,
         loginUrl,
         expiresInHours: 24,
+        temporaryPassword,
+        role: "Admin",
       });
 
       const sendResult = await sendMail({
@@ -573,6 +575,8 @@ export async function reissueAdminTemporaryPassword(
         recipientEmail: targetStaff.email,
         loginUrl,
         expiresInHours: 24,
+        temporaryPassword,
+        role: "Admin",
       });
 
       const sendResult = await sendMail({
@@ -751,6 +755,8 @@ export async function retryAdminInvitationEmail(
     recipientEmail: targetStaff.email,
     loginUrl,
     expiresInHours: 24,
+    temporaryPassword: FIXED_ADMIN_TEMPORARY_PASSWORD,
+    role: "Admin",
   });
 
   const sendResult = await sendMail({

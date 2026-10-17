@@ -124,7 +124,7 @@ export function renderRegistrationReceiptEmail(data: RegistrationEmailData): {
   if (safePhone) {
     summaryRows.push({ label: "PHONE NUMBER", value: safePhone });
   }
-  if (safeWhatsapp && safeWhatsapp !== safePhone) {
+  if (safeWhatsapp) {
     summaryRows.push({ label: "WHATSAPP", value: safeWhatsapp });
   }
   if (experienceLabel) {
@@ -431,7 +431,7 @@ export function renderRegistrationReceiptEmail(data: RegistrationEmailData): {
   if (data.universityEmail) textSummaryList.push(`University Email: ${data.universityEmail}`);
   if (data.googleEmail) textSummaryList.push(`Personal Email: ${data.googleEmail}`);
   if (data.phone) textSummaryList.push(`Phone: ${data.phone}`);
-  if (data.whatsapp && data.whatsapp !== data.phone) textSummaryList.push(`WhatsApp: ${data.whatsapp}`);
+  if (data.whatsapp) textSummaryList.push(`WhatsApp: ${data.whatsapp}`);
   if (data.experienceLevel) {
     textSummaryList.push(`Experience Level: ${EXPERIENCE_LEVEL_LABELS[data.experienceLevel] || data.experienceLevel}`);
   }

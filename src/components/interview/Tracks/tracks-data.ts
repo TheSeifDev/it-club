@@ -91,7 +91,7 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students interested in organizational psychology and HR",
       "Problem solvers focused on team dynamics and motivation",
     ],
-    memberIds: ["farida-mohamed", "shahd-ahssen", "habiba-ahmed", "merna"],
+    memberIds: ["adham-ahmed", "marwan-awad"],
   },
   {
     id: "pr",
@@ -146,7 +146,7 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students exploring corporate relations, PR, and business development",
       "Ambassadors passionate about external representation and community reach",
     ],
-    memberIds: ["omar-mehawed", "abdulrahman-ashraf", "mohamed-al-amir", "saif-kambo"],
+    memberIds: ["omar-mehawed"],
   },
   {
     id: "sm",
@@ -201,7 +201,12 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Growth marketers curious about viral distribution and tech media",
       "Creative minds who want their work seen by thousands of tech students",
     ],
-    memberIds: ["marwan-awad", "ziad-ayman", "adham-ahmed", "marwan"],
+    memberIds: [
+      "mohamed-al-amir",
+      "abdulrahman-ashraf",
+      "youssef-soliman",
+      "merna",
+    ],
   },
   {
     id: "oc",
@@ -256,7 +261,14 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Calm problem solvers who handle real-time logistical challenges with composure",
       "Students eager to master large-scale event management and operations",
     ],
-    memberIds: ["mohamed-sherif", "sherif-hamdy", "youssef-soliman", "mohamed-ibrahim"],
+    memberIds: [
+      "farida-mohamed",
+      "mahmoud-sameh",
+      "shahd-ahssen",
+      "habiba-ahmed",
+      "mohamed-nagi",
+      "saif-kambo",
+    ],
   },
   {
     id: "it",
@@ -311,7 +323,7 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students committed to shipping production software for real users",
       "Builders looking to level up code quality, TypeScript rigor, and web standards",
     ],
-    memberIds: ["seif-ayman", "ahmed-mohsen", "ahmed-samir", "mahmoud-sameh"],
+    memberIds: ["mohamed-ibrahim", "seif-ayman", "ziad-ayman"],
   },
   {
     id: "rnd",
@@ -366,6 +378,6 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Hackers who experiment with prototype technologies before they become mainstream",
       "Students driven by exploration, deep technical curiosity, and novel solutions",
     ],
-    memberIds: ["mohamed-nagi", "ahmed-samir", "seif-ayman", "adham-ahmed"],
+    memberIds: [],
   },
 ];

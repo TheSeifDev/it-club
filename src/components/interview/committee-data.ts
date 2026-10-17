@@ -282,6 +282,7 @@ export type TeamMember = {
   needsReview?: boolean;
   reviewNotes?: string;
   isAlternate?: boolean;
+  isAlumni?: boolean;
   linkedin?: string;
   github?: string;
   portfolio?: string;
@@ -295,6 +296,7 @@ export const MEMBER_CUTOUT_MAP: Record<string, string> = {
   "farida-mohamed": "/COMMITTEES/cutouts/farida-mohamed.webp",
   "mahmoud-sameh": "/COMMITTEES/cutouts/mahmoud-sameh.webp",
   "marwan-awad": "/COMMITTEES/cutouts/marwan-awad.webp",
+  "marwan": "/COMMITTEES/cutouts/marwan-awad.webp",
   "shahd-ahssen": "/COMMITTEES/cutouts/shahd-ahssen.webp",
   "mohamed-al-amir": "/COMMITTEES/cutouts/mohamed-al-amir.webp",
   "abdulrahman-ashraf": "/COMMITTEES/cutouts/abdulrahman-ashraf.webp",
@@ -358,7 +360,7 @@ export const teamMembers: TeamMember[] = [
     id: "mohamed-ibrahim",
     name: "Mohamed Ibrahim",
     role: "Main",
-    committee: "IT Club",
+    committee: "Information Technology",
     image: "/COMMITTEES/mohamed ibrahim.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-ibrahim.webp",
     order: 3,
@@ -371,7 +373,7 @@ export const teamMembers: TeamMember[] = [
     id: "seif-ayman",
     name: "Seif Ayman",
     role: "Main",
-    committee: "IT Club",
+    committee: "Information Technology",
     image: "/COMMITTEES/ken.webp",
     cutoutImage: "/COMMITTEES/cutouts/seif-ayman.webp",
     order: 4,
@@ -387,7 +389,7 @@ export const teamMembers: TeamMember[] = [
     id: "farida-mohamed",
     name: "Farida Mohamed",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Farida Mohamed.webp",
     cutoutImage: "/COMMITTEES/cutouts/farida-mohamed.webp",
     order: 5,
@@ -400,7 +402,7 @@ export const teamMembers: TeamMember[] = [
     id: "mahmoud-sameh",
     name: "Mahmoud Sameh",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Mahmoud Sameh.webp",
     cutoutImage: "/COMMITTEES/cutouts/mahmoud-sameh.webp",
     order: 6,
@@ -413,8 +415,8 @@ export const teamMembers: TeamMember[] = [
     id: "marwan-awad",
     name: "Marwan Awad",
     role: "Main",
-    committee: "IT Club",
-    image: "/COMMITTEES/Marwan Awad.webp",
+    committee: "Human Resources",
+    image: "/COMMITTEES/marwan.webp",
     cutoutImage: "/COMMITTEES/cutouts/marwan-awad.webp",
     order: 7,
     countryName: "EGYPT",
@@ -426,7 +428,7 @@ export const teamMembers: TeamMember[] = [
     id: "shahd-ahssen",
     name: "Shahd Ahssen",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Shahd Ahssen.webp",
     cutoutImage: "/COMMITTEES/cutouts/shahd-ahssen.webp",
     order: 8,
@@ -439,7 +441,7 @@ export const teamMembers: TeamMember[] = [
     id: "mohamed-al-amir",
     name: "Mohamed Al-Amir",
     role: "Main",
-    committee: "IT Club",
+    committee: "Social Media",
     image: "/COMMITTEES/Mohamed Al-Amir.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-al-amir.webp",
     order: 9,
@@ -452,170 +454,146 @@ export const teamMembers: TeamMember[] = [
     id: "abdulrahman-ashraf",
     name: "Abdulrahman Ashraf",
     role: "Main",
-    committee: "IT Club",
+    committee: "Social Media",
     image: "/COMMITTEES/Abdulrahman Ashraf.webp",
     cutoutImage: "/COMMITTEES/cutouts/abdulrahman-ashraf.webp",
     order: 10,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "adham-ahmed",
     name: "Adham Ahmed",
     role: "Main",
-    committee: "IT Club",
+    committee: "Human Resources",
     image: "/COMMITTEES/Adham Ahmed.webp",
     cutoutImage: "/COMMITTEES/cutouts/adham-ahmed.webp",
     order: 11,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "habiba-ahmed",
     name: "Habiba Ahmed",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Habiba Ahmed.webp",
     cutoutImage: "/COMMITTEES/cutouts/habiba-ahmed.webp",
     order: 12,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "mohamed-nagi",
     name: "Mohamed Nagi",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Mohamed Nagi.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-nagi.webp",
     order: 13,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "mohamed-sherif",
     name: "Mohamed Sherif",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Mohamed Sherif.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-sherif.webp",
     order: 14,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    isAlumni: true,
+    needsReview: false,
   },
   {
     id: "omar-mehawed",
     name: "Omar Mehawed",
     role: "Main",
-    committee: "IT Club",
+    committee: "Public Relations",
     image: "/COMMITTEES/Omar Mehawed.webp",
     cutoutImage: "/COMMITTEES/cutouts/omar-mehawed.webp",
     order: 15,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "saif-kambo",
     name: "Saif Kambo",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Saif Kambo.webp",
     cutoutImage: "/COMMITTEES/cutouts/saif-kambo.webp",
     order: 16,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "youssef-soliman",
     name: "Youssef Soliman",
     role: "Main",
-    committee: "IT Club",
+    committee: "Social Media",
     image: "/COMMITTEES/Youssef soliman.webp",
     cutoutImage: "/COMMITTEES/cutouts/youssef-soliman.webp",
     order: 17,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "ziad-ayman",
     name: "Ziad Ayman",
     role: "Main",
-    committee: "IT Club",
+    committee: "Information Technology",
     image: "/COMMITTEES/Ziad Ayman.webp",
     cutoutImage: "/COMMITTEES/cutouts/ziad-ayman.webp",
     order: 18,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
+    needsReview: false,
   },
   {
     id: "merna",
     name: "Merna",
     role: "Main",
-    committee: "IT Club",
+    committee: "Social Media",
     image: "/COMMITTEES/Merna.webp",
     cutoutImage: "/COMMITTEES/cutouts/merna.webp",
     order: 19,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role, committee assignment, and nationality pending official confirmation.",
-  },
-  {
-    id: "marwan",
-    name: "Marwan Awad",
-    role: "Main",
-    committee: "IT Club",
-    image: "/COMMITTEES/marwan.webp",
-    order: 20,
-    countryName: "EGYPT",
-    countryFlag: "🇪🇬",
-    countryCode: "EG",
     needsReview: false,
-    reviewNotes: "Alternate portrait for Marwan Awad.",
-    isAlternate: true,
   },
   {
     id: "sherif-hamdy",
     name: "Sherif Hamdy",
     role: "Main",
-    committee: "IT Club",
+    committee: "Organizing Committee",
     image: "/COMMITTEES/Sherif.webp",
     cutoutImage: "/COMMITTEES/cutouts/sherif-hamdy.webp",
     order: 21,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: true,
-    reviewNotes: "Role and committee assignment pending official confirmation.",
-    isAlternate: false,
+    isAlumni: true,
+    needsReview: false,
   },
 ];
 
@@ -654,25 +632,25 @@ export const getTeamMemberById = (id: string): TeamMember | undefined => {
       (id === "sherif-hamdy" && (m.id === "Sherif-alt" || m.id === "sherif-hamdy")) ||
       (id === "farida" && m.id === "farida-mohamed") ||
       (id === "farida-mohamed" && m.id === "farida") ||
-      (id === "marwan-alt" && m.id === "marwan")
+      ((id === "marwan" || id === "marwan-alt") && m.id === "marwan-awad")
   );
 };
 
 export const getMembersByCommittee = (committee: string): TeamMember[] => {
-  return teamMembers.filter((m) => m.committee === committee);
+  return teamMembers.filter((m) => m.committee === committee && !m.isAlternate && !m.isAlumni);
 };
 
 export const getVerifiedMembers = (): TeamMember[] => {
-  return teamMembers.filter((m) => !m.needsReview && !m.isAlternate);
+  return teamMembers.filter((m) => !m.needsReview && !m.isAlternate && !m.isAlumni);
 };
 
 export const getPendingReviewMembers = (): TeamMember[] => {
-  return teamMembers.filter((m) => m.needsReview && !m.isAlternate);
+  return teamMembers.filter((m) => m.needsReview && !m.isAlternate && !m.isAlumni);
 };
 
 export const getLegitimateMembers = (): TeamMember[] => {
   return teamMembers
-    .filter((m) => !m.isAlternate)
+    .filter((m) => !m.isAlternate && !m.isAlumni)
     .sort((a, b) => a.order - b.order);
 };
 
@@ -684,11 +662,18 @@ export const getFeaturedHeroMembers = (): TeamMember[] => {
   return getLegitimateMembers().slice(0, 10);
 };
 
+export const getAlumniMembers = (): TeamMember[] => {
+  return teamMembers
+    .filter((m) => !!m.isAlumni && !m.isAlternate)
+    .sort((a, b) => a.order - b.order);
+};
+
 export interface TeamDataDiagnosticResult {
   totalRecords: number;
   legitimateMembersCount: number;
   alternatePortraitsCount: number;
   needsReviewCount: number;
+  alumniCount: number;
   duplicateIds: string[];
   duplicateNames: string[];
   missingNames: string[];
@@ -746,15 +731,17 @@ export function validateTeamData(): TeamDataDiagnosticResult {
     }
   });
 
-  const legitimate = teamMembers.filter((m) => !m.isAlternate);
+  const legitimate = teamMembers.filter((m) => !m.isAlternate && !m.isAlumni);
   const alternates = teamMembers.filter((m) => m.isAlternate);
-  const needsReview = teamMembers.filter((m) => m.needsReview && !m.isAlternate);
+  const alumni = teamMembers.filter((m) => !!m.isAlumni && !m.isAlternate);
+  const needsReview = teamMembers.filter((m) => m.needsReview && !m.isAlternate && !m.isAlumni);
 
   const result: TeamDataDiagnosticResult = {
     totalRecords: teamMembers.length,
     legitimateMembersCount: legitimate.length,
     alternatePortraitsCount: alternates.length,
     needsReviewCount: needsReview.length,
+    alumniCount: alumni.length,
     duplicateIds,
     duplicateNames,
     missingNames,

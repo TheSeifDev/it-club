@@ -11,12 +11,12 @@ export interface SmtpSelfTestResult {
 }
 
 /**
- * Server-only operator diagnostic. It always sends to the configured Gmail
- * mailbox itself; callers cannot choose a recipient.
+ * Server-only operator diagnostic. It sends to the configured Gmail
+ * mailbox itself by default, or an explicitly provided operator diagnostic recipient.
  */
-export async function runSmtpSelfTest(): Promise<SmtpSelfTestResult> {
+export async function runSmtpSelfTest(targetRecipient?: string): Promise<SmtpSelfTestResult> {
   const config = getEmailConfig();
-  const recipient = config.gmailUser?.trim().toLowerCase();
+  const recipient = (targetRecipient || config.gmailUser)?.trim().toLowerCase();
   const sender = config.from;
 
   if (!recipient || !isEmailConfigured()) {

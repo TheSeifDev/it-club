@@ -1,6 +1,7 @@
 import { runSmtpSelfTest } from "../lib/email/smtp-self-test.ts";
 
-runSmtpSelfTest()
+const target = process.argv[2]?.trim();
+runSmtpSelfTest(target || undefined)
   .then((result) => {
     // Deliberately print only operational metadata, never credentials or links.
     console.log(JSON.stringify(result));

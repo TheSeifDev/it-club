@@ -46,6 +46,9 @@ interface IssuedCredential {
   emailDelivery?: {
     configured: boolean;
     sent: boolean;
+    status?: string;
+    messageId?: string;
+    response?: string;
     error?: string;
   };
   isReissue?: boolean;
@@ -69,6 +72,9 @@ export default function OwnerStaffManagement({
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [reissuingUserId, setReissuingUserId] = useState<string | null>(null);
+  const [retryingUserId, setRetryingUserId] = useState<string | null>(null);
+  const [runningDiagnostics, setRunningDiagnostics] = useState(false);
+  const [diagnosticFeedback, setDiagnosticFeedback] = useState<string | null>(null);
 
   // Active one-time credential panel (never saved to localStorage or sessionStorage)
   const [issuedCredential, setIssuedCredential] = useState<IssuedCredential | null>(null);
@@ -200,6 +206,62 @@ export default function OwnerStaffManagement({
     } catch {
       alert("Network error while resetting administrator password.");
       setReissuingUserId(null);
+    }
+  };
+
+  const handleRetryEmail = async (targetUserId: string, targetEmail: string | null) => {
+    setRetryingUserId(targetUserId);
+
+    try {
+      const res = await fetch("/api/admin/staff/retry-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: targetUserId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to resend invitation email.");
+        setRetryingUserId(null);
+        return;
+      }
+
+      setEditSuccessMessage(
+        `Invitation re-sent: Accepted by mail provider for ${targetEmail || targetUserId} (Delivery not confirmed).`
+      );
+      setTimeout(() => setEditSuccessMessage(""), 6000);
+      setRetryingUserId(null);
+    } catch {
+      alert("Network failure while retrying email dispatch.");
+      setRetryingUserId(null);
+    }
+  };
+
+  const handleRunDiagnostics = async () => {
+    setRunningDiagnostics(true);
+    setDiagnosticFeedback(null);
+
+    try {
+      const res = await fetch("/api/admin/staff/email-diagnostics", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setDiagnosticFeedback(
+          `Diagnostic Check: ${data.verifyError || data.error || "SMTP verification could not complete."}`
+        );
+      } else {
+        setDiagnosticFeedback(
+          `Diagnostics Passed: SMTP verified & test email accepted by provider for ${data.testEmail?.recipient} (ID: ${data.testEmail?.messageId || "accepted"}). Delivery not confirmed until checked in mailbox.`
+        );
+      }
+    } catch {
+      setDiagnosticFeedback("Network error while running email diagnostics.");
+    } finally {
+      setRunningDiagnostics(false);
     }
   };
 
@@ -343,13 +405,45 @@ export default function OwnerStaffManagement({
               </div>
             )}
 
-            <p className="text-xs text-white/40 leading-relaxed">
-              New accounts are assigned the <strong className="text-white">Admin</strong> role with
-              the standardized temporary credential <code className="text-[#00e599] bg-[#00e599]/10 px-1 py-0.5 rounded font-mono">0123456789</code> and a 24-hour expiration window. The invitee must replace this password immediately upon their first sign in.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-white/10 text-xs">
+              <p className="text-xs text-white/40 leading-relaxed max-w-xl">
+                New accounts are assigned the <strong className="text-white">Admin</strong> role with
+                the standardized temporary credential <code className="text-[#00e599] bg-[#00e599]/10 px-1 py-0.5 rounded font-mono">0123456789</code> and a 24-hour expiration window. The invitee must replace this password immediately upon their first sign in.
+              </p>
+              <button
+                type="button"
+                onClick={handleRunDiagnostics}
+                disabled={runningDiagnostics}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-white/15 bg-white/[0.04] text-white/70 hover:text-white hover:border-[#00e599]/40 hover:bg-[#00e599]/10 text-xs font-mono transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {runningDiagnostics ? (
+                  <Loader2 size={13} className="animate-spin text-[#00e599]" />
+                ) : (
+                  <Activity size={13} className="text-[#00e599]" />
+                )}
+                <span>Run Email Diagnostics</span>
+              </button>
+            </div>
           </form>
         </div>
       </Panel>
+
+      {/* Diagnostics Feedback Banner */}
+      {diagnosticFeedback && (
+        <div className="p-3.5 rounded bg-[#071310] border border-[#00e599]/40 text-[#00e599] text-xs flex items-center justify-between gap-2.5 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={15} className="text-[#00e599] shrink-0" />
+            <span className="font-mono text-white/90">{diagnosticFeedback}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDiagnosticFeedback(null)}
+            className="text-white/40 hover:text-white cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Global Success Feedback Banner */}
       {editSuccessMessage && (
@@ -449,23 +543,40 @@ export default function OwnerStaffManagement({
               {/* Email Delivery Feedback */}
               <div className="pt-2 border-t border-white/10 text-xs">
                 {issuedCredential.emailDelivery?.sent ? (
-                  <div className="flex items-center gap-1.5 text-[#00e599]">
-                    <CheckCircle2 size={13} />
-                    <span>
-                      Invitation notification successfully delivered via SMTP to{" "}
-                      {issuedCredential.email}.
-                    </span>
+                  <div className="flex items-start gap-2 text-[#00e599]">
+                    <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold text-xs text-[#00e599]">
+                        Accepted by mail provider — delivery not confirmed.
+                      </p>
+                      <p className="text-[11px] text-white/60 leading-relaxed">
+                        The SMTP server accepted this notification for {issuedCredential.email}{" "}
+                        {issuedCredential.emailDelivery.messageId && (
+                          <span className="font-mono text-white/40">
+                            ({issuedCredential.emailDelivery.messageId})
+                          </span>
+                        )}
+                        . Because destination providers may delay, filter, or quarantine automated messages, please also provide the temporary credential above to the Administrator directly if needed.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-1.5 text-amber-300">
-                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-                    <span>
-                      {issuedCredential.emailDelivery?.configured
-                        ? `SMTP delivery could not be confirmed (${
-                            issuedCredential.emailDelivery.error || "undelivered"
-                          }). Please copy and securely share this temporary password with the Admin directly.`
-                        : "Email provider is not configured. Please securely copy and communicate this temporary password to the Admin in person."}
-                    </span>
+                  <div className="flex items-start gap-2 text-amber-300">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold text-xs text-amber-300">
+                        {issuedCredential.emailDelivery?.configured
+                          ? `SMTP acceptance unconfirmed (${
+                              issuedCredential.emailDelivery.error ||
+                              issuedCredential.emailDelivery.status ||
+                              "undelivered"
+                            }).`
+                          : "Email provider is not configured."}
+                      </p>
+                      <p className="text-[11px] text-white/60 leading-relaxed">
+                        Automatic email could not be confirmed. Please copy and securely deliver the temporary password above to the Administrator directly in person or via an authenticated channel.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -653,7 +764,25 @@ export default function OwnerStaffManagement({
                               <span>Edit</span>
                             </button>
 
-                            {/* 3. Reset Password (Available for ALL non-owner accounts) */}
+                            {/* 3. Retry Invitation Email (for pending administrators) */}
+                            {member.role === "admin" && member.password_change_required && (
+                              <button
+                                type="button"
+                                onClick={() => handleRetryEmail(member.user_id, member.email)}
+                                disabled={retryingUserId === member.user_id}
+                                title="Resend invitation notification without changing password"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/10 bg-white/[0.04] text-[11px] font-mono font-medium text-white/70 hover:border-[#18c8ed]/40 hover:bg-[#18c8ed]/10 hover:text-[#18c8ed] transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                {retryingUserId === member.user_id ? (
+                                  <Loader2 size={11} className="animate-spin text-[#18c8ed]" />
+                                ) : (
+                                  <Mail size={11} />
+                                )}
+                                <span>Retry Email</span>
+                              </button>
+                            )}
+
+                            {/* 4. Reset Password (Available for ALL non-owner accounts) */}
                             <button
                               type="button"
                               onClick={() => handleResetPassword(member.user_id, member.email)}

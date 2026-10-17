@@ -15,15 +15,6 @@ export function renderAdminInvitationEmail(data: AdminInvitationEmailData): {
   const safeEmail = escapeHtml(data.recipientEmail);
   const safeLoginUrl = escapeHtml(data.loginUrl);
   const hours = data.expiresInHours || 24;
-  const tempPasswordDisplay = data.temporaryPassword
-    ? `<div style="margin: 20px 0; padding: 16px; background-color: #0c1218; border: 1px dashed #00e599; border-radius: 6px; text-align: center;">
-         <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #00e599; margin-bottom: 6px;">One-Time Temporary Credential</div>
-         <div style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: 0.05em;">${escapeHtml(data.temporaryPassword)}</div>
-         <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Valid for ${hours} hours. You will be prompted to replace this with your private password upon initial sign in.</div>
-       </div>`
-    : `<div style="margin: 20px 0; padding: 14px; background-color: #0c1218; border: 1px solid #1e293b; border-radius: 6px; text-align: center;">
-         <div style="font-size: 12px; color: #94a3b8;">Your one-time temporary password will be securely provided by the IT Club Owner in person or through an authenticated channel.</div>
-       </div>`;
 
   const subject = "IT Club Staff Invitation — Administrator Access";
 
@@ -80,7 +71,13 @@ export function renderAdminInvitationEmail(data: AdminInvitationEmailData): {
                 You have been invited by the IT Club Owner to join the administrative team for the <strong style="color: #ffffff;">IT Club Recruitment Platform</strong> with the email <strong style="color: #00e599;">${safeEmail}</strong>.
               </p>
 
-              ${tempPasswordDisplay}
+              <!-- Security Information Box (Password kept in Owner UI only) -->
+              <div style="margin: 20px 0; padding: 16px; background-color: #0c1218; border: 1px solid #1e293b; border-radius: 6px;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #00e599; margin-bottom: 6px;">Secure Credential Notice</div>
+                <div style="font-size: 13px; color: #94a3b8; line-height: 1.5;">
+                  For enhanced account security, your one-time temporary credential has been issued directly to the IT Club Owner. Please contact the Owner or your onboarding coordinator to receive your temporary password.
+                </div>
+              </div>
 
               <div style="margin: 24px 0; text-align: center;">
                 <a href="${safeLoginUrl}" style="display: inline-block; background-color: #00e599; color: #050708; padding: 13px 32px; font-size: 13px; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em; border-radius: 4px;">
@@ -123,8 +120,10 @@ You have been invited by the IT Club Owner to join the administrative team for t
 Account Email: ${data.recipientEmail}
 Role: Administrator
 Login Portal: ${data.loginUrl}
-${data.temporaryPassword ? `Temporary Password: ${data.temporaryPassword}\n` : ""}
-Security Policy:
+
+Credential Security Notice:
+- Your one-time temporary credential has been issued directly to the IT Club Owner.
+- Please contact the IT Club Owner to receive your temporary password.
 - Your temporary credential is valid for ${hours} hours.
 - You must change your temporary password immediately upon your first sign-in.
 - Administrative dashboard features remain locked until your password is changed.

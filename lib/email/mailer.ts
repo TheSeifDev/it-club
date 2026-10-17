@@ -10,6 +10,15 @@ export type MailerSafeCategory =
   | "REJECTED_RECIPIENT"
   | "PROVIDER_ERROR";
 
+export type EmailDeliveryState =
+  | "CONFIG_ERROR"
+  | "CONNECTION_ERROR"
+  | "AUTH_ERROR"
+  | "RECIPIENT_REJECTED"
+  | "PROVIDER_REJECTED"
+  | "ACCEPTED_BY_PROVIDER"
+  | "DELIVERY_CONFIRMED";
+
 export interface SendMailOptions {
   to: string;
   subject: string;
@@ -20,9 +29,13 @@ export interface SendMailOptions {
 
 export interface MailerResult {
   success: boolean;
+  status: EmailDeliveryState;
   messageId?: string;
+  response?: string;
+  accepted: string[];
+  rejected: string[];
   /** Whether Nodemailer reported that the SMTP server accepted this recipient. */
-  acceptedRecipient?: boolean;
+  acceptedRecipient: boolean;
   safeCategory?: MailerSafeCategory;
   errorMessage?: string;
 }
@@ -60,15 +73,24 @@ export function getTransporter(): Transporter<SentMessageInfo> | null {
     return null;
   }
 
-  // Test runs opt into an in-memory transport through config/test.env. Keep
-  // this after the configuration guard so missing-config tests remain honest.
+  // Refuse mock transport unless in test environment
   if (process.env.EMAIL_TRANSPORT === "mock") {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "EMAIL_TRANSPORT=mock is strictly prohibited outside NODE_ENV=test."
+      );
+    }
     return {
-      sendMail: async (message: { to?: string | string[] }) => ({
-        messageId: `<mock-${Date.now()}@itclub.test>`,
-        accepted: [String(message.to)],
-        rejected: [],
-      }),
+      sendMail: async (message: { to?: string | string[] }) => {
+        const toStr = String(message.to || "");
+        return {
+          messageId: `<mock-${Date.now()}@itclub.test>`,
+          accepted: [toStr],
+          rejected: [],
+          response: "250 Mock transport accepted (test only)",
+          envelope: { from: "mock@itclub.test", to: [toStr] },
+        };
+      },
     } as unknown as Transporter<SentMessageInfo>;
   }
 
@@ -183,6 +205,20 @@ export function classifySmtpError(error: unknown): {
   };
 }
 
+export function maskEmail(email: string): string {
+  if (!email || typeof email !== "string") return "[invalid-email]";
+  const trimmed = email.trim();
+  const atIndex = trimmed.lastIndexOf("@");
+  if (atIndex <= 0 || atIndex === trimmed.length - 1) return "[invalid-email]";
+  const local = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex + 1);
+  const maskedLocal =
+    local.length <= 2
+      ? `${local[0]}*`
+      : `${local.slice(0, 2)}***${local.slice(-1)}`;
+  return `${maskedLocal}@${domain}`;
+}
+
 /**
  * Validates an email recipient address.
  */
@@ -203,6 +239,10 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   if (!isValidEmailAddress(cleanRecipient)) {
     return {
       success: false,
+      status: "RECIPIENT_REJECTED",
+      accepted: [],
+      rejected: [cleanRecipient || "invalid"],
+      acceptedRecipient: false,
       safeCategory: "INVALID_RECIPIENT",
       errorMessage: "Recipient email address is invalid.",
     };
@@ -212,6 +252,10 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   if (!isEmailConfigured() && !mockTransporter) {
     return {
       success: false,
+      status: "CONFIG_ERROR",
+      accepted: [],
+      rejected: [],
+      acceptedRecipient: false,
       safeCategory: "PROVIDER_NOT_CONFIGURED",
       errorMessage:
         "Gmail SMTP credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured.",
@@ -222,6 +266,10 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   if (!transporter) {
     return {
       success: false,
+      status: "CONFIG_ERROR",
+      accepted: [],
+      rejected: [],
+      acceptedRecipient: false,
       safeCategory: "PROVIDER_NOT_CONFIGURED",
       errorMessage: "Gmail SMTP transporter could not be initialized.",
     };
@@ -243,39 +291,92 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const info = await transporter.sendMail(mailPayload);
-      const acceptedRecipient = Array.isArray(info?.accepted)
-        ? info.accepted.some(
-            (recipient) => recipient.toLowerCase() === cleanRecipient
-          )
-        : undefined;
+      const acceptedList = Array.isArray(info?.accepted)
+        ? info.accepted.map(String)
+        : [];
+      const rejectedList = Array.isArray(info?.rejected)
+        ? info.rejected.map(String)
+        : [];
+      const acceptedRecipient = acceptedList.some(
+        (recipient) => recipient.toLowerCase() === cleanRecipient
+      );
+
+      // Secret-safe diagnostic logging
+      console.log(
+        `[mailer:dispatch] recipient=${maskEmail(cleanRecipient)} ` +
+        `envelopeFrom=${maskEmail(String(info?.envelope?.from || config.from))} ` +
+        `accepted=[${acceptedList.map(maskEmail).join(", ")}] ` +
+        `rejected=[${rejectedList.map(maskEmail).join(", ")}] ` +
+        `response=${JSON.stringify(info?.response || "")} ` +
+        `messageId=${info?.messageId || "none"}`
+      );
 
       // Verify SMTP accepted the message
-      if (info && Array.isArray(info.rejected) && info.rejected.length > 0) {
+      if (rejectedList.some((r) => r.toLowerCase() === cleanRecipient) || rejectedList.length > 0) {
         return {
           success: false,
+          status: "RECIPIENT_REJECTED",
+          messageId: info?.messageId,
+          response: typeof info?.response === "string" ? info.response : undefined,
+          accepted: acceptedList,
+          rejected: rejectedList,
           acceptedRecipient: false,
           safeCategory: "REJECTED_RECIPIENT",
           errorMessage: "Recipient rejected by destination mail server.",
         };
       }
 
+      // Treat "recipient not in accepted[]" as failure
+      if (!acceptedRecipient) {
+        return {
+          success: false,
+          status: "RECIPIENT_REJECTED",
+          messageId: info?.messageId,
+          response: typeof info?.response === "string" ? info.response : undefined,
+          accepted: acceptedList,
+          rejected: rejectedList,
+          acceptedRecipient: false,
+          safeCategory: "REJECTED_RECIPIENT",
+          errorMessage: "Recipient was not accepted by mail provider.",
+        };
+      }
+
       if (info && info.messageId) {
         return {
           success: true,
+          status: "ACCEPTED_BY_PROVIDER",
           messageId: info.messageId,
-          acceptedRecipient,
+          response: typeof info.response === "string" ? info.response : undefined,
+          accepted: acceptedList,
+          rejected: rejectedList,
+          acceptedRecipient: true,
         };
       }
 
       // If messageId is missing, message was not confirmed accepted
       return {
         success: false,
+        status: "PROVIDER_REJECTED",
+        response: typeof info?.response === "string" ? info.response : undefined,
+        accepted: acceptedList,
+        rejected: rejectedList,
+        acceptedRecipient: false,
         safeCategory: "PROVIDER_ERROR",
         errorMessage: "SMTP did not return an accepted message ID.",
       };
     } catch (err: unknown) {
       lastError = err;
       const { safeCategory } = classifySmtpError(err);
+      const errObj = err as { code?: string; responseCode?: number; command?: string };
+
+      console.error(
+        `[mailer:error] recipient=${maskEmail(cleanRecipient)} ` +
+        `attempt=${attempt}/${maxAttempts} ` +
+        `code=${errObj?.code || "none"} ` +
+        `responseCode=${errObj?.responseCode || "none"} ` +
+        `command=${errObj?.command || "none"} ` +
+        `safeCategory=${safeCategory}`
+      );
 
       // Only retry once on transient connection issues, never on auth or bad recipient
       if (attempt < maxAttempts && safeCategory === "CONNECTION_FAILED") {
@@ -288,8 +389,21 @@ export async function sendMail(options: SendMailOptions): Promise<MailerResult> 
   }
 
   const { safeCategory, safeMessage } = classifySmtpError(lastError);
+  let status: EmailDeliveryState = "PROVIDER_REJECTED";
+  if (safeCategory === "AUTHENTICATION_FAILED") {
+    status = "AUTH_ERROR";
+  } else if (safeCategory === "CONNECTION_FAILED") {
+    status = "CONNECTION_ERROR";
+  } else if (safeCategory === "REJECTED_RECIPIENT") {
+    status = "RECIPIENT_REJECTED";
+  }
+
   return {
     success: false,
+    status,
+    accepted: [],
+    rejected: [cleanRecipient],
+    acceptedRecipient: false,
     safeCategory,
     errorMessage: safeMessage,
   };

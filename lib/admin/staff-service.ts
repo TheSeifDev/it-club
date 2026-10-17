@@ -1,6 +1,12 @@
 import { getServiceRoleClient } from "../auth/service-role.ts";
 import { recordAuditEvent } from "../audit/service.ts";
-import { isValidEmailAddress, sendMail, isEmailProviderActive } from "../email/mailer.ts";
+import {
+  isValidEmailAddress,
+  sendMail,
+  isEmailProviderActive,
+  type EmailDeliveryState,
+} from "../email/mailer.ts";
+import { getEmailConfig } from "../email/config.ts";
 import { renderAdminInvitationEmail } from "../email/templates/admin-invitation.ts";
 import type { StaffRole } from "../auth/roles.ts";
 
@@ -15,6 +21,15 @@ export interface InviteAdminInput {
   };
 }
 
+export interface AdminEmailDeliveryInfo {
+  configured: boolean;
+  sent: boolean;
+  status: EmailDeliveryState;
+  messageId?: string;
+  response?: string;
+  error?: string;
+}
+
 export interface InviteAdminResult {
   success: boolean;
   code?: string;
@@ -25,11 +40,7 @@ export interface InviteAdminResult {
   temporaryPassword?: string;
   expiresAt?: string;
   issuedAt?: string;
-  emailDelivery?: {
-    configured: boolean;
-    sent: boolean;
-    error?: string;
-  };
+  emailDelivery?: AdminEmailDeliveryInfo;
 }
 
 export interface ReissueAdminCredentialInput {
@@ -50,11 +61,23 @@ export interface ReissueAdminCredentialResult {
   temporaryPassword?: string;
   expiresAt?: string;
   issuedAt?: string;
-  emailDelivery?: {
-    configured: boolean;
-    sent: boolean;
-    error?: string;
+  emailDelivery?: AdminEmailDeliveryInfo;
+}
+
+export interface RetryAdminInvitationInput {
+  targetUserId: string;
+  ownerUser: {
+    id: string;
+    email?: string | null;
+    role: string;
   };
+}
+
+export interface RetryAdminInvitationResult {
+  success: boolean;
+  code?: string;
+  error?: string;
+  emailDelivery?: AdminEmailDeliveryInfo;
 }
 
 export interface ChangeStaffPasswordInput {
@@ -260,18 +283,21 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
   });
 
   // 9. Email dispatch (if configured)
-  const emailDeliveryResult = {
+  const emailConfig = getEmailConfig();
+  const loginUrl = `${emailConfig.appBaseUrl}/login`;
+
+  const emailDeliveryResult: AdminEmailDeliveryInfo = {
     configured: isEmailProviderActive(),
     sent: false,
-    error: undefined as string | undefined,
+    status: isEmailProviderActive() ? "PROVIDER_REJECTED" : "CONFIG_ERROR",
+    error: undefined,
   };
 
   if (emailDeliveryResult.configured) {
     try {
       const emailTemplate = renderAdminInvitationEmail({
         recipientEmail: rawEmail,
-        loginUrl: "https://dev.itclub.one/login",
-        temporaryPassword,
+        loginUrl,
         expiresInHours: 24,
       });
 
@@ -281,6 +307,10 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
         html: emailTemplate.html,
         text: emailTemplate.text,
       });
+
+      emailDeliveryResult.status = sendResult.status;
+      emailDeliveryResult.messageId = sendResult.messageId;
+      emailDeliveryResult.response = sendResult.response;
 
       if (sendResult.success) {
         emailDeliveryResult.sent = true;
@@ -297,7 +327,11 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
           outcome: "SUCCESS",
           metadata: {
             targetEmail: rawEmail,
+            provider: "gmail-smtp",
+            status: sendResult.status,
             messageId: sendResult.messageId,
+            response: sendResult.response,
+            deliveryConfirmed: false,
           },
         });
       } else {
@@ -314,16 +348,38 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
             role: "owner",
           },
           outcome: "FAILURE",
-          errorCategory: sendResult.safeCategory || "PROVIDER_ERROR",
+          errorCategory: sendResult.safeCategory || sendResult.status,
           metadata: {
             targetEmail: rawEmail,
+            provider: "gmail-smtp",
+            status: sendResult.status,
             error: sendResult.errorMessage,
           },
         });
       }
     } catch (mailErr) {
       emailDeliveryResult.sent = false;
+      emailDeliveryResult.status = "PROVIDER_REJECTED";
       emailDeliveryResult.error = mailErr instanceof Error ? mailErr.message : "SMTP exception";
+      await recordAuditEvent({
+        action: "ADMIN_INVITATION_DELIVERY_FAILURE",
+        entityType: "staff_member",
+        entityId: createdAuthUserId,
+        entityReference: rawEmail,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "PROVIDER_ERROR",
+        metadata: {
+          targetEmail: rawEmail,
+          provider: "gmail-smtp",
+          status: "PROVIDER_REJECTED",
+          error: emailDeliveryResult.error,
+        },
+      });
     }
   }
 
@@ -501,18 +557,21 @@ export async function reissueAdminTemporaryPassword(
   });
 
   // 7. Dispatch email if target email exists and mailer is active
-  const emailDeliveryResult = {
+  const emailConfig = getEmailConfig();
+  const loginUrl = `${emailConfig.appBaseUrl}/login`;
+
+  const emailDeliveryResult: AdminEmailDeliveryInfo = {
     configured: isEmailProviderActive(),
     sent: false,
-    error: undefined as string | undefined,
+    status: isEmailProviderActive() ? "PROVIDER_REJECTED" : "CONFIG_ERROR",
+    error: undefined,
   };
 
   if (emailDeliveryResult.configured && targetStaff.email) {
     try {
       const emailTemplate = renderAdminInvitationEmail({
         recipientEmail: targetStaff.email,
-        loginUrl: "https://dev.itclub.one/login",
-        temporaryPassword,
+        loginUrl,
         expiresInHours: 24,
       });
 
@@ -523,15 +582,81 @@ export async function reissueAdminTemporaryPassword(
         text: emailTemplate.text,
       });
 
+      emailDeliveryResult.status = sendResult.status;
+      emailDeliveryResult.messageId = sendResult.messageId;
+      emailDeliveryResult.response = sendResult.response;
+
       if (sendResult.success) {
         emailDeliveryResult.sent = true;
+        await recordAuditEvent({
+          action: "ADMIN_INVITATION_DELIVERY_SUCCESS",
+          entityType: "staff_member",
+          entityId: input.targetUserId,
+          entityReference: targetStaff.email,
+          actor: {
+            id: input.ownerUser.id,
+            email: input.ownerUser.email || undefined,
+            role: "owner",
+          },
+          outcome: "SUCCESS",
+          metadata: {
+            targetEmail: targetStaff.email,
+            provider: "gmail-smtp",
+            status: sendResult.status,
+            messageId: sendResult.messageId,
+            response: sendResult.response,
+            deliveryConfirmed: false,
+            isReissue: true,
+          },
+        });
       } else {
         emailDeliveryResult.sent = false;
-        emailDeliveryResult.error = sendResult.errorMessage;
+        emailDeliveryResult.error = sendResult.errorMessage || "SMTP dispatch rejected";
+        await recordAuditEvent({
+          action: "ADMIN_INVITATION_DELIVERY_FAILURE",
+          entityType: "staff_member",
+          entityId: input.targetUserId,
+          entityReference: targetStaff.email,
+          actor: {
+            id: input.ownerUser.id,
+            email: input.ownerUser.email || undefined,
+            role: "owner",
+          },
+          outcome: "FAILURE",
+          errorCategory: sendResult.safeCategory || sendResult.status,
+          metadata: {
+            targetEmail: targetStaff.email,
+            provider: "gmail-smtp",
+            status: sendResult.status,
+            error: sendResult.errorMessage,
+            isReissue: true,
+          },
+        });
       }
     } catch (mailErr) {
       emailDeliveryResult.sent = false;
+      emailDeliveryResult.status = "PROVIDER_REJECTED";
       emailDeliveryResult.error = mailErr instanceof Error ? mailErr.message : "SMTP exception";
+      await recordAuditEvent({
+        action: "ADMIN_INVITATION_DELIVERY_FAILURE",
+        entityType: "staff_member",
+        entityId: input.targetUserId,
+        entityReference: targetStaff.email,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "PROVIDER_ERROR",
+        metadata: {
+          targetEmail: targetStaff.email,
+          provider: "gmail-smtp",
+          status: "PROVIDER_REJECTED",
+          error: emailDeliveryResult.error,
+          isReissue: true,
+        },
+      });
     }
   }
 
@@ -543,6 +668,134 @@ export async function reissueAdminTemporaryPassword(
     issuedAt: issuedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
     emailDelivery: emailDeliveryResult,
+  };
+}
+
+/**
+ * Retries dispatching the invitation notification to an existing Admin.
+ * Strictly Owner-only. NEVER creates a second Auth user, NEVER resets passwords.
+ * Guarded against double submissions within 30 seconds.
+ */
+export async function retryAdminInvitationEmail(
+  input: RetryAdminInvitationInput
+): Promise<RetryAdminInvitationResult> {
+  // 1. Strict Owner role enforcement
+  if (input.ownerUser.role !== "owner") {
+    return {
+      success: false,
+      code: "FORBIDDEN",
+      error: "Only the IT Club Owner can retry admin invitations.",
+    };
+  }
+
+  const serviceClient = getServiceRoleClient();
+
+  // 2. Fetch staff member
+  const { data: targetStaff, error: fetchErr } = await serviceClient
+    .from("staff_members")
+    .select("user_id, role, email, password_change_required, temporary_password_expires_at")
+    .eq("user_id", input.targetUserId)
+    .maybeSingle();
+
+  if (fetchErr || !targetStaff || !targetStaff.email) {
+    return {
+      success: false,
+      code: "STAFF_NOT_FOUND",
+      error: "Staff member record with email address not found.",
+    };
+  }
+
+  if (targetStaff.role !== "admin") {
+    return {
+      success: false,
+      code: "INVALID_TARGET_ROLE",
+      error: "Only Administrator invitations can be retried.",
+    };
+  }
+
+  if (!targetStaff.password_change_required) {
+    return {
+      success: false,
+      code: "ALREADY_ACTIVATED",
+      error: "This administrator has already completed their first login and set their password.",
+    };
+  }
+
+  // 3. Double-submission / Rate-limiting guard (prevent spamming within 30 seconds)
+  const thirtySecondsAgo = new Date(Date.now() - 30 * 1000).toISOString();
+  const { data: recentEvents } = await serviceClient
+    .from("audit_events")
+    .select("id, created_at")
+    .eq("entity_id", input.targetUserId)
+    .in("action", [
+      "ADMIN_INVITATION_DELIVERY_SUCCESS",
+      "ADMIN_INVITATION_DELIVERY_FAILURE",
+      "ADMIN_INVITATION_RETRY_DISPATCHED",
+    ])
+    .gte("created_at", thirtySecondsAgo)
+    .limit(1);
+
+  if (recentEvents && recentEvents.length > 0) {
+    return {
+      success: false,
+      code: "RATE_LIMITED",
+      error: "An invitation email was dispatched recently. Please wait 30 seconds before retrying.",
+    };
+  }
+
+  // 4. Send email (NEVER resets password, NEVER creates a new user)
+  const emailConfig = getEmailConfig();
+  const loginUrl = `${emailConfig.appBaseUrl}/login`;
+
+  const emailTemplate = renderAdminInvitationEmail({
+    recipientEmail: targetStaff.email,
+    loginUrl,
+    expiresInHours: 24,
+  });
+
+  const sendResult = await sendMail({
+    to: targetStaff.email,
+    subject: emailTemplate.subject,
+    html: emailTemplate.html,
+    text: emailTemplate.text,
+  });
+
+  const emailDelivery: AdminEmailDeliveryInfo = {
+    configured: isEmailProviderActive(),
+    sent: sendResult.success,
+    status: sendResult.status,
+    messageId: sendResult.messageId,
+    response: sendResult.response,
+    error: sendResult.errorMessage,
+  };
+
+  await recordAuditEvent({
+    action: "ADMIN_INVITATION_RETRY_DISPATCHED",
+    entityType: "staff_member",
+    entityId: input.targetUserId,
+    entityReference: targetStaff.email,
+    actor: {
+      id: input.ownerUser.id,
+      email: input.ownerUser.email || undefined,
+      role: "owner",
+    },
+    outcome: sendResult.success ? "SUCCESS" : "FAILURE",
+    errorCategory: sendResult.success ? undefined : (sendResult.safeCategory || sendResult.status),
+    metadata: {
+      targetEmail: targetStaff.email,
+      provider: "gmail-smtp",
+      status: sendResult.status,
+      messageId: sendResult.messageId,
+      response: sendResult.response,
+      deliveryConfirmed: false,
+      error: sendResult.errorMessage,
+    },
+  });
+
+  return {
+    success: sendResult.success,
+    emailDelivery,
+    error: sendResult.errorMessage,
   };
 }
 

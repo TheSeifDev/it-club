@@ -863,6 +863,8 @@ export async function sendAcceptanceInvitation(
         authEmail: cleanAuthEmail,
         isFallback: resolved.isFallback,
         providerMessageId,
+        providerStatus: mailResult.status,
+        deliveryConfirmed: false,
       },
       outcome: "SUCCESS",
     });
@@ -1236,6 +1238,8 @@ export async function sendShortlistedInvitation(
         authEmail: cleanAuthEmail,
         isFallback: resolved.isFallback,
         providerMessageId,
+        providerStatus: mailResult.status,
+        deliveryConfirmed: false,
       },
       outcome: "SUCCESS",
     });

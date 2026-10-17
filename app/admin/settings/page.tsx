@@ -14,10 +14,8 @@ import {
 import { requireStaffRole } from "../../../lib/auth/page-guard";
 import { getAuditStats } from "../../../lib/audit/service";
 import { getEmailConfig, isEmailConfigured } from "../../../lib/email/config";
-import { getServiceRoleClient } from "../../../lib/auth/service-role";
 import { AdminPageHeader, Panel } from "../dashboard-ui";
 import AdminSettingsClient from "./AdminSettingsClient";
-import OwnerStaffManagement, { type StaffDirectoryItem } from "./OwnerStaffManagement";
 
 export const metadata: Metadata = {
   title: "Settings - IT Club Admin",
@@ -39,24 +37,6 @@ export default async function AdminSettingsPage() {
     Promise.resolve(isEmailConfigured()),
     Promise.resolve(getEmailConfig()),
   ]);
-
-  // If user is owner, fetch verified staff roster from database
-  let staffList: StaffDirectoryItem[] = [];
-  if (role === "owner") {
-    try {
-      const serviceClient = getServiceRoleClient();
-      const { data, error } = await serviceClient
-        .from("staff_members")
-        .select("user_id, role, email, created_at, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at")
-        .order("created_at", { ascending: true });
-
-      if (!error && data) {
-        staffList = data as StaffDirectoryItem[];
-      }
-    } catch {
-      // Gracefully handle query fallback
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -140,15 +120,6 @@ export default async function AdminSettingsPage() {
         userId={user.id}
         role={role}
       />
-
-      {/* Verified Staff Management & Directory (Owner Clearance Only) */}
-      {role === "owner" && (
-        <OwnerStaffManagement
-          initialStaffList={staffList}
-          currentUserId={user.id}
-          isEmailConfigured={emailConfigured}
-        />
-      )}
 
       {/* Recruitment Operations & Governance Boundaries */}
       <Panel

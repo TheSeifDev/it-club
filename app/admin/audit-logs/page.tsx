@@ -11,9 +11,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminAuditLogsPage() {
+export default async function AdminAuditLogsPage(props: {
+  searchParams: Promise<{ actorId?: string }>;
+}) {
   // Strictly enforce Owner role (Admins and students rejected)
   const { user, role } = await requireStaffRole(["owner"]);
+  const searchParams = await props.searchParams;
+  const initialActorId = searchParams?.actorId?.trim() || undefined;
 
   return (
     <div className="space-y-6">
@@ -43,7 +47,10 @@ export default async function AdminAuditLogsPage() {
       </div>
 
       {/* Interactive Owner Audit Viewer */}
-      <AuditLogClient ownerEmail={user.email || "owner@itclub.org"} />
+      <AuditLogClient
+        ownerEmail={user.email || "owner@itclub.org"}
+        initialActorId={initialActorId}
+      />
     </div>
   );
 }

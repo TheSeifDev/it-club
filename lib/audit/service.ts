@@ -207,6 +207,11 @@ export async function queryAuditLogs(
     query = query.eq("actor_role", filters.actorRole);
   }
 
+  // 4b. Filter by Actor ID
+  if (filters.actorId && filters.actorId.trim() && filters.actorId !== "ALL") {
+    query = query.eq("actor_id", filters.actorId.trim());
+  }
+
   // 5. Date Range Filters
   if (filters.from) {
     query = query.gte("created_at", filters.from);

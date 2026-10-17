@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
   QrCode,
   Settings,
+  UserCog,
   Users,
   X,
 } from "lucide-react";
@@ -154,6 +155,42 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
           </Link>
         );
       })}
+
+      {userRole === "owner" && (
+        <Link
+          href="/admin/staff"
+          onClick={onNavClick}
+          title={isCompactView ? "Admin Management" : undefined}
+          className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-emerald-400 ${
+            isActive("/admin/staff")
+              ? "bg-emerald-400/10 text-emerald-400 font-bold"
+              : "text-white/65 hover:bg-white/[0.04] hover:text-white"
+          } ${isCompactView ? "justify-center px-2" : ""}`}
+        >
+          {isActive("/admin/staff") && (
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-emerald-400"
+            />
+          )}
+          <UserCog
+            size={18}
+            className={`shrink-0 transition-colors ${
+              isActive("/admin/staff")
+                ? "text-emerald-400"
+                : "text-white/50 group-hover:text-white"
+            }`}
+          />
+          {!isCompactView && (
+            <>
+              <span className="truncate">Admin Management</span>
+              <span className="ml-auto rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                Owner
+              </span>
+            </>
+          )}
+        </Link>
+      )}
 
       {userRole === "owner" && (
         <Link

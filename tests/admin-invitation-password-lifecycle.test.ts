@@ -5,15 +5,20 @@ import {
   inviteAdminAccount,
   reissueAdminTemporaryPassword,
   changeStaffPassword,
+  updateStaffAccount,
+  FIXED_ADMIN_TEMPORARY_PASSWORD,
 } from "../lib/admin/staff-service.ts";
 import {
   verifyStaffApiRequest,
   getStaffMember,
 } from "../lib/auth/server.ts";
 import { generateSecureTemporaryPassword } from "../lib/auth/provisioning.ts";
+import { queryAuditLogs } from "../lib/audit/service.ts";
 import { POST as postInviteAdmin } from "../app/api/admin/staff/invite/route.ts";
 import { POST as postReissueCredential } from "../app/api/admin/staff/reissue/route.ts";
 import { POST as postChangePassword } from "../app/api/admin/change-password/route.ts";
+import { PATCH as patchStaffAccount } from "../app/api/admin/staff/[userId]/route.ts";
+import { GET as getAuditLogs } from "../app/api/admin/audit-logs/route.ts";
 
 describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Password Change Suite", () => {
   const supabaseUrl =
@@ -158,6 +163,22 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       });
       const resChange = await postChangePassword(reqChange);
       assert.ok(resChange.status === 401 || resChange.status === 403);
+
+      // 4. Update staff endpoint
+      const reqUpdate = new Request("http://localhost:3000/api/admin/staff/00000000-0000-0000-0000-000000000002", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "interviewer" }),
+      });
+      const resUpdate = await patchStaffAccount(reqUpdate, {
+        params: Promise.resolve({ userId: "00000000-0000-0000-0000-000000000002" }),
+      });
+      assert.ok(resUpdate.status === 401 || resUpdate.status === 403);
+
+      // 5. Audit logs endpoint
+      const reqAudit = new Request("http://localhost:3000/api/admin/audit-logs");
+      const resAudit = await getAuditLogs(reqAudit);
+      assert.ok(resAudit.status === 401 || resAudit.status === 403);
     });
 
     it("verifies verifyStaffApiRequest rejects unauthenticated API calls", async () => {
@@ -191,6 +212,16 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       assert.equal(result.email, testEmail);
       assert.equal(result.role, "admin", "Invited account must be assigned role 'admin'");
       assert.ok(result.temporaryPassword, "Must return temporary password only to Owner");
+      assert.equal(
+        result.temporaryPassword,
+        FIXED_ADMIN_TEMPORARY_PASSWORD,
+        "Must use the exact required fixed password 0123456789"
+      );
+      assert.equal(
+        result.temporaryPassword,
+        "0123456789",
+        "Required initial password is exactly 0123456789"
+      );
       assert.ok(result.expiresAt, "Must specify expiration timestamp");
 
       // Calculate expiry window: exactly ~24 hours
@@ -432,7 +463,16 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       });
 
       assert.ok(reissueRes.success, `Reissue failed: ${reissueRes.error}`);
-      assert.notEqual(reissueRes.temporaryPassword, inv.temporaryPassword, "Must generate a fresh password");
+      assert.equal(
+        reissueRes.temporaryPassword,
+        "0123456789",
+        "Reissued password must be exactly 0123456789"
+      );
+      assert.equal(
+        reissueRes.temporaryPassword,
+        FIXED_ADMIN_TEMPORARY_PASSWORD,
+        "Must use the exact fixed password 0123456789"
+      );
 
       // Check DB updated with new expiry in future
       const { data: reissuedStaff } = await serviceClient
@@ -456,14 +496,77 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       assert.ok(changeRes.success, `Password change should succeed after reissue: ${changeRes.error}`);
     });
 
-    it("rejects reissuing credentials for an Owner account", async () => {
+    it("rejects reissuing credentials for an Owner account and records an audit failure", async () => {
+      if (!serviceClient) return;
+
       const result = await reissueAdminTemporaryPassword({
-        targetUserId: "b644118a-1099-422c-aa16-7e032659e055", // existing owner
+        targetUserId: ownerUser.id,
         ownerUser,
       });
 
       assert.equal(result.success, false);
       assert.equal(result.code, "INVALID_TARGET_ROLE");
+
+      // Verify audit failure was recorded without password values
+      const { data: auditEvents } = await serviceClient
+        .from("audit_events")
+        .select("action, outcome, error_category, metadata")
+        .eq("entity_id", ownerUser.id)
+        .eq("action", "ADMIN_TEMPORARY_PASSWORD_REISSUED");
+
+      assert.ok(auditEvents && auditEvents.length >= 1, "Must log reissue attempt for Owner");
+      const failEvent = auditEvents.find((e) => e.outcome === "FAILURE");
+      assert.ok(failEvent, "Must record FAILURE outcome");
+      assert.equal(failEvent.error_category, "CANNOT_RESET_OWNER");
+      assert.equal(JSON.stringify(failEvent).includes("0123456789"), false, "Must never record password in audit metadata");
+    });
+
+    it("resets password for an admin whose password was previously changed and re-enforces change requirement", async () => {
+      if (!serviceClient) return;
+
+      const randomTag = Math.floor(100000 + Math.random() * 900000);
+      const testEmail = `reissue.active.${randomTag}@itclub.org`;
+      createdEmails.push(testEmail);
+
+      // 1. Invite admin
+      const inv = await inviteAdminAccount({ email: testEmail, ownerUser });
+      assert.ok(inv.success);
+      createdAuthUserIds.push(inv.userId!);
+
+      // 2. Complete password change (account now active)
+      const changeRes = await changeStaffPassword({
+        userId: inv.userId!,
+        newPassword: "ActivePassword123!",
+        confirmPassword: "ActivePassword123!",
+      });
+      assert.ok(changeRes.success);
+
+      const memberBefore = await getStaffMember(inv.userId!);
+      assert.equal(memberBefore?.password_change_required, false);
+      assert.ok(memberBefore?.password_changed_at);
+
+      // 3. Owner resets password for this active admin
+      const resetRes = await reissueAdminTemporaryPassword({
+        targetUserId: inv.userId!,
+        ownerUser,
+      });
+
+      assert.ok(resetRes.success);
+      assert.equal(resetRes.temporaryPassword, "0123456789");
+
+      // 4. Verify DB state has re-enforced password change and cleared password_changed_at
+      const { data: staffAfterReset } = await serviceClient
+        .from("staff_members")
+        .select("password_change_required, temporary_password_expires_at, password_changed_at")
+        .eq("user_id", inv.userId!)
+        .single();
+
+      assert.ok(staffAfterReset, "Staff record must exist after reset");
+      assert.equal(staffAfterReset.password_change_required, true);
+      assert.equal(staffAfterReset.password_changed_at, null);
+      assert.ok(staffAfterReset.temporary_password_expires_at);
+      const expiryTime = new Date(staffAfterReset.temporary_password_expires_at).getTime();
+      assert.ok(expiryTime > Date.now(), "24-hour expiry must be re-initialized");
     });
   });
 
@@ -488,6 +591,169 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
         false,
         "Owner account must not have password_change_required flag set"
       );
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 7. Owner Staff Editing & Role Management
+  // --------------------------------------------------------------------------
+  describe("7. Admin Account Editing & Role Transitions", () => {
+    it("allows Owner to update staff email and role, keeping Auth and staff_members in sync", async () => {
+      if (!serviceClient) return;
+
+      const randomTag = Math.floor(100000 + Math.random() * 900000);
+      const testEmail = `editable.staff.${randomTag}@itclub.org`;
+      createdEmails.push(testEmail);
+
+      const inv = await inviteAdminAccount({ email: testEmail, ownerUser });
+      assert.ok(inv.success);
+      createdAuthUserIds.push(inv.userId!);
+
+      // Update email and role to interviewer
+      const updatedEmail = `updated.staff.${randomTag}@itclub.org`;
+      createdEmails.push(updatedEmail);
+
+      const updateRes = await updateStaffAccount({
+        targetUserId: inv.userId!,
+        email: updatedEmail,
+        role: "interviewer",
+        ownerUser,
+      });
+
+      assert.ok(updateRes.success, `Update failed: ${updateRes.error}`);
+      assert.equal(updateRes.staffMember?.email, updatedEmail);
+      assert.equal(updateRes.staffMember?.role, "interviewer");
+
+      // Verify DB record
+      const { data: staffRow } = await serviceClient
+        .from("staff_members")
+        .select("email, role")
+        .eq("user_id", inv.userId!)
+        .single();
+
+      assert.ok(staffRow, "Staff row must exist in staff_members");
+      assert.equal(staffRow.email, updatedEmail);
+      assert.equal(staffRow.role, "interviewer");
+
+      // Verify Supabase Auth email was updated
+      const { data: authUser } = await serviceClient.auth.admin.getUserById(inv.userId!);
+      assert.equal(authUser.user?.email?.toLowerCase(), updatedEmail);
+
+      // Verify audit events
+      const { data: auditEvents } = await serviceClient
+        .from("audit_events")
+        .select("action, outcome, metadata")
+        .eq("entity_id", inv.userId!);
+
+      const emailEvent = auditEvents?.find((e) => e.action === "ADMIN_EMAIL_UPDATED");
+      const roleEvent = auditEvents?.find((e) => e.action === "ADMIN_ROLE_UPDATED");
+      assert.ok(emailEvent, "Must record ADMIN_EMAIL_UPDATED event");
+      assert.ok(roleEvent, "Must record ADMIN_ROLE_UPDATED event");
+      assert.equal(emailEvent.outcome, "SUCCESS");
+      assert.equal(roleEvent.outcome, "SUCCESS");
+    });
+
+    it("rejects assigning the Owner role through the staff update interface", async () => {
+      if (!serviceClient) return;
+
+      const randomTag = Math.floor(100000 + Math.random() * 900000);
+      const testEmail = `owner.promo.${randomTag}@itclub.org`;
+      createdEmails.push(testEmail);
+
+      const inv = await inviteAdminAccount({ email: testEmail, ownerUser });
+      assert.ok(inv.success);
+      createdAuthUserIds.push(inv.userId!);
+
+      // Attempt to promote to owner
+      const res = await updateStaffAccount({
+        targetUserId: inv.userId!,
+        role: "owner",
+        ownerUser,
+      });
+
+      assert.equal(res.success, false);
+      assert.equal(res.code, "INVALID_ROLE");
+    });
+
+    it("rejects modifying an existing Owner account", async () => {
+      if (!serviceClient) return;
+
+      const res = await updateStaffAccount({
+        targetUserId: ownerUser.id,
+        role: "admin",
+        ownerUser,
+      });
+
+      assert.equal(res.success, false);
+      assert.equal(res.code, "CANNOT_MODIFY_OWNER");
+    });
+
+    it("rejects update attempts performed by non-owners", async () => {
+      if (!serviceClient) return;
+
+      const randomTag = Math.floor(100000 + Math.random() * 900000);
+      const testEmail = `unauth.edit.${randomTag}@itclub.org`;
+      createdEmails.push(testEmail);
+
+      const inv = await inviteAdminAccount({ email: testEmail, ownerUser });
+      assert.ok(inv.success);
+      createdAuthUserIds.push(inv.userId!);
+
+      const res = await updateStaffAccount({
+        targetUserId: inv.userId!,
+        role: "interviewer",
+        ownerUser: nonOwnerAdminUser,
+      });
+
+      assert.equal(res.success, false);
+      assert.equal(res.code, "FORBIDDEN");
+    });
+
+    it("rejects duplicate emails when editing an account", async () => {
+      if (!serviceClient) return;
+
+      const randomTag = Math.floor(100000 + Math.random() * 900000);
+      const emailA = `staff.a.${randomTag}@itclub.org`;
+      const emailB = `staff.b.${randomTag}@itclub.org`;
+      createdEmails.push(emailA, emailB);
+
+      const invA = await inviteAdminAccount({ email: emailA, ownerUser });
+      const invB = await inviteAdminAccount({ email: emailB, ownerUser });
+      assert.ok(invA.success && invB.success);
+      createdAuthUserIds.push(invA.userId!, invB.userId!);
+
+      // Attempt to change B's email to A's email
+      const dupRes = await updateStaffAccount({
+        targetUserId: invB.userId!,
+        email: emailA,
+        ownerUser,
+      });
+
+      assert.equal(dupRes.success, false);
+      assert.equal(dupRes.code, "ACCOUNT_ALREADY_EXISTS");
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 8. Exact Actor ID Audit Filtering
+  // --------------------------------------------------------------------------
+  describe("8. Exact Actor ID Audit Log Querying", () => {
+    it("queries audit events matching exact actor_id filter", async () => {
+      if (!serviceClient) return;
+
+      // Query audit logs filtered by the owner's user ID
+      const result = await queryAuditLogs({
+        actorId: ownerUser.id,
+        pageSize: 10,
+      });
+
+      assert.ok(result.events, "Must return events array");
+      assert.ok(result.totalCount >= 0, "Must return totalCount");
+
+      // Verify all returned records have the matching actor_id
+      for (const ev of result.events) {
+        assert.equal(ev.actor_id, ownerUser.id, "All returned events must strictly match the filtered actor_id");
+      }
     });
   });
 });

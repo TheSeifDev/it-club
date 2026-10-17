@@ -29,6 +29,8 @@ export async function GET(request: Request) {
   const entityType = searchParams.get("entityType") || undefined;
   const outcome = searchParams.get("outcome") || undefined;
   const actorRole = searchParams.get("actorRole") || undefined;
+  const actorIdParam = searchParams.get("actorId");
+  const actorId = actorIdParam && actorIdParam.trim() && actorIdParam.trim() !== "ALL" ? actorIdParam.trim() : undefined;
   const search = searchParams.get("search") || undefined;
   const from = searchParams.get("from") || undefined;
   const to = searchParams.get("to") || undefined;
@@ -42,6 +44,7 @@ export async function GET(request: Request) {
         entityType,
         outcome,
         actorRole,
+        actorId,
         search,
         from,
         to,

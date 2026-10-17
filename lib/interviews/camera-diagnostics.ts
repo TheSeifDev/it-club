@@ -21,10 +21,6 @@ export type ValidHtml5QrcodeConfig =
   | { deviceId: { exact: string } }
   | string;
 
-/**
- * Builds a strictly valid camera configuration matching html5-qrcode's createVideoConstraints contract.
- * Prevents invalid { ideal: "..." } objects or multi-key objects from ever reaching Html5Qrcode.start().
- */
 export function buildValidCameraConfig(
   cameraId?: string,
   facingMode: "environment" | "user" = "environment"
@@ -95,8 +91,8 @@ export async function diagnoseCameraEnvironment(
   const hasMediaDevices = Boolean(nav && "mediaDevices" in nav && nav.mediaDevices);
   const hasGetUserMedia = Boolean(
     hasMediaDevices &&
-      nav?.mediaDevices &&
-      typeof nav.mediaDevices.getUserMedia === "function"
+    nav?.mediaDevices &&
+    typeof nav.mediaDevices.getUserMedia === "function"
   );
 
   // Permissions-Policy inspection via standard Document API

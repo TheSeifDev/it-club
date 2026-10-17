@@ -1,9 +1,10 @@
 import { getServiceRoleClient } from "../auth/service-role.ts";
-import { generateSecureTemporaryPassword } from "../auth/provisioning.ts";
 import { recordAuditEvent } from "../audit/service.ts";
 import { isValidEmailAddress, sendMail, isEmailProviderActive } from "../email/mailer.ts";
 import { renderAdminInvitationEmail } from "../email/templates/admin-invitation.ts";
 import type { StaffRole } from "../auth/roles.ts";
+
+export const FIXED_ADMIN_TEMPORARY_PASSWORD = "0123456789";
 
 export interface InviteAdminInput {
   email: string;
@@ -136,8 +137,8 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     };
   }
 
-  // 5. Generate secure temporary password & 24-hour expiration
-  const temporaryPassword = generateSecureTemporaryPassword();
+  // 5. Generate fixed temporary password & 24-hour expiration
+  const temporaryPassword = FIXED_ADMIN_TEMPORARY_PASSWORD;
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 24 * 60 * 60 * 1000);
 
@@ -375,6 +376,25 @@ export async function reissueAdminTemporaryPassword(
 
   // Never allow reissuing credentials for an Owner account
   if (targetStaff.role === "owner") {
+    await recordAuditEvent({
+      action: "ADMIN_TEMPORARY_PASSWORD_REISSUED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: targetStaff.email || input.targetUserId,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "FAILURE",
+      errorCategory: "CANNOT_RESET_OWNER",
+      metadata: {
+        targetUserId: input.targetUserId,
+        targetEmail: targetStaff.email,
+        targetRole: targetStaff.role,
+      },
+    });
+
     return {
       success: false,
       code: "INVALID_TARGET_ROLE",
@@ -382,8 +402,8 @@ export async function reissueAdminTemporaryPassword(
     };
   }
 
-  // 3. Generate new temporary password and reset expiry
-  const temporaryPassword = generateSecureTemporaryPassword();
+  // 3. Set fixed temporary password and reset expiry
+  const temporaryPassword = FIXED_ADMIN_TEMPORARY_PASSWORD;
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 24 * 60 * 60 * 1000);
 
@@ -397,6 +417,25 @@ export async function reissueAdminTemporaryPassword(
   );
 
   if (authErr) {
+    await recordAuditEvent({
+      action: "ADMIN_TEMPORARY_PASSWORD_REISSUED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: targetStaff.email || input.targetUserId,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "FAILURE",
+      errorCategory: "AUTH_UPDATE_FAILED",
+      metadata: {
+        targetUserId: input.targetUserId,
+        targetEmail: targetStaff.email,
+        error: authErr.message,
+      },
+    });
+
     return {
       success: false,
       code: "AUTH_UPDATE_FAILED",
@@ -411,10 +450,30 @@ export async function reissueAdminTemporaryPassword(
       password_change_required: true,
       temporary_password_issued_at: issuedAt.toISOString(),
       temporary_password_expires_at: expiresAt.toISOString(),
+      password_changed_at: null,
     })
     .eq("user_id", input.targetUserId);
 
   if (updateErr) {
+    await recordAuditEvent({
+      action: "ADMIN_TEMPORARY_PASSWORD_REISSUED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: targetStaff.email || input.targetUserId,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "FAILURE",
+      errorCategory: "DATABASE_UPDATE_FAILED",
+      metadata: {
+        targetUserId: input.targetUserId,
+        targetEmail: targetStaff.email,
+        error: updateErr.message,
+      },
+    });
+
     return {
       success: false,
       code: "DATABASE_UPDATE_FAILED",
@@ -627,5 +686,291 @@ export async function changeStaffPassword(
   return {
     success: true,
     message: "Password changed successfully.",
+  };
+}
+
+export interface UpdateStaffAccountInput {
+  targetUserId: string;
+  email?: string;
+  role?: StaffRole;
+  ownerUser: {
+    id: string;
+    email?: string | null;
+    role: string;
+  };
+}
+
+export interface UpdateStaffAccountResult {
+  success: boolean;
+  code?: string;
+  error?: string;
+  staffMember?: {
+    user_id: string;
+    role: StaffRole;
+    email: string | null;
+  };
+}
+
+/**
+ * Updates a non-owner staff member's email address and/or role.
+ * Strictly Owner-only. Never permits editing or assigning Owner role.
+ * Synchronizes Supabase Auth email and public.staff_members email.
+ * Records immutable audit logs for both email and role changes.
+ */
+export async function updateStaffAccount(
+  input: UpdateStaffAccountInput
+): Promise<UpdateStaffAccountResult> {
+  // 1. Strict Owner role enforcement
+  if (input.ownerUser.role !== "owner") {
+    return {
+      success: false,
+      code: "FORBIDDEN",
+      error: "Only the IT Club Owner can update staff accounts.",
+    };
+  }
+
+  if (!input.targetUserId || typeof input.targetUserId !== "string") {
+    return {
+      success: false,
+      code: "INVALID_INPUT",
+      error: "Target staff user ID is required.",
+    };
+  }
+
+  const serviceClient = getServiceRoleClient();
+
+  // 2. Fetch target staff member record
+  const { data: targetStaff, error: fetchErr } = await serviceClient
+    .from("staff_members")
+    .select("user_id, role, email")
+    .eq("user_id", input.targetUserId)
+    .maybeSingle();
+
+  if (fetchErr || !targetStaff) {
+    return {
+      success: false,
+      code: "STAFF_NOT_FOUND",
+      error: "Staff member record not found.",
+    };
+  }
+
+  // Never allow changing any target Owner account
+  if (targetStaff.role === "owner") {
+    return {
+      success: false,
+      code: "CANNOT_MODIFY_OWNER",
+      error: "Owner accounts cannot be modified.",
+    };
+  }
+
+  // 3. Validate role if provided (must only be 'admin' or 'interviewer')
+  if (input.role !== undefined) {
+    if (input.role === "owner" || (input.role !== "admin" && input.role !== "interviewer")) {
+      return {
+        success: false,
+        code: "INVALID_ROLE",
+        error: "Staff role can only be updated to 'admin' or 'interviewer'. Assigning the owner role is forbidden.",
+      };
+    }
+  }
+
+  // 4. Validate email if provided
+  let cleanEmail: string | undefined = undefined;
+  if (input.email !== undefined) {
+    cleanEmail = input.email.trim().toLowerCase();
+    if (!cleanEmail || !isValidEmailAddress(cleanEmail)) {
+      return {
+        success: false,
+        code: "INVALID_EMAIL",
+        error: "Please provide a valid email address.",
+      };
+    }
+
+    if (cleanEmail !== targetStaff.email?.toLowerCase()) {
+      // Check for duplicate staff account
+      const { data: duplicateStaff, error: checkDupErr } = await serviceClient
+        .from("staff_members")
+        .select("user_id")
+        .eq("email", cleanEmail)
+        .neq("user_id", input.targetUserId)
+        .maybeSingle();
+
+      if (checkDupErr) {
+        return {
+          success: false,
+          code: "DATABASE_ERROR",
+          error: "Could not verify email uniqueness in staff directory.",
+        };
+      }
+
+      if (duplicateStaff) {
+        return {
+          success: false,
+          code: "ACCOUNT_ALREADY_EXISTS",
+          error: `A staff member with the email ${cleanEmail} is already enrolled.`,
+        };
+      }
+    }
+  }
+
+  // 5. Update Email if changed
+  let updatedEmail = targetStaff.email;
+  if (cleanEmail && cleanEmail !== targetStaff.email?.toLowerCase()) {
+    // Update Supabase Auth user email
+    const { error: authErr } = await serviceClient.auth.admin.updateUserById(
+      input.targetUserId,
+      {
+        email: cleanEmail,
+        email_confirm: true,
+      }
+    );
+
+    if (authErr) {
+      await recordAuditEvent({
+        action: "ADMIN_EMAIL_UPDATED",
+        entityType: "staff_member",
+        entityId: input.targetUserId,
+        entityReference: cleanEmail,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "AUTH_UPDATE_FAILED",
+        metadata: {
+          targetUserId: input.targetUserId,
+          previousEmail: targetStaff.email,
+          newEmail: cleanEmail,
+          error: authErr.message,
+        },
+      });
+
+      return {
+        success: false,
+        code: "AUTH_UPDATE_FAILED",
+        error: `Could not update authentication email: ${authErr.message}`,
+      };
+    }
+
+    // Update staff_members email
+    const { error: dbErr } = await serviceClient
+      .from("staff_members")
+      .update({ email: cleanEmail })
+      .eq("user_id", input.targetUserId);
+
+    if (dbErr) {
+      await recordAuditEvent({
+        action: "ADMIN_EMAIL_UPDATED",
+        entityType: "staff_member",
+        entityId: input.targetUserId,
+        entityReference: cleanEmail,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "DATABASE_UPDATE_FAILED",
+        metadata: {
+          targetUserId: input.targetUserId,
+          previousEmail: targetStaff.email,
+          newEmail: cleanEmail,
+          error: dbErr.message,
+        },
+      });
+
+      return {
+        success: false,
+        code: "DATABASE_UPDATE_FAILED",
+        error: "Failed to update staff record in database.",
+      };
+    }
+
+    await recordAuditEvent({
+      action: "ADMIN_EMAIL_UPDATED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: cleanEmail,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "SUCCESS",
+      metadata: {
+        targetUserId: input.targetUserId,
+        previousEmail: targetStaff.email,
+        newEmail: cleanEmail,
+      },
+    });
+
+    updatedEmail = cleanEmail;
+  }
+
+  // 6. Update Role if changed
+  let updatedRole = targetStaff.role;
+  if (input.role !== undefined && input.role !== targetStaff.role) {
+    const { error: roleDbErr } = await serviceClient
+      .from("staff_members")
+      .update({ role: input.role })
+      .eq("user_id", input.targetUserId);
+
+    if (roleDbErr) {
+      await recordAuditEvent({
+        action: "ADMIN_ROLE_UPDATED",
+        entityType: "staff_member",
+        entityId: input.targetUserId,
+        entityReference: updatedEmail || input.targetUserId,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "DATABASE_UPDATE_FAILED",
+        metadata: {
+          targetUserId: input.targetUserId,
+          previousRole: targetStaff.role,
+          newRole: input.role,
+          error: roleDbErr.message,
+        },
+      });
+
+      return {
+        success: false,
+        code: "DATABASE_UPDATE_FAILED",
+        error: "Failed to update staff role in database.",
+      };
+    }
+
+    await recordAuditEvent({
+      action: "ADMIN_ROLE_UPDATED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: updatedEmail || input.targetUserId,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "SUCCESS",
+      metadata: {
+        targetUserId: input.targetUserId,
+        previousRole: targetStaff.role,
+        newRole: input.role,
+      },
+    });
+
+    updatedRole = input.role;
+  }
+
+  return {
+    success: true,
+    staffMember: {
+      user_id: input.targetUserId,
+      role: updatedRole as StaffRole,
+      email: updatedEmail,
+    },
   };
 }

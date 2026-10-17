@@ -20,6 +20,7 @@ import type { AuditEventRecord, AuditStats } from "../../../lib/audit/types";
 
 export interface AuditLogClientProps {
   ownerEmail: string;
+  initialActorId?: string;
 }
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
@@ -40,9 +41,18 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   INTERVIEW_EVALUATION_UPDATED: { label: "Evaluation Updated", color: "#c084fc" },
   STAFF_ROLE_ASSIGNED: { label: "Staff Role Assigned", color: "#9b7cff" },
   OWNER_BOOTSTRAP: { label: "Owner Bootstrapped", color: "#9b7cff" },
+  ADMIN_INVITATION_INITIATED: { label: "Admin Invite Queued", color: "#38bdf8" },
+  ADMIN_ACCOUNT_CREATED: { label: "Admin Account Created", color: "#00e599" },
+  ADMIN_INVITATION_DELIVERY_SUCCESS: { label: "Invite Email Sent", color: "#00e599" },
+  ADMIN_INVITATION_DELIVERY_FAILURE: { label: "Invite Email Failed", color: "#f43f5e" },
+  ADMIN_TEMPORARY_PASSWORD_REISSUED: { label: "Password Reissued", color: "#f59e0b" },
+  ADMIN_EMAIL_UPDATED: { label: "Admin Email Updated", color: "#38bdf8" },
+  ADMIN_ROLE_UPDATED: { label: "Admin Role Updated", color: "#9b7cff" },
+  STAFF_PASSWORD_CHANGED: { label: "Password Replaced", color: "#00e599" },
+  EXPIRED_STAFF_CREDENTIAL_REJECTED: { label: "Expired Credential Blocked", color: "#ef4444" },
 };
 
-export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
+export default function AuditLogClient({ ownerEmail, initialActorId }: AuditLogClientProps) {
   // Data state
   const [events, setEvents] = useState<AuditEventRecord[]>([]);
   const [stats, setStats] = useState<AuditStats | null>(null);
@@ -58,6 +68,7 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [actorId, setActorId] = useState(initialActorId || "");
   const [actionFilter, setActionFilter] = useState("ALL");
   const [entityTypeFilter, setEntityTypeFilter] = useState("ALL");
   const [outcomeFilter, setOutcomeFilter] = useState("ALL");
@@ -78,6 +89,7 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
       if (actionFilter !== "ALL") params.set("action", actionFilter);
       if (entityTypeFilter !== "ALL") params.set("entityType", entityTypeFilter);
       if (outcomeFilter !== "ALL") params.set("outcome", outcomeFilter);
+      if (actorId.trim()) params.set("actorId", actorId.trim());
       if (search.trim()) params.set("search", search.trim());
 
       if (datePreset !== "ALL") {
@@ -119,7 +131,7 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
     return () => {
       ignore = true;
     };
-  }, [page, pageSize, actionFilter, entityTypeFilter, outcomeFilter, search, datePreset, refreshKey]);
+  }, [page, pageSize, actionFilter, entityTypeFilter, outcomeFilter, actorId, search, datePreset, refreshKey]);
 
   // Trigger manual refresh
   const handleRefresh = () => {
@@ -131,6 +143,7 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
   const handleResetFilters = () => {
     setLoading(true);
     setSearch("");
+    setActorId("");
     setActionFilter("ALL");
     setEntityTypeFilter("ALL");
     setOutcomeFilter("ALL");
@@ -246,6 +259,30 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
 
       {/* Filter Toolbar */}
       <div className="border border-white/10 bg-[#080a0c] p-4 space-y-4">
+        {/* Active Actor Filter Pill */}
+        {actorId && (
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border border-[#9b7cff]/40 bg-[#9b7cff]/10 rounded text-xs font-mono">
+            <div className="flex items-center gap-2 text-[#9b7cff] min-w-0">
+              <Shield size={14} className="shrink-0" />
+              <span className="font-semibold uppercase tracking-wider shrink-0">Admin Filter Active:</span>
+              <span className="truncate text-white bg-black/50 px-2 py-0.5 rounded border border-[#9b7cff]/30 font-bold" title={actorId}>
+                {actorId}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActorId("");
+                setPage(1);
+              }}
+              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded transition-colors shrink-0 cursor-pointer"
+            >
+              <X size={12} />
+              <span>Clear Filter</span>
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative flex-1 max-w-lg">
@@ -299,6 +336,14 @@ export default function AuditLogClient({ ownerEmail }: AuditLogClientProps) {
             className="bg-[#050708] border border-white/10 text-xs font-mono text-white/80 px-3 py-1.5 focus:border-[#9b7cff] focus:outline-none"
           >
             <option value="ALL">ALL ACTIONS</option>
+            <option value="ADMIN_ACCOUNT_CREATED">ADMIN_ACCOUNT_CREATED</option>
+            <option value="ADMIN_INVITATION_DELIVERY_SUCCESS">ADMIN_INVITATION_DELIVERY_SUCCESS</option>
+            <option value="ADMIN_INVITATION_DELIVERY_FAILURE">ADMIN_INVITATION_DELIVERY_FAILURE</option>
+            <option value="ADMIN_TEMPORARY_PASSWORD_REISSUED">ADMIN_TEMPORARY_PASSWORD_REISSUED</option>
+            <option value="ADMIN_EMAIL_UPDATED">ADMIN_EMAIL_UPDATED</option>
+            <option value="ADMIN_ROLE_UPDATED">ADMIN_ROLE_UPDATED</option>
+            <option value="STAFF_PASSWORD_CHANGED">STAFF_PASSWORD_CHANGED</option>
+            <option value="EXPIRED_STAFF_CREDENTIAL_REJECTED">EXPIRED_STAFF_CREDENTIAL_REJECTED</option>
             <option value="APPLICATION_SUBMITTED">APPLICATION_SUBMITTED</option>
             <option value="APPLICATION_STATUS_UPDATED">APPLICATION_STATUS_UPDATED</option>
             <option value="APPLICATION_REVIEW_NOTE_UPDATED">APPLICATION_REVIEW_NOTE_UPDATED</option>

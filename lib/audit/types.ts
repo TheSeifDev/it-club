@@ -29,6 +29,8 @@ export type AuditAction =
   | "ADMIN_INVITATION_DELIVERY_SUCCESS"
   | "ADMIN_INVITATION_DELIVERY_FAILURE"
   | "ADMIN_TEMPORARY_PASSWORD_REISSUED"
+  | "ADMIN_EMAIL_UPDATED"
+  | "ADMIN_ROLE_UPDATED"
   | "EXPIRED_STAFF_CREDENTIAL_REJECTED"
   | "STAFF_PASSWORD_CHANGED";
 
@@ -96,6 +98,7 @@ export interface AuditLogFilters {
   entityType?: string;
   outcome?: string;
   actorRole?: string;
+  actorId?: string;
   search?: string;
   from?: string;
   to?: string;

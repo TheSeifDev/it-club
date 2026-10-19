@@ -1,0 +1,96 @@
+name: Process Notification Outbox
+
+# ==============================================================================
+# Scheduled outbox worker for Vercel Hobby tier compatibility.
+#
+# Vercel Hobby accounts reject cron schedules more frequent than once per day
+# (e.g. '*/5 * * * *' fails deployment). This GitHub Actions workflow triggers
+# the production endpoint every five minutes with the exact Bearer CRON_SECRET contract.
+#
+# Guardrails:
+# - Bounded job timeout (5 minutes)
+# - Concurrency locked to prevent overlapping runs (cancel-in-progress: false)
+# - Read-only repository permissions (contents: read)
+# - Never logs secrets or authorization headers
+# - Explicit validation of HTTP status codes (200 OK, 401/403 auth error, etc.)
+# ==============================================================================
+
+on:
+  schedule:
+    # Trigger every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: notification-outbox-cron
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drain-outbox:
+    name: Process Pending Notifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Notification Outbox Processor
+        env:
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL || secrets.PRODUCTION_URL || vars.APP_BASE_URL || vars.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          # 1. Validate required environment secrets
+          if [ -z "${APP_BASE_URL:-}" ]; then
+            echo "::error::Missing required secret: APP_BASE_URL (or PRODUCTION_URL). Please configure this secret in GitHub Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::Missing required secret: CRON_SECRET. Please configure this secret in GitHub Repository Settings -> Secrets and variables -> Actions matching the CRON_SECRET environment variable on Vercel."
+            exit 1
+          fi
+
+          # 2. Normalize Base URL (ensure https:// scheme and strip trailing slash)
+          TARGET_URL="${APP_BASE_URL}"
+          if [[ "$TARGET_URL" != http://* && "$TARGET_URL" != https://* ]]; then
+            TARGET_URL="https://$TARGET_URL"
+          fi
+          TARGET_URL="${TARGET_URL%/}"
+          ENDPOINT="${TARGET_URL}/api/admin/notifications/process"
+
+          echo "Target Endpoint: ${TARGET_URL}/api/admin/notifications/process"
+
+          # 3. Invoke endpoint with Bearer CRON_SECRET without echoing secret in logs
+          TMP_RESPONSE=$(mktemp)
+          HTTP_STATUS=$(curl -sS -o "$TMP_RESPONSE" -w "%{http_code}" -X POST "$ENDPOINT" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"batchSize": 25, "delayBetweenMs": 250}' \
+            --connect-timeout 15 \
+            --max-time 180)
+
+          RESPONSE_BODY=$(cat "$TMP_RESPONSE")
+          rm -f "$TMP_RESPONSE"
+
+          echo "HTTP Response Status Code: $HTTP_STATUS"
+
+          # 4. Handle response status codes with explicit error diagnostics
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "Outbox processing completed successfully."
+            echo "Response: $RESPONSE_BODY"
+          elif [ "$HTTP_STATUS" -eq 401 ] || [ "$HTTP_STATUS" -eq 403 ]; then
+            echo "::error::Authentication failed with HTTP $HTTP_STATUS. The CRON_SECRET repository secret does not match the server's expected secret."
+            exit 1
+          elif [ "$HTTP_STATUS" -eq 404 ]; then
+            echo "::error::Endpoint not found (HTTP 404). Verify that APP_BASE_URL points to the correct deployment."
+            exit 1
+          elif [ "$HTTP_STATUS" -eq 500 ]; then
+            echo "::error::Server error (HTTP 500) during outbox execution. Details: $RESPONSE_BODY"
+            exit 1
+          else
+            echo "::error::Unexpected HTTP status $HTTP_STATUS returned by endpoint. Response: $RESPONSE_BODY"
+            exit 1
+          fi

@@ -12,6 +12,10 @@ import {
   processPendingNotifications,
 } from "../lib/email/notification-service.ts";
 import { setMockTransporter, resetMailerTransporter } from "../lib/email/mailer.ts";
+import {
+  POST as postProcessNotifications,
+  GET as getProcessNotifications,
+} from "../app/api/admin/notifications/process/route.ts";
 
 describe("Burst Readiness & Capacity Hardening", () => {
   beforeEach(() => {
@@ -241,6 +245,86 @@ describe("Burst Readiness & Capacity Hardening", () => {
       assert.equal(typeof res.sent, "number");
       assert.equal(typeof res.failed, "number");
       assert.ok(Array.isArray(res.errors));
+    });
+
+    it("rejects unauthenticated requests to /api/admin/notifications/process with 401 UNAUTHORIZED", async () => {
+      const req = new Request("http://localhost:3000/api/admin/notifications/process", {
+        method: "POST",
+      });
+      const res = await postProcessNotifications(req);
+      assert.equal(res.status, 401);
+      const json = await res.json();
+      assert.equal(json.code, "UNAUTHORIZED");
+    });
+
+    it("rejects requests with invalid Bearer token with 401 UNAUTHORIZED", async () => {
+      const req = new Request("http://localhost:3000/api/admin/notifications/process", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer invalid_secret_token_12345",
+        },
+      });
+      const res = await postProcessNotifications(req);
+      assert.equal(res.status, 401);
+      const json = await res.json();
+      assert.equal(json.code, "UNAUTHORIZED");
+    });
+
+    it("accepts requests with valid CRON_SECRET Bearer header and executes batch processing", async () => {
+      const testSecret = "test_cron_secret_auth_check_789";
+      const originalSecret = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = testSecret;
+
+      try {
+        const req = new Request("http://localhost:3000/api/admin/notifications/process", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${testSecret}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ batchSize: 5, delayBetweenMs: 0 }),
+        });
+
+        const res = await postProcessNotifications(req);
+        assert.equal(res.status, 200);
+        const json = await res.json();
+        assert.equal(json.ok, true);
+        assert.equal(typeof json.processed, "number");
+        assert.equal(typeof json.sent, "number");
+        assert.equal(typeof json.failed, "number");
+      } finally {
+        if (originalSecret !== undefined) {
+          process.env.CRON_SECRET = originalSecret;
+        } else {
+          delete process.env.CRON_SECRET;
+        }
+      }
+    });
+
+    it("supports GET method with valid CRON_SECRET Bearer header", async () => {
+      const testSecret = "test_cron_secret_auth_check_789";
+      const originalSecret = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = testSecret;
+
+      try {
+        const req = new Request("http://localhost:3000/api/admin/notifications/process", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${testSecret}`,
+          },
+        });
+
+        const res = await getProcessNotifications(req);
+        assert.equal(res.status, 200);
+        const json = await res.json();
+        assert.equal(json.ok, true);
+      } finally {
+        if (originalSecret !== undefined) {
+          process.env.CRON_SECRET = originalSecret;
+        } else {
+          delete process.env.CRON_SECRET;
+        }
+      }
     });
   });
 });

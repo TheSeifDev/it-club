@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { requireStaffRole } from "../../lib/auth/page-guard";
+import { getCurrentStaffCommittee } from "../../lib/auth/committee-access";
 import { getDashboardMetrics, listApplications } from "../../lib/admin/queries";
 import { STATUS_METADATA, TRACK_METADATA } from "../../lib/admin/transitions";
 import type { ApplicationListItem, ApplicationStatus, CommitteeTrack, DashboardMetrics } from "../../lib/admin/types";
@@ -105,13 +106,30 @@ export default async function AdminPage() {
     redirect("/admin/interviews/scan");
   }
 
+  const scope = await getCurrentStaffCommittee();
+  if (!scope || (!scope.isOwner && !scope.committee)) {
+    return (
+      <div className="p-12 border border-rose-500/20 bg-rose-500/5 text-center space-y-4">
+        <h2 className="text-xl font-bold text-white">No Committee Assigned</h2>
+        <p className="text-xs text-white/60 max-w-md mx-auto font-mono">
+          Your staff account does not currently have an assigned committee. Please contact the Owner to assign your committee scope.
+        </p>
+      </div>
+    );
+  }
+
+  const committeeScope = scope.isOwner ? null : scope.committee;
+
   let metrics: DashboardMetrics | null = null;
   let metricsError: string | null = null;
   let recentApplications: ApplicationListItem[] = [];
 
   try {
-    metrics = await getDashboardMetrics();
-    const listRes = await listApplications({ pageSize: 8, sortBy: "created_at", sortOrder: "desc" });
+    metrics = await getDashboardMetrics(committeeScope);
+    const listRes = await listApplications(
+      { pageSize: 8, sortBy: "created_at", sortOrder: "desc" },
+      committeeScope
+    );
     recentApplications = listRes.applications;
   } catch (err: unknown) {
     metricsError = err instanceof Error ? err.message : "Failed to load database records.";

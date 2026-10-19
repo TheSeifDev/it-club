@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server.js";
 import { verifyStaffApiRequest } from "../../../../../lib/auth/server.ts";
 import { updateStaffAccount } from "../../../../../lib/admin/staff-service.ts";
-import type { StaffRole } from "../../../../../lib/auth/roles.ts";
+import type { StaffRole, CommitteeTrack } from "../../../../../lib/auth/roles.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +38,7 @@ export async function PATCH(
   interface UpdatePayload {
     email?: string;
     role?: string;
+    committee?: string | null;
   }
 
   let body: UpdatePayload;
@@ -50,9 +51,9 @@ export async function PATCH(
     );
   }
 
-  if (body.email === undefined && body.role === undefined) {
+  if (body.email === undefined && body.role === undefined && body.committee === undefined) {
     return NextResponse.json(
-      { error: "At least one of email or role must be provided for update.", code: "INVALID_INPUT" },
+      { error: "At least one of email, role, or committee must be provided for update.", code: "INVALID_INPUT" },
       { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } }
     );
   }
@@ -62,6 +63,7 @@ export async function PATCH(
     targetUserId: userId.trim(),
     email: body.email,
     role: body.role as StaffRole | undefined,
+    committee: body.committee as CommitteeTrack | null | undefined,
     ownerUser: {
       id: auth.user.id,
       email: auth.user.email,
@@ -77,7 +79,7 @@ export async function PATCH(
         ? 403
         : result.code === "ACCOUNT_ALREADY_EXISTS"
         ? 409
-        : result.code === "INVALID_ROLE" || result.code === "INVALID_EMAIL" || result.code === "INVALID_INPUT"
+        : result.code === "INVALID_ROLE" || result.code === "INVALID_EMAIL" || result.code === "INVALID_COMMITTEE" || result.code === "INVALID_INPUT"
         ? 400
         : 500;
 

@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { Loader2 } from "lucide-react";
 import { requireStaffRole } from "../../../lib/auth/page-guard";
+import { getCurrentStaffCommittee } from "../../../lib/auth/committee-access";
 import { listApplications } from "../../../lib/admin/queries";
 import ApplicationsListClient from "./ApplicationsListClient";
 import type { ApplicationStatus, CommitteeTrack, AcademicYear, ApplicationFilters } from "../../../lib/admin/types";
@@ -27,6 +28,18 @@ export default async function ApplicationsPage(props: {
 }) {
   await requireStaffRole(["owner", "admin"]);
 
+  const scope = await getCurrentStaffCommittee();
+  if (!scope || (!scope.isOwner && !scope.committee)) {
+    return (
+      <div className="p-12 border border-rose-500/20 bg-rose-500/5 text-center space-y-4">
+        <h2 className="text-xl font-bold text-white">No Committee Assigned</h2>
+        <p className="text-xs text-white/60 max-w-md mx-auto font-mono">
+          Your staff account does not currently have an assigned committee. Please contact the Owner to assign your committee scope.
+        </p>
+      </div>
+    );
+  }
+
   const params = await props.searchParams;
 
   const filters: ApplicationFilters = {
@@ -42,7 +55,8 @@ export default async function ApplicationsPage(props: {
     pageSize: params.pageSize ? parseInt(params.pageSize, 10) : 20,
   };
 
-  const data = await listApplications(filters);
+  const committeeScope = scope.isOwner ? null : scope.committee;
+  const data = await listApplications(filters, committeeScope);
 
   return (
     <Suspense

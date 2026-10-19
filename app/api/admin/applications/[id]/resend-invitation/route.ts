@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server.js";
 import { verifyStaffApiRequest } from "../../../../../../lib/auth/server.ts";
 import { getApplicationById } from "../../../../../../lib/admin/queries.ts";
+import { requireApplicationCommitteeAccess } from "../../../../../../lib/auth/committee-access.ts";
 import { reissueInvitation } from "../../../../../../lib/email/notification-service.ts";
 import { recordAuditEvent } from "../../../../../../lib/audit/service.ts";
 import type { AuditActorRole } from "../../../../../../lib/audit/types.ts";
@@ -42,6 +43,18 @@ export async function POST(
     return NextResponse.json(
       { error: "Applicant not found.", code: "NOT_FOUND" },
       { status: 404 }
+    );
+  }
+
+  const access = await requireApplicationCommitteeAccess(
+    application.application_reference,
+    application.primary_track,
+    "REISSUE_INVITATION"
+  );
+  if (!access.allowed) {
+    return NextResponse.json(
+      { error: access.error, code: access.code },
+      { status: access.status || 403 }
     );
   }
 

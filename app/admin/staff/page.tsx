@@ -23,7 +23,7 @@ export default async function AdminStaffPage() {
     const { data, error } = await serviceClient
       .from("staff_members")
       .select(
-        "user_id, role, email, created_at, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at"
+        "user_id, role, committee, email, created_at, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at"
       )
       .order("created_at", { ascending: true });
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server.js";
 import { verifyStaffApiRequest } from "../../../../../../lib/auth/server.ts";
+import { getApplicationById } from "../../../../../../lib/admin/queries.ts";
+import { requireApplicationCommitteeAccess } from "../../../../../../lib/auth/committee-access.ts";
 import { provisionStudentAccount } from "../../../../../../lib/auth/provisioning.ts";
 
 export const runtime = "nodejs";
@@ -18,6 +20,27 @@ export async function POST(
   }
 
   const { id } = await props.params;
+
+  // Verify application exists and staff member has authorized committee scope
+  const application = await getApplicationById(id);
+  if (!application) {
+    return NextResponse.json(
+      { error: "Applicant record not found.", code: "NOT_FOUND" },
+      { status: 404 }
+    );
+  }
+
+  const access = await requireApplicationCommitteeAccess(
+    application.application_reference,
+    application.primary_track,
+    "PROVISION_STUDENT_ACCOUNT"
+  );
+  if (!access.allowed) {
+    return NextResponse.json(
+      { error: access.error, code: access.code },
+      { status: access.status || 403 }
+    );
+  }
 
   let isReissue = false;
   try {

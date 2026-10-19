@@ -39,7 +39,7 @@ export async function getStaffMember(userId: string): Promise<StaffMember | null
     const serviceClient = getServiceRoleClient();
     const { data, error } = await serviceClient
       .from("staff_members")
-      .select("user_id, role, email, created_at, created_by, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at")
+      .select("user_id, role, committee, email, created_at, created_by, password_change_required, temporary_password_issued_at, temporary_password_expires_at, password_changed_at")
       .eq("user_id", userId)
       .maybeSingle();
 

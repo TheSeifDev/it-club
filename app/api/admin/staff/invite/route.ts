@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server.js";
 import { verifyStaffApiRequest } from "../../../../../lib/auth/server.ts";
 import { inviteAdminAccount } from "../../../../../lib/admin/staff-service.ts";
+import type { StaffRole, CommitteeTrack } from "../../../../../lib/auth/roles.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
   // 2. Parse request JSON
   interface InvitePayload {
     email?: string;
+    role?: string;
+    committee?: string | null;
   }
 
   let body: InvitePayload;
@@ -46,6 +49,8 @@ export async function POST(request: Request) {
   // 3. Invite Admin Account
   const result = await inviteAdminAccount({
     email: body.email,
+    role: (body.role as StaffRole) || "admin",
+    committee: (body.committee as CommitteeTrack | null) ?? null,
     ownerUser: {
       id: auth.user.id,
       email: auth.user.email,
@@ -57,7 +62,7 @@ export async function POST(request: Request) {
     const statusCode =
       result.code === "ACCOUNT_ALREADY_EXISTS"
         ? 409
-        : result.code === "INVALID_EMAIL"
+        : result.code === "INVALID_EMAIL" || result.code === "INVALID_COMMITTEE" || result.code === "INVALID_ROLE"
         ? 400
         : result.code === "FORBIDDEN"
         ? 403

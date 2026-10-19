@@ -5,6 +5,7 @@ import {
   updateApplicationStatus,
   saveReviewerNotes,
 } from "../../../../../lib/admin/queries.ts";
+import { requireApplicationCommitteeAccess } from "../../../../../lib/auth/committee-access.ts";
 import {
   sendAcceptanceInvitation,
   sendShortlistedInvitation,
@@ -35,6 +36,18 @@ export async function GET(
       return NextResponse.json(
         { error: "Applicant not found.", code: "NOT_FOUND" },
         { status: 404 }
+      );
+    }
+
+    const access = await requireApplicationCommitteeAccess(
+      application.application_reference,
+      application.primary_track,
+      "VIEW_APPLICATION"
+    );
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, code: access.code },
+        { status: access.status || 403 }
       );
     }
 
@@ -80,6 +93,27 @@ export async function PATCH(
     return NextResponse.json(
       { error: "Invalid JSON request body.", code: "MALFORMED_JSON" },
       { status: 400 }
+    );
+  }
+
+  // Pre-load target application to strictly enforce committee authorization before mutation
+  const targetApp = await getApplicationById(id);
+  if (!targetApp) {
+    return NextResponse.json(
+      { error: "Applicant not found.", code: "NOT_FOUND" },
+      { status: 404 }
+    );
+  }
+
+  const access = await requireApplicationCommitteeAccess(
+    targetApp.application_reference,
+    targetApp.primary_track,
+    body.saveNotesOnly ? "UPDATE_REVIEW_NOTES" : "UPDATE_APPLICATION_STATUS"
+  );
+  if (!access.allowed) {
+    return NextResponse.json(
+      { error: access.error, code: access.code },
+      { status: access.status || 403 }
     );
   }
 

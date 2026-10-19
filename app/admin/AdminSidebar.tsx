@@ -26,6 +26,7 @@ const TRACKS: CommitteeTrack[] = ["hr", "pr", "sm", "oc", "it", "rnd"];
 export interface AdminSidebarProps {
   userRole?: string;
   userEmail: string;
+  userCommittee?: CommitteeTrack | null;
 }
 
 const navItems = [
@@ -35,7 +36,14 @@ const navItems = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps) {
+export default function AdminSidebar({ userRole, userEmail, userCommittee }: AdminSidebarProps) {
+  const allowedTracks: CommitteeTrack[] =
+    userRole === "owner"
+      ? TRACKS
+      : userCommittee
+      ? [userCommittee]
+      : [];
+
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [compact, setCompact] = useState(false);
@@ -331,13 +339,13 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
           {renderNavLinks(compact)}
 
           {/* Track Filters (Expanded only, non-interviewers) */}
-          {!compact && !isInterviewer && (
+          {!compact && !isInterviewer && allowedTracks.length > 0 && (
             <div className="mt-6 pt-5 border-t border-white/10">
               <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
-                Track Filters
+                {userRole === "owner" ? "Track Filters" : "Authorized Committee"}
               </p>
               <div className="grid grid-cols-2 gap-1.5 px-1">
-                {TRACKS.map((track) => {
+                {allowedTracks.map((track) => {
                   const meta = TRACK_METADATA[track];
                   const isTrackActive = pathname === "/admin/applications" && pathname.includes(`track=${track}`);
                   return (
@@ -372,10 +380,15 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
                 <p className="mt-0.5 truncate text-xs font-medium text-white/90" title={userEmail}>
                   {userEmail}
                 </p>
-                <div className="mt-1.5">
+                <div className="mt-1.5 flex flex-wrap gap-1">
                   <span className={`inline-flex rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${roleBadgeStyle}`}>
                     {userRole || "staff"}
                   </span>
+                  {userCommittee && (
+                    <span className="inline-flex rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      {userCommittee.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -491,13 +504,13 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
               {renderNavLinks(false, closeMobile)}
 
               {/* Mobile Track Filters */}
-              {!isInterviewer && (
+              {!isInterviewer && allowedTracks.length > 0 && (
                 <div className="mt-6 pt-5 border-t border-white/10">
                   <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
-                    Track Filters
+                    {userRole === "owner" ? "Track Filters" : "Authorized Committee"}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {TRACKS.map((track) => {
+                    {allowedTracks.map((track) => {
                       const meta = TRACK_METADATA[track];
                       const isTrackActive = pathname === "/admin/applications" && pathname.includes(`track=${track}`);
                       return (
@@ -532,10 +545,15 @@ export default function AdminSidebar({ userRole, userEmail }: AdminSidebarProps)
                   <p className="mt-0.5 truncate text-xs font-medium text-white/90" title={userEmail}>
                     {userEmail}
                   </p>
-                  <div className="mt-1.5">
+                  <div className="mt-1.5 flex flex-wrap gap-1">
                     <span className={`inline-flex rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${roleBadgeStyle}`}>
                       {userRole || "staff"}
                     </span>
+                    {userCommittee && (
+                      <span className="inline-flex rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        {userCommittee.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                 </div>
 

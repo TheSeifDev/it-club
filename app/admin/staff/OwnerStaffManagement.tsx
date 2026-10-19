@@ -20,10 +20,13 @@ import {
   UserCheck,
 } from "lucide-react";
 import { Panel } from "../dashboard-ui";
+import { type CommitteeTrack, VALID_COMMITTEE_TRACKS } from "../../../lib/auth/roles";
+import { TRACK_METADATA } from "../../../lib/admin/transitions";
 
 export interface StaffDirectoryItem {
   user_id: string;
   role: "owner" | "admin" | "interviewer";
+  committee?: CommitteeTrack | null;
   email: string | null;
   created_at: string;
   password_change_required?: boolean;
@@ -58,8 +61,10 @@ interface EditingStaff {
   userId: string;
   email: string;
   role: "admin" | "interviewer";
+  committee: CommitteeTrack | null;
   originalEmail: string;
   originalRole: "admin" | "interviewer";
+  originalCommittee: CommitteeTrack | null;
 }
 
 export default function OwnerStaffManagement({
@@ -69,6 +74,8 @@ export default function OwnerStaffManagement({
 }: Props) {
   const [staffList, setStaffList] = useState<StaffDirectoryItem[]>(initialStaffList);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "interviewer">("admin");
+  const [inviteCommittee, setInviteCommittee] = useState<CommitteeTrack | "">("hr");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [reissuingUserId, setReissuingUserId] = useState<string | null>(null);
@@ -110,7 +117,7 @@ export default function OwnerStaffManagement({
 
     const cleanEmail = inviteEmail.trim().toLowerCase();
     if (!cleanEmail) {
-      setInviteError("Please enter an email address for the new Administrator.");
+      setInviteError("Please enter an email address for the new staff member.");
       return;
     }
 
@@ -120,13 +127,17 @@ export default function OwnerStaffManagement({
       const res = await fetch("/api/admin/staff/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail }),
+        body: JSON.stringify({
+          email: cleanEmail,
+          role: inviteRole,
+          committee: inviteCommittee || null,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setInviteError(data.error || "Failed to invite administrator account.");
+        setInviteError(data.error || "Failed to invite staff account.");
         setInviting(false);
         return;
       }
@@ -134,7 +145,8 @@ export default function OwnerStaffManagement({
       // Add to local staff directory
       const newItem: StaffDirectoryItem = {
         user_id: data.userId,
-        role: "admin",
+        role: inviteRole,
+        committee: (inviteCommittee as CommitteeTrack) || null,
         email: cleanEmail,
         created_at: data.issuedAt || new Date().toISOString(),
         password_change_required: true,
@@ -147,7 +159,7 @@ export default function OwnerStaffManagement({
       setInviteEmail("");
       setIssuedCredential({
         email: cleanEmail,
-        role: "admin",
+        role: inviteRole,
         temporaryPassword: data.temporaryPassword,
         expiresAt: data.expiresAt,
         emailDelivery: data.emailDelivery,
@@ -273,8 +285,10 @@ export default function OwnerStaffManagement({
       userId: member.user_id,
       email: member.email || "",
       role: member.role === "interviewer" ? "interviewer" : "admin",
+      committee: member.committee || null,
       originalEmail: member.email || "",
       originalRole: member.role === "interviewer" ? "interviewer" : "admin",
+      originalCommittee: member.committee || null,
     });
   };
 
@@ -305,6 +319,7 @@ export default function OwnerStaffManagement({
         body: JSON.stringify({
           email: cleanEmail,
           role: editingStaff.role,
+          committee: editingStaff.committee,
         }),
       });
 
@@ -324,6 +339,7 @@ export default function OwnerStaffManagement({
                 ...item,
                 email: cleanEmail,
                 role: editingStaff.role,
+                committee: editingStaff.committee,
               }
             : item
         )
@@ -352,13 +368,13 @@ export default function OwnerStaffManagement({
       >
         <div className="p-5">
           <form onSubmit={handleInviteSubmit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
-              <div className="sm:col-span-2">
+            <div className="grid gap-4 sm:grid-cols-12 sm:items-end">
+              <div className="sm:col-span-5">
                 <label
                   htmlFor="invite-admin-email"
                   className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5"
                 >
-                  Administrator Email Address Only
+                  Staff Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/30">
@@ -377,7 +393,49 @@ export default function OwnerStaffManagement({
                 </div>
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="invite-staff-role"
+                  className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5"
+                >
+                  Role
+                </label>
+                <select
+                  id="invite-staff-role"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as "admin" | "interviewer")}
+                  disabled={inviting}
+                  className="w-full px-3 py-2.5 rounded border border-white/15 bg-[#050708] text-white text-xs font-mono focus:outline-none focus:border-[#00e599] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="interviewer">Interviewer</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label
+                  htmlFor="invite-staff-committee"
+                  className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5"
+                >
+                  Committee Scope
+                </label>
+                <select
+                  id="invite-staff-committee"
+                  value={inviteCommittee}
+                  onChange={(e) => setInviteCommittee(e.target.value as CommitteeTrack | "")}
+                  disabled={inviting}
+                  className="w-full px-3 py-2.5 rounded border border-white/15 bg-[#050708] text-white text-xs font-mono focus:outline-none focus:border-[#00e599] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {VALID_COMMITTEE_TRACKS.map((t) => (
+                    <option key={t} value={t}>
+                      {TRACK_METADATA[t].name} ({t.toUpperCase()})
+                    </option>
+                  ))}
+                  <option value="">Unassigned (Access Denied)</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
                 <button
                   type="submit"
                   disabled={inviting}
@@ -391,7 +449,7 @@ export default function OwnerStaffManagement({
                   ) : (
                     <>
                       <UserPlus size={14} />
-                      <span>Invite Admin</span>
+                      <span>Invite</span>
                     </>
                   )}
                 </button>
@@ -620,6 +678,7 @@ export default function OwnerStaffManagement({
               <tr className="border-b border-white/10 bg-white/[0.02] text-white/40">
                 <th className="px-5 py-3 font-bold uppercase tracking-wider">Account / User ID</th>
                 <th className="px-5 py-3 font-bold uppercase tracking-wider">Role</th>
+                <th className="px-5 py-3 font-bold uppercase tracking-wider">Committee</th>
                 <th className="px-5 py-3 font-bold uppercase tracking-wider">Enrolled Date</th>
                 <th className="px-5 py-3 font-bold uppercase tracking-wider">Temporary Credential</th>
                 <th className="px-5 py-3 font-bold uppercase tracking-wider">Password Status</th>
@@ -679,6 +738,23 @@ export default function OwnerStaffManagement({
                         )}
                         <span>{member.role}</span>
                       </span>
+                    </td>
+
+                    {/* Committee Scope */}
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      {member.role === "owner" ? (
+                        <span className="inline-flex items-center gap-1 border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase rounded text-white/80">
+                          All Committees
+                        </span>
+                      ) : member.committee ? (
+                        <span className="inline-flex items-center gap-1 border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase rounded text-[#00e599]">
+                          {TRACK_METADATA[member.committee]?.name || member.committee.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase rounded text-amber-300">
+                          Unassigned (Denied)
+                        </span>
+                      )}
                     </td>
 
                     {/* Enrolled Date */}
@@ -905,6 +981,41 @@ export default function OwnerStaffManagement({
                 </select>
                 <p className="mt-1 text-[11px] text-white/40">
                   Note: The Owner role is protected and cannot be assigned through this interface.
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="edit-staff-committee"
+                  className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5"
+                >
+                  Assigned Committee Scope
+                </label>
+                <select
+                  id="edit-staff-committee"
+                  value={editingStaff.committee || ""}
+                  onChange={(e) =>
+                    setEditingStaff((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            committee: (e.target.value as CommitteeTrack) || null,
+                          }
+                        : null
+                    )
+                  }
+                  disabled={savingEdit}
+                  className="w-full px-3 py-2 rounded border border-white/15 bg-[#050708] text-white text-xs font-mono focus:outline-none focus:border-[#00e599] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <option value="">Unassigned (No Access to Applications)</option>
+                  {VALID_COMMITTEE_TRACKS.map((t) => (
+                    <option key={t} value={t}>
+                      {TRACK_METADATA[t].name} ({t.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-white/40">
+                  Staff can only view, evaluate, and manage applications belonging to their assigned committee.
                 </p>
               </div>
 

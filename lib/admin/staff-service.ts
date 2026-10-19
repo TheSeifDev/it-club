@@ -8,12 +8,14 @@ import {
 } from "../email/mailer.ts";
 import { getEmailConfig } from "../email/config.ts";
 import { renderAdminInvitationEmail } from "../email/templates/admin-invitation.ts";
-import type { StaffRole } from "../auth/roles.ts";
+import { type StaffRole, type CommitteeTrack, isCommitteeTrack } from "../auth/roles.ts";
 
 export const FIXED_ADMIN_TEMPORARY_PASSWORD = "0123456789";
 
 export interface InviteAdminInput {
   email: string;
+  role?: StaffRole;
+  committee?: CommitteeTrack | null;
   ownerUser: {
     id: string;
     email?: string | null;
@@ -37,6 +39,7 @@ export interface InviteAdminResult {
   userId?: string;
   email?: string;
   role?: StaffRole;
+  committee?: CommitteeTrack | null;
   temporaryPassword?: string;
   expiresAt?: string;
   issuedAt?: string;
@@ -118,6 +121,19 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     };
   }
 
+  const assignedRole: StaffRole = input.role === "interviewer" ? "interviewer" : "admin";
+  let assignedCommittee: CommitteeTrack | null = null;
+  if (input.committee !== undefined && input.committee !== null) {
+    if (!isCommitteeTrack(input.committee)) {
+      return {
+        success: false,
+        code: "INVALID_COMMITTEE",
+        error: `Invalid committee identifier: '${input.committee}'.`,
+      };
+    }
+    assignedCommittee = input.committee;
+  }
+
   const serviceClient = getServiceRoleClient();
 
   // 3. Record Audit: Admin invitation initiated
@@ -133,7 +149,8 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     outcome: "SUCCESS",
     metadata: {
       targetEmail: rawEmail,
-      assignedRole: "admin",
+      assignedRole,
+      assignedCommittee,
     },
   });
 
@@ -240,10 +257,11 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     }
   }
 
-  // 7. Insert record into public.staff_members (Strictly 'admin' role, never 'owner')
+  // 7. Insert record into public.staff_members (Never 'owner')
   const { error: insertErr } = await serviceClient.from("staff_members").insert({
     user_id: createdAuthUserId,
-    role: "admin",
+    role: assignedRole,
+    committee: assignedCommittee,
     email: rawEmail,
     created_by: createdByUserId,
     password_change_required: true,
@@ -276,7 +294,8 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     outcome: "SUCCESS",
     metadata: {
       targetEmail: rawEmail,
-      assignedRole: "admin",
+      assignedRole,
+      assignedCommittee,
       temporaryPasswordIssued: true,
       expiresAt: expiresAt.toISOString(),
     },
@@ -390,7 +409,8 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
     success: true,
     userId: createdAuthUserId,
     email: rawEmail,
-    role: "admin",
+    role: assignedRole,
+    committee: assignedCommittee,
     temporaryPassword,
     issuedAt: issuedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
@@ -952,6 +972,7 @@ export interface UpdateStaffAccountInput {
   targetUserId: string;
   email?: string;
   role?: StaffRole;
+  committee?: CommitteeTrack | null;
   ownerUser: {
     id: string;
     email?: string | null;
@@ -966,6 +987,7 @@ export interface UpdateStaffAccountResult {
   staffMember?: {
     user_id: string;
     role: StaffRole;
+    committee?: CommitteeTrack | null;
     email: string | null;
   };
 }
@@ -1001,7 +1023,7 @@ export async function updateStaffAccount(
   // 2. Fetch target staff member record
   const { data: targetStaff, error: fetchErr } = await serviceClient
     .from("staff_members")
-    .select("user_id, role, email")
+    .select("user_id, role, email, committee")
     .eq("user_id", input.targetUserId)
     .maybeSingle();
 
@@ -1020,6 +1042,19 @@ export async function updateStaffAccount(
       code: "CANNOT_MODIFY_OWNER",
       error: "Owner accounts cannot be modified.",
     };
+  }
+
+  // Validate committee if provided
+  let cleanCommittee: CommitteeTrack | null | undefined = undefined;
+  if (input.committee !== undefined) {
+    if (input.committee !== null && !isCommitteeTrack(input.committee)) {
+      return {
+        success: false,
+        code: "INVALID_COMMITTEE",
+        error: `Invalid committee identifier: '${input.committee}'.`,
+      };
+    }
+    cleanCommittee = input.committee;
   }
 
   // 3. Validate role if provided (must only be 'admin' or 'interviewer')
@@ -1224,11 +1259,69 @@ export async function updateStaffAccount(
     updatedRole = input.role;
   }
 
+  // 7. Update Committee if changed
+  let updatedCommittee = targetStaff.committee ?? null;
+  if (cleanCommittee !== undefined && cleanCommittee !== (targetStaff.committee ?? null)) {
+    const { error: committeeDbErr } = await serviceClient
+      .from("staff_members")
+      .update({ committee: cleanCommittee })
+      .eq("user_id", input.targetUserId);
+
+    if (committeeDbErr) {
+      await recordAuditEvent({
+        action: "ADMIN_COMMITTEE_UPDATED",
+        entityType: "staff_member",
+        entityId: input.targetUserId,
+        entityReference: updatedEmail || input.targetUserId,
+        actor: {
+          id: input.ownerUser.id,
+          email: input.ownerUser.email || undefined,
+          role: "owner",
+        },
+        outcome: "FAILURE",
+        errorCategory: "DATABASE_UPDATE_FAILED",
+        metadata: {
+          targetUserId: input.targetUserId,
+          previousCommittee: targetStaff.committee ?? null,
+          newCommittee: cleanCommittee,
+          error: committeeDbErr.message,
+        },
+      });
+
+      return {
+        success: false,
+        code: "DATABASE_UPDATE_FAILED",
+        error: "Failed to update staff committee in database.",
+      };
+    }
+
+    await recordAuditEvent({
+      action: "ADMIN_COMMITTEE_UPDATED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: updatedEmail || input.targetUserId,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "SUCCESS",
+      metadata: {
+        targetUserId: input.targetUserId,
+        previousCommittee: targetStaff.committee ?? null,
+        newCommittee: cleanCommittee,
+      },
+    });
+
+    updatedCommittee = cleanCommittee;
+  }
+
   return {
     success: true,
     staffMember: {
       user_id: input.targetUserId,
       role: updatedRole as StaffRole,
+      committee: updatedCommittee,
       email: updatedEmail,
     },
   };

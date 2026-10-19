@@ -20,13 +20,40 @@ import {
 const ALLOWED_SORT_FIELDS = ["created_at", "full_name", "status", "primary_track"] as const;
 
 /**
- * Computes dashboard recruitment metrics from the live database.
+ * Narrow type for the committee scope filter used by server-side query functions.
+ * - null | undefined | "ALL" = Owner or test/unrestricted (fetch all committees)
+ * - CommitteeTrack string = non-owner staff (restricted to that committee's primary_track)
+ * - "DENIED" = staff member has no assigned committee (deny: returns empty/null)
  */
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+export type CommitteeScopeFilter = CommitteeTrack | "ALL" | "DENIED" | null | undefined;
+
+/**
+ * Computes dashboard recruitment metrics from the live database.
+ *
+ * @param committeeScope
+ *   - null | undefined | "ALL" -> Owner or unrestricted: fetch all applications across all committees
+ *   - CommitteeTrack string -> non-owner: restrict to that committee's primary_track
+ *   - "DENIED" -> staff has no committee assignment: returns empty metrics
+ */
+export async function getDashboardMetrics(
+  committeeScope?: CommitteeScopeFilter
+): Promise<DashboardMetrics> {
+  // Non-owner staff with no committee assignment: deny-by-default, return zero metrics
+  if (committeeScope === "DENIED") {
+    return buildEmptyMetrics();
+  }
+
   const serviceClient = getServiceRoleClient();
-  const { data, error } = await serviceClient
+  let query = serviceClient
     .from("applications")
     .select("status, primary_track, secondary_track, created_at");
+
+  // Apply committee restriction for non-owner staff
+  if (committeeScope && COMMITTEE_TRACKS.includes(committeeScope as CommitteeTrack)) {
+    query = query.eq("primary_track", committeeScope);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`Failed to load recruitment metrics: ${error.message}`);
@@ -134,6 +161,42 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   };
 }
 
+
+/** Returns a zeroed DashboardMetrics object for denied/unassigned committee scope. */
+function buildEmptyMetrics(): DashboardMetrics {
+  const byStatus = {
+    PENDING_REVIEW: 0,
+    UNDER_REVIEW: 0,
+    NEEDS_CORRECTION: 0,
+    SHORTLISTED: 0,
+    INTERVIEW_SCHEDULED: 0,
+    INTERVIEWED: 0,
+    ACCEPTED: 0,
+    REJECTED: 0,
+    WAITLISTED: 0,
+  };
+  const emptyTrack = { hr: 0, pr: 0, sm: 0, oc: 0, it: 0, rnd: 0 };
+  return {
+    total: 0,
+    byStatus,
+    byTrack: { ...emptyTrack },
+    trackMetrics: {
+      byPrimary: { ...emptyTrack },
+      bySecondary: { ...emptyTrack },
+      byCombined: { ...emptyTrack },
+      totalPrimary: 0,
+      totalSecondary: 0,
+      totalSelections: 0,
+    },
+    recentCount24h: 0,
+    submissionsByDay: Array.from({ length: 14 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (13 - i));
+      return { date: d.toISOString().slice(0, 10), count: 0 };
+    }),
+    pipeline: VALID_STATUSES.map((status) => ({ status, count: 0 })),
+  };
+}
 /** Latest persisted SMTP attempt; SENT means SMTP accepted, never mailbox delivery. */
 export async function getLatestInvitationNotification(
   applicationId: string
@@ -153,15 +216,26 @@ export async function getLatestInvitationNotification(
 /**
  * Lists applications with server-side pagination, search, filtering, and sorting.
  * Masks sensitive National IDs in the returned list.
+ *
+ * The committeeScope parameter can be:
+ * - null | undefined | "ALL" -> Owner or unrestricted: no committee restriction applied
+ * - CommitteeTrack -> non-owner staff: restricts to that committee's primary_track
+ * - "DENIED" -> staff has no committee assignment: returns empty result set
  */
 export async function listApplications(
-  filters: ApplicationFilters = {}
+  filters: ApplicationFilters = {},
+  committeeScope?: CommitteeScopeFilter
 ): Promise<PaginatedApplications> {
-  const serviceClient = getServiceRoleClient();
-
   const page = Math.max(1, Number(filters.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(filters.pageSize) || 10));
   const offset = (page - 1) * pageSize;
+
+  // Staff with no committee assignment: deny-by-default, return empty
+  if (committeeScope === "DENIED") {
+    return { applications: [], totalCount: 0, page, pageSize, totalPages: 1 };
+  }
+
+  const serviceClient = getServiceRoleClient();
 
   let query = serviceClient
     .from("applications")
@@ -170,21 +244,46 @@ export async function listApplications(
       { count: "exact" }
     );
 
+  // CRITICAL: Apply committee scope restriction FIRST, before any user-supplied filters.
+  // This ensures search, sort, and pagination only operate within the authorized subset.
+  // Owner (committeeScope === null / undefined / "ALL") gets unrestricted access.
+  // Non-owner staff get hard-filtered to their assigned committee's primary_track.
+  const isCommitteeFiltered = Boolean(committeeScope && COMMITTEE_TRACKS.includes(committeeScope as CommitteeTrack));
+  if (isCommitteeFiltered) {
+    query = query.eq("primary_track", committeeScope as CommitteeTrack);
+  }
+
   // Status Filter
   if (filters.status && filters.status !== "ALL" && isApplicationStatus(filters.status)) {
     query = query.eq("status", filters.status);
   }
 
   // Track Filter with primary / secondary / either preference scope
+  // NOTE: For non-owner staff, the committee scope already restricts primary_track.
+  // Additional track filters from the client are applied only within the authorized subset.
+  // We skip client-supplied track filter if it conflicts with the scope (cannot expand).
   if (filters.track && filters.track !== "ALL" && COMMITTEE_TRACKS.includes(filters.track as CommitteeTrack)) {
-    const scope = filters.trackScope || "primary";
-    if (scope === "secondary") {
-      query = query.eq("secondary_track", filters.track);
-    } else if (scope === "either") {
-      query = query.or(`primary_track.eq.${filters.track},secondary_track.eq.${filters.track}`);
-    } else {
-      query = query.eq("primary_track", filters.track);
+    // Non-owner: only allow the filter if it matches their authorized committee
+    const trackAllowed = !isCommitteeFiltered || filters.track === committeeScope;
+    if (trackAllowed) {
+      const scope = filters.trackScope || "primary";
+      if (scope === "secondary") {
+        query = query.eq("secondary_track", filters.track);
+      } else if (scope === "either") {
+        // For non-owner: "either" cannot expand beyond their primary committee restriction
+        if (isCommitteeFiltered) {
+          query = query.eq("secondary_track", filters.track);
+        } else {
+          query = query.or(`primary_track.eq.${filters.track},secondary_track.eq.${filters.track}`);
+        }
+      } else {
+        if (!isCommitteeFiltered) {
+          query = query.eq("primary_track", filters.track);
+        }
+      }
     }
+    // If trackAllowed is false (non-owner tried to expand scope), silently ignore.
+    // The query already filters to their committee only.
   }
 
   // Submission Date Filter (YYYY-MM-DD from timeline click)
@@ -262,10 +361,22 @@ export async function listApplications(
 
 /**
  * Retrieves the full application details by UUID or reference code.
+ *
+ * @param committeeScope
+ *   - null | undefined | "ALL" -> Owner or unrestricted: no committee restriction
+ *   - CommitteeTrack -> non-owner: application must match this primary_track
+ *   - "DENIED" -> staff has no committee assignment: returns null
+ *
+ * IMPORTANT: The committee check is performed on the DB record's primary_track,
+ * NOT on any caller-supplied value. This prevents cross-committee enumeration.
  */
 export async function getApplicationById(
-  idOrReference: string
+  idOrReference: string,
+  committeeScope?: CommitteeScopeFilter
 ): Promise<ApplicationDetail | null> {
+  // Staff with no committee assignment: deny-by-default
+  if (committeeScope === "DENIED") return null;
+
   const serviceClient = getServiceRoleClient();
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrReference);
 
@@ -274,6 +385,11 @@ export async function getApplicationById(
     query = query.eq("id", idOrReference);
   } else {
     query = query.eq("application_reference", idOrReference.toUpperCase().trim());
+  }
+
+  // Apply committee scope restriction at the DB level when restricted to a committee
+  if (committeeScope && COMMITTEE_TRACKS.includes(committeeScope as CommitteeTrack)) {
+    query = query.eq("primary_track", committeeScope as CommitteeTrack);
   }
 
   const { data, error } = await query.maybeSingle();
@@ -448,3 +564,5 @@ export async function saveReviewerNotes(input: {
 
   return { success: true };
 }
+
+

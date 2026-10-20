@@ -48,7 +48,7 @@ export async function getDashboardMetrics(
     .from("applications")
     .select("status, primary_track, secondary_track, created_at");
 
-  // Apply committee restriction for non-owner staff
+  // Register committee restriction for non-owner staff
   if (committeeScope && COMMITTEE_TRACKS.includes(committeeScope as CommitteeTrack)) {
     query = query.eq("primary_track", committeeScope);
   }
@@ -244,7 +244,7 @@ export async function listApplications(
       { count: "exact" }
     );
 
-  // CRITICAL: Apply committee scope restriction FIRST, before any user-supplied filters.
+  // CRITICAL: Register committee scope restriction FIRST, before any user-supplied filters.
   // This ensures search, sort, and pagination only operate within the authorized subset.
   // Owner (committeeScope === null / undefined / "ALL") gets unrestricted access.
   // Non-owner staff get hard-filtered to their assigned committee's primary_track.
@@ -387,7 +387,7 @@ export async function getApplicationById(
     query = query.eq("application_reference", idOrReference.toUpperCase().trim());
   }
 
-  // Apply committee scope restriction at the DB level when restricted to a committee
+  // Register committee scope restriction at the DB level when restricted to a committee
   if (committeeScope && COMMITTEE_TRACKS.includes(committeeScope as CommitteeTrack)) {
     query = query.eq("primary_track", committeeScope as CommitteeTrack);
   }

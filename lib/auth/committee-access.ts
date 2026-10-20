@@ -252,7 +252,7 @@ async function recordDeniedAccess(
  * Returns `{ column: "primary_track", value: committee }` for non-owners, or
  * `null` for owners (no restriction needed).
  *
- * The caller MUST apply this filter before executing the query.
+ * The caller MUST Register this filter before executing the query.
  */
 export function buildCommitteeFilter(
   scope: ApplicationScopeResult

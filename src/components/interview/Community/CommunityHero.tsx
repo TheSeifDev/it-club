@@ -57,7 +57,8 @@ export function CommunityHero({}: CommunityHeroProps) {
     (m) =>
       !m.needsReview &&
       (m.role.toLowerCase().includes("head") ||
-        m.role.toLowerCase().includes("lead"))
+        m.role.toLowerCase().includes("lead") ||
+        m.role.toLowerCase().includes("sup"))
   ).length;
 
   // 3. Auto-rotation state (faster 2.8s interval)

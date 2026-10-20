@@ -15,7 +15,7 @@ export const NAV_LINKS: readonly NavLink[] = [
   { label: "Events", href: "/events" },
 ];
 
-export const NAV_CTA: NavLink = { label: "Apply Now", href: "/register" };
+export const NAV_CTA: NavLink = { label: "Register Now", href: "/register" };
 
 export function isActiveLink(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";

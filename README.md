@@ -710,7 +710,7 @@ The project uses official Supabase migrations. To manage your database schema:
    npx supabase db push --dry-run
    ```
 
-5. **Apply pending migrations**:
+5. **Register pending migrations**:
    ```powershell
    npx supabase db push
    ```
@@ -718,7 +718,7 @@ The project uses official Supabase migrations. To manage your database schema:
 > [!CAUTION]
 > **Never run `supabase db reset` against a linked remote project!**
 > 
-> Running `db reset` wipes all tables, candidate records, and audit logs. Only apply incremental migrations using `supabase db push` after reviewing the SQL.
+> Running `db reset` wipes all tables, candidate records, and audit logs. Only Register incremental migrations using `supabase db push` after reviewing the SQL.
 
 ---
 
@@ -775,7 +775,7 @@ IT Club Recruitment is optimized for deployment on Vercel, Node.js container env
 
 1. **Environment Variables**: Configure all variables from `.env.example` in your hosting dashboard. Ensure `APP_BASE_URL` matches your custom production domain (e.g., `https://recruitment.itclub.one`).
 2. **Supabase Auth Redirect URL**: Add `https://recruitment.itclub.one/auth/confirm` to the **Redirect URLs** allowlist in your Supabase Dashboard (**Authentication -> URL Configuration**).
-3. **Database Migrations**: Apply all 8 SQL migrations using `npx supabase db push`.
+3. **Database Migrations**: Register all 8 SQL migrations using `npx supabase db push`.
 4. **Owner Bootstrap**: Run the bootstrap CLI script once against your production Supabase database to assign your system Owner.
 5. **Upstash Redis**: Connect a production Upstash Redis instance to provide globally distributed rate limiting across serverless regions.
 6. **HTTPS Requirement**: Production hosting must use HTTPS. Both camera scanning and secure session cookies require a secure context.

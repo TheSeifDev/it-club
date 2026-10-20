@@ -54,10 +54,10 @@ export default function JoinSection() {
             </p>
 
             <Link
-              href="/apply"
+              href="/Register"
               className="group mt-12 flex h-14 w-full items-center justify-center gap-3 bg-[#42e895] px-8 text-sm font-bold text-[#050708] transition-all duration-300 hover:brightness-110 lg:max-w-190"
             >
-              APPLY NOW
+              Register NOW
               <ArrowRight
                 size={19}
                 strokeWidth={2}

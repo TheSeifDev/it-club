@@ -305,7 +305,7 @@ export function renderRegistrationReceiptEmail(data: RegistrationEmailData): {
           <tr>
             <td class="body-pad" style="padding: 0 32px 24px 32px; font-size: 14px; line-height: 1.6; color: #b4bac2;">
               Dear <strong style="color: #ffffff;">${safeFullName}</strong>,<br /><br />
-              Thank you for applying to join IT Club. Your recruitment application has been successfully saved into our database. It has now entered the evaluation queue for committee review.
+              Thank you for Registering to join IT Club. Your recruitment application has been successfully saved into our database. It has now entered the evaluation queue for committee review.
               
               <!-- Concise Arabic Note -->
               <div dir="rtl" style="margin-top: 12px; padding: 12px 16px; background-color: #051610; border-right: 3px solid #00e599; font-family: 'Alexandria', Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #86efac; text-align: right; border-radius: 0 4px 4px 0;">
@@ -454,7 +454,7 @@ IT CLUB RECRUITMENT 2026 — APPLICATION CONFIRMATION
 
 Dear ${data.fullName},
 
-Thank you for applying to IT Club. We have successfully registered your application in our system. Your application has entered our review queue.
+Thank you for Registering to IT Club. We have successfully registered your application in our system. Your application has entered our review queue.
 
 APPLICATION REFERENCE CODE:
 >>> ${data.referenceCode} <<<

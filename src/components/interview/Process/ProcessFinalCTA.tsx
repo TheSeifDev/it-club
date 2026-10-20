@@ -63,7 +63,7 @@ export default function ProcessFinalCTA() {
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#00e599] text-[#050708] font-bold text-sm tracking-wide uppercase hover:bg-[#3bf5ad] transition-colors duration-200 shadow-[0_0_30px_rgba(0,229,153,0.25)] hover:shadow-[0_0_45px_rgba(0,229,153,0.4)]"
               style={{ borderRadius: 0 }}
             >
-              Apply Now
+              Register Now
               <ArrowRight size={16} />
             </Link>
 

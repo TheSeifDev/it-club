@@ -50,14 +50,22 @@ export function CommunityDirectory() {
       // 3. Role filter
       if (selectedRole !== "ALL") {
         const r = (member.role || "").toUpperCase();
-        if (selectedRole === "HEAD") {
-          if (!r.includes("HEAD") || r.includes("VICE HEAD")) return false;
+        if (selectedRole === "SUPERVISOR") {
+          if (!r.includes("SUPERVISOR") && !r.includes("SUP")) return false;
+        } else if (selectedRole === "HEAD") {
+          if (!r.includes("HEAD") || r.includes("VICE HEAD") || r.includes("VICE_HEAD")) return false;
         } else if (selectedRole === "VICE HEAD") {
-          if (!r.includes("VICE HEAD")) return false;
+          if (!r.includes("VICE HEAD") && !r.includes("VICE_HEAD")) return false;
         } else if (selectedRole === "LEADER") {
           if (!r.includes("LEADER")) return false;
         } else if (selectedRole === "MAIN") {
-          if (r.includes("HEAD") || r.includes("LEADER")) return false;
+          if (
+            r.includes("HEAD") ||
+            r.includes("LEADER") ||
+            r.includes("SUPERVISOR") ||
+            r.includes("SUP")
+          )
+            return false;
         }
       }
 
@@ -180,7 +188,7 @@ export function CommunityDirectory() {
                 مكانك في مجتمع نادي تكنولوجيا المعلومات مستنيك.
               </p>
               <p className="mt-3 text-base text-[#aeb4bb]">
-                Ready to build, learn, collaborate, and grow with ambitious students? Apply to join IT Club today.
+                Ready to build, learn, collaborate, and grow with ambitious students? Register to join IT Club today.
               </p>
             </div>
 
@@ -189,7 +197,7 @@ export function CommunityDirectory() {
                 href="/register"
                 className="group inline-flex items-center gap-3 bg-[#35d98a] px-8 py-4 text-sm font-bold text-[#050708] transition-all duration-300 hover:bg-[#5cf2a9] hover:shadow-[0_0_30px_rgba(53,217,138,0.4)] cursor-pointer"
               >
-                <span>Apply Now</span>
+                <span>Register Now</span>
                 <ArrowRight
                   size={18}
                   strokeWidth={2.2}

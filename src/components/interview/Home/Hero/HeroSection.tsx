@@ -210,7 +210,7 @@ export default function HeroSection() {
             type="button"
             className="h-13 w-full cursor-pointer bg-[#42e895] text-sm font-semibold text-black transition hover:bg-[#6af0ad] sm:w-70"
           >
-            Applay Now
+            Register
           </button>
 
           <p className="mt-3 text-xs text-neutral-300">

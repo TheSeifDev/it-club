@@ -15,7 +15,7 @@ const terms = [
   },
   {
     number: "02",
-    title: "Applying to IT Club",
+    title: "Registering to IT Club",
     text: "Submitting an application means that you are interested in joining IT Club. An application does not guarantee an interview, acceptance, a specific track, or a specific position within the club.",
   },
   {
@@ -99,7 +99,7 @@ const TermsPage = () => {
 
                 <p className="mt-10 max-w-155 text-[17px] leading-[1.7] text-[#aeb4bb] md:text-[19px]">
                   These terms define the basic expectations for using the IT
-                  Club website, applying to the club, and participating in the
+                  Club website, Registering to the club, and participating in the
                   interview process.
                 </p>
 

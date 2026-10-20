@@ -91,7 +91,7 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students interested in organizational psychology and HR",
       "Problem solvers focused on team dynamics and motivation",
     ],
-    memberIds: ["adham-ahmed", "marwan-awad"],
+    memberIds: ["marwan-awad", "islam-el-sayed"],
   },
   {
     id: "pr",
@@ -202,10 +202,12 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Creative minds who want their work seen by thousands of tech students",
     ],
     memberIds: [
-      "mohamed-al-amir",
+      "nour",
       "abdulrahman-ashraf",
-      "youssef-soliman",
+      "mohamed-al-amir",
+      "menna",
       "merna",
+      "youssef-soliman",
     ],
   },
   {
@@ -262,12 +264,15 @@ export const IT_CLUB_TRACKS: TrackDefinition[] = [
       "Students eager to master large-scale event management and operations",
     ],
     memberIds: [
-      "farida-mohamed",
+      "habiba-mounir",
       "mahmoud-sameh",
+      "farida-mohamed",
       "shahd-ahssen",
       "habiba-ahmed",
       "mohamed-nagi",
+      "saber",
       "saif-kambo",
+      "benjamin",
     ],
   },
   {

@@ -422,7 +422,7 @@ export default function ProcessStagesSection() {
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00e599] text-[#050708] font-bold text-[11px] tracking-widest uppercase hover:bg-[#3bf5ad] transition-colors duration-200"
                         style={{ borderRadius: 0 }}
                       >
-                        Apply Now
+                        Register Now
                         <ArrowRight size={13} />
                       </Link>
                     </div>
@@ -477,9 +477,8 @@ export default function ProcessStagesSection() {
 
                 {/* VISUAL COLUMN */}
                 <div
-                  className={`flex items-center justify-center ${
-                    isEven ? "lg:justify-end" : "lg:justify-start"
-                  }`}
+                  className={`flex items-center justify-center ${isEven ? "lg:justify-end" : "lg:justify-start"
+                    }`}
                   style={{ order: visualOrder }}
                 >
                   <Visual />

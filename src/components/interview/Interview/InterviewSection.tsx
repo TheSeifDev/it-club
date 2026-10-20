@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 const interviewSteps = [
   {
     number: "01",
-    title: "Apply",
+    title: "Register",
     arabicTitle: "التقديم",
     description:
       "Choose the track that fits you best and submit your application to become part of IT Club.",
@@ -141,7 +141,7 @@ export default function InterviewSection() {
           </span>
 
           <span className="font-mono text-[10px] tracking-[0.18em] text-white/30">
-            APPLY · INTERVIEW · JOIN
+            Register · INTERVIEW · JOIN
           </span>
         </div>
       </div>

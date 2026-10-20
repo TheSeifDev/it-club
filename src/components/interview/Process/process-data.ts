@@ -31,7 +31,7 @@ export const PROCESS_STAGES: ProcessStage[] = [
     description:
       "Begin your journey by filling out our application form. Share your background, interests, skills, and the track you're most passionate about. Don't worry if you're just starting — we value motivation and willingness to grow as much as experience.",
     arabicDescription: "ابدأ رحلتك بملء نموذج طلبنا",
-    ctaLabel: "Apply Now",
+    ctaLabel: "Register Now",
   },
   {
     id: "review",
@@ -175,7 +175,7 @@ export const OUTCOME_CARDS: OutcomeCard[] = [
   {
     icon: "x-circle",
     title: "Not Accepted",
-    description: "Keep grinding. Apply again next recruitment round.",
+    description: "Keep grinding. Register again next recruitment round.",
     color: "#ff3ca7",
     bgColor: "rgba(255,60,167,0.06)",
   },
@@ -299,9 +299,9 @@ export interface FAQItem {
 export const PROCESS_FAQS: FAQItem[] = [
   {
     id: "multiple-tracks",
-    question: "Can I apply to more than one track?",
+    question: "Can I Register to more than one track?",
     answer:
-      "You can apply to one primary track per application cycle. However, as a member you'll collaborate with people across all tracks regularly.",
+      "You can Register to one primary track per application cycle. However, as a member you'll collaborate with people across all tracks regularly.",
   },
   {
     id: "know-result",
@@ -311,7 +311,7 @@ export const PROCESS_FAQS: FAQItem[] = [
   },
   {
     id: "prior-experience",
-    question: "Do I need previous experience to apply?",
+    question: "Do I need previous experience to Register?",
     answer:
       "No prior experience is required for most tracks. We value passion, curiosity, and willingness to learn over existing technical skills.",
   },

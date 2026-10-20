@@ -2,9 +2,17 @@ export type LeadershipRole =
   | "Head"
   | "Vice Head"
   | "Leader"
+  | "Supervisor"
+  | "Main"
   | "HEAD"
   | "VICE HEAD"
   | "LEADER"
+  | "SUPERVISOR"
+  | "MAIN"
+  | "CLUB_SUP"
+  | "CLUB_HEAD"
+  | "CLUB_VICE_HEAD"
+  | "VICE_HEAD"
   | string;
 
 export const COMMITTEES = [
@@ -83,19 +91,44 @@ export function formatRoleMetadata(
     return upperRole;
   }
 
-  const isHead = upperRole === "HEAD";
-  const isViceHead = upperRole === "VICE HEAD";
+  const isSupervisor =
+    upperRole === "SUPERVISOR" ||
+    upperRole === "SUP" ||
+    upperRole === "CLUB_SUP" ||
+    upperRole === "CLUB SUP";
+
+  const isHead =
+    upperRole === "HEAD" ||
+    upperRole === "CLUB_HEAD" ||
+    upperRole === "CLUB HEAD";
+
+  const isViceHead =
+    upperRole === "VICE HEAD" ||
+    upperRole === "VICE_HEAD" ||
+    upperRole === "V. HEAD" ||
+    upperRole === "V.HEAD" ||
+    upperRole === "V_HEAD" ||
+    upperRole === "CLUB_VICE_HEAD" ||
+    upperRole === "CLUB VICE HEAD";
+
   const isLeader = upperRole === "LEADER";
 
+  if (isSupervisor) {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club" || upperRole === "CLUB_SUP" || upperRole === "CLUB SUP") {
+      return "CLUB SUPERVISOR";
+    }
+    return abbrev ? `SUPERVISOR OF ${abbrev}` : "SUPERVISOR";
+  }
+
   if (isHead) {
-    if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club" || upperRole === "CLUB_HEAD" || upperRole === "CLUB HEAD") {
       return "HEAD OF CLUB";
     }
     return abbrev ? `HEAD OF ${abbrev}` : "HEAD";
   }
 
   if (isViceHead) {
-    if (abbrev === "CLUB" || c.toLowerCase() === "it club") {
+    if (abbrev === "CLUB" || c.toLowerCase() === "it club" || upperRole === "CLUB_VICE_HEAD" || upperRole === "CLUB VICE HEAD") {
       return "VICE HEAD OF CLUB";
     }
     return abbrev ? `VICE HEAD OF ${abbrev}` : "VICE HEAD";
@@ -310,6 +343,13 @@ export const MEMBER_CUTOUT_MAP: Record<string, string> = {
   "ziad-ayman": "/COMMITTEES/cutouts/ziad-ayman.webp",
   "merna": "/COMMITTEES/cutouts/merna.webp",
   "sherif-hamdy": "/COMMITTEES/cutouts/sherif-hamdy.webp",
+  "fares": "/COMMITTEES/cutouts/fares.webp",
+  "islam-el-sayed": "/COMMITTEES/cutouts/islam-el-sayed.webp",
+  "nour": "/COMMITTEES/cutouts/nour.webp",
+  "menna": "/COMMITTEES/cutouts/menna.webp",
+  "habiba-mounir": "/COMMITTEES/cutouts/habiba-mounir.webp",
+  "saber": "/COMMITTEES/cutouts/saber.webp",
+  "benjamin": "/COMMITTEES/cutouts/benjamin.webp",
 };
 
 export function getMemberCutoutImage(memberOrId?: TeamMember | string): string | undefined {
@@ -333,7 +373,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: "ahmed-samir",
     name: "Ahmed Samir",
-    role: "Main",
+    role: "Head",
     committee: "IT Club",
     image: "/COMMITTEES/Ahmed Samir.webp",
     cutoutImage: "/COMMITTEES/cutouts/ahmed-samir.webp",
@@ -346,7 +386,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: "ahmed-mohsen",
     name: "Ahmed Mohsen",
-    role: "Main",
+    role: "Vice Head",
     committee: "IT Club",
     image: "/COMMITTEES/Ahmed Mohsen.webp",
     cutoutImage: "/COMMITTEES/cutouts/ahmed-mohsen.webp",
@@ -357,13 +397,39 @@ export const teamMembers: TeamMember[] = [
     needsReview: false,
   },
   {
+    id: "adham-ahmed",
+    name: "Adham Ahmed",
+    role: "Head",
+    committee: "IT Club",
+    image: "/COMMITTEES/Adham Ahmed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/adham-ahmed.webp",
+    order: 3,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "fares",
+    name: "Fares",
+    role: "Vice Head",
+    committee: "IT Club",
+    image: "/COMMITTEES/Fares.webp",
+    cutoutImage: "/COMMITTEES/cutouts/fares.webp",
+    order: 4,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
     id: "mohamed-ibrahim",
     name: "Mohamed Ibrahim",
-    role: "Main",
+    role: "Supervisor ",
     committee: "Information Technology",
     image: "/COMMITTEES/mohamed ibrahim.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-ibrahim.webp",
-    order: 3,
+    order: 5,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -372,11 +438,11 @@ export const teamMembers: TeamMember[] = [
   {
     id: "seif-ayman",
     name: "Seif Ayman",
-    role: "Main",
+    role: "Vice Head",
     committee: "Information Technology",
     image: "/COMMITTEES/ken.webp",
     cutoutImage: "/COMMITTEES/cutouts/seif-ayman.webp",
-    order: 4,
+    order: 6,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -386,26 +452,26 @@ export const teamMembers: TeamMember[] = [
     portfolio: "https://seifdev.vercel.app",
   },
   {
-    id: "farida-mohamed",
-    name: "Farida Mohamed",
-    role: "Main",
-    committee: "Organizing Committee",
-    image: "/COMMITTEES/Farida Mohamed.webp",
-    cutoutImage: "/COMMITTEES/cutouts/farida-mohamed.webp",
-    order: 5,
+    id: "ziad-ayman",
+    name: "Ziad Ayman",
+    role: "Leader",
+    committee: "Information Technology",
+    image: "/COMMITTEES/Ziad Ayman.webp",
+    cutoutImage: "/COMMITTEES/cutouts/ziad-ayman.webp",
+    order: 7,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
     needsReview: false,
   },
   {
-    id: "mahmoud-sameh",
-    name: "Mahmoud Sameh",
-    role: "Main",
-    committee: "Organizing Committee",
-    image: "/COMMITTEES/Mahmoud Sameh.webp",
-    cutoutImage: "/COMMITTEES/cutouts/mahmoud-sameh.webp",
-    order: 6,
+    id: "omar-mehawed",
+    name: "Omar Mehawed",
+    role: "Head",
+    committee: "Public Relations",
+    image: "/COMMITTEES/Omar Mehawed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/omar-mehawed.webp",
+    order: 8,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -414,37 +480,37 @@ export const teamMembers: TeamMember[] = [
   {
     id: "marwan-awad",
     name: "Marwan Awad",
-    role: "Main",
+    role: "Head",
     committee: "Human Resources",
     image: "/COMMITTEES/marwan.webp",
     cutoutImage: "/COMMITTEES/cutouts/marwan-awad.webp",
-    order: 7,
-    countryName: "EGYPT",
-    countryFlag: "🇪🇬",
-    countryCode: "EG",
-    needsReview: false,
-  },
-  {
-    id: "shahd-ahssen",
-    name: "Shahd Ahssen",
-    role: "Main",
-    committee: "Organizing Committee",
-    image: "/COMMITTEES/Shahd Ahssen.webp",
-    cutoutImage: "/COMMITTEES/cutouts/shahd-ahssen.webp",
-    order: 8,
-    countryName: "EGYPT",
-    countryFlag: "🇪🇬",
-    countryCode: "EG",
-    needsReview: false,
-  },
-  {
-    id: "mohamed-al-amir",
-    name: "Mohamed Al-Amir",
-    role: "Main",
-    committee: "Social Media",
-    image: "/COMMITTEES/Mohamed Al-Amir.webp",
-    cutoutImage: "/COMMITTEES/cutouts/mohamed-al-amir.webp",
     order: 9,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "islam-el-sayed",
+    name: "Islam El-Sayed",
+    role: "Vice Head",
+    committee: "Human Resources",
+    image: "/COMMITTEES/Islam El-Sayed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/islam-el-sayed.webp",
+    order: 10,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "nour",
+    name: "Nour",
+    role: "Leader",
+    committee: "Social Media",
+    image: "/COMMITTEES/Nour.webp",
+    cutoutImage: "/COMMITTEES/cutouts/nour.webp",
+    order: 11,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -453,24 +519,115 @@ export const teamMembers: TeamMember[] = [
   {
     id: "abdulrahman-ashraf",
     name: "Abdulrahman Ashraf",
-    role: "Main",
+    role: "Head",
     committee: "Social Media",
     image: "/COMMITTEES/Abdulrahman Ashraf.webp",
     cutoutImage: "/COMMITTEES/cutouts/abdulrahman-ashraf.webp",
-    order: 10,
+    order: 12,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
     needsReview: false,
   },
   {
-    id: "adham-ahmed",
-    name: "Adham Ahmed",
-    role: "Main",
-    committee: "Human Resources",
-    image: "/COMMITTEES/Adham Ahmed.webp",
-    cutoutImage: "/COMMITTEES/cutouts/adham-ahmed.webp",
-    order: 11,
+    id: "mohamed-al-amir",
+    name: "Mohamed Al-Amir",
+    role: "Vice Head",
+    committee: "Social Media",
+    image: "/COMMITTEES/Mohamed Al-Amir.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-al-amir.webp",
+    order: 13,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "menna",
+    name: "Menna",
+    role: "leader",
+    committee: "Social Media",
+    image: "/COMMITTEES/menna.webp",
+    cutoutImage: "/COMMITTEES/cutouts/menna.webp",
+    order: 14,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "merna",
+    name: "Merna",
+    role: "Vice Head",
+    committee: "Social Media",
+    image: "/COMMITTEES/Merna.webp",
+    cutoutImage: "/COMMITTEES/cutouts/merna.webp",
+    order: 15,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "youssef-soliman",
+    name: "Youssef Soliman",
+    role: "leader",
+    committee: "Social Media",
+    image: "/COMMITTEES/Youssef soliman.webp",
+    cutoutImage: "/COMMITTEES/cutouts/youssef-soliman.webp",
+    order: 16,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "habiba-mounir",
+    name: "Habiba Mounir",
+    role: "Head",
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/Habiba Mounir.webp",
+    cutoutImage: "/COMMITTEES/cutouts/habiba-mounir.webp",
+    order: 17,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "mahmoud-sameh",
+    name: "Mahmoud Sameh",
+    role: "Vice Head",
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/Mahmoud Sameh.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mahmoud-sameh.webp",
+    order: 18,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "farida-mohamed",
+    name: "Farida Mohamed",
+    role: "Supervisor",
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/Farida Mohamed.webp",
+    cutoutImage: "/COMMITTEES/cutouts/farida-mohamed.webp",
+    order: 19,
+    countryName: "EGYPT",
+    countryFlag: "🇪🇬",
+    countryCode: "EG",
+    needsReview: false,
+  },
+  {
+    id: "shahd-ahssen",
+    name: "Shahd Ahssen",
+    role: "Supervisor",
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/Shahd Ahssen.webp",
+    cutoutImage: "/COMMITTEES/cutouts/shahd-ahssen.webp",
+    order: 20,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -479,11 +636,11 @@ export const teamMembers: TeamMember[] = [
   {
     id: "habiba-ahmed",
     name: "Habiba Ahmed",
-    role: "Main",
+    role: "Supervisor",
     committee: "Organizing Committee",
     image: "/COMMITTEES/Habiba Ahmed.webp",
     cutoutImage: "/COMMITTEES/cutouts/habiba-ahmed.webp",
-    order: 12,
+    order: 21,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -492,38 +649,24 @@ export const teamMembers: TeamMember[] = [
   {
     id: "mohamed-nagi",
     name: "Mohamed Nagi",
-    role: "Main",
+    role: "Supervisor",
     committee: "Organizing Committee",
     image: "/COMMITTEES/Mohamed Nagi.webp",
     cutoutImage: "/COMMITTEES/cutouts/mohamed-nagi.webp",
-    order: 13,
+    order: 22,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
     needsReview: false,
   },
   {
-    id: "mohamed-sherif",
-    name: "Mohamed Sherif",
-    role: "Main",
+    id: "saber",
+    name: "Saber",
+    role: "Supervisor",
     committee: "Organizing Committee",
-    image: "/COMMITTEES/Mohamed Sherif.webp",
-    cutoutImage: "/COMMITTEES/cutouts/mohamed-sherif.webp",
-    order: 14,
-    countryName: "EGYPT",
-    countryFlag: "🇪🇬",
-    countryCode: "EG",
-    isAlumni: true,
-    needsReview: false,
-  },
-  {
-    id: "omar-mehawed",
-    name: "Omar Mehawed",
-    role: "Main",
-    committee: "Public Relations",
-    image: "/COMMITTEES/Omar Mehawed.webp",
-    cutoutImage: "/COMMITTEES/cutouts/omar-mehawed.webp",
-    order: 15,
+    image: "/COMMITTEES/saber.webp",
+    cutoutImage: "/COMMITTEES/cutouts/saber.webp",
+    order: 23,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -536,49 +679,37 @@ export const teamMembers: TeamMember[] = [
     committee: "Organizing Committee",
     image: "/COMMITTEES/Saif Kambo.webp",
     cutoutImage: "/COMMITTEES/cutouts/saif-kambo.webp",
-    order: 16,
+    order: 24,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
     needsReview: false,
   },
   {
-    id: "youssef-soliman",
-    name: "Youssef Soliman",
-    role: "Main",
-    committee: "Social Media",
-    image: "/COMMITTEES/Youssef soliman.webp",
-    cutoutImage: "/COMMITTEES/cutouts/youssef-soliman.webp",
-    order: 17,
+    id: "benjamin",
+    name: "Benjamin",
+    role: "Supervisor of sm",
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/benjamin.webp",
+    cutoutImage: "/COMMITTEES/cutouts/benjamin.webp",
+    order: 25,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
     needsReview: false,
   },
   {
-    id: "ziad-ayman",
-    name: "Ziad Ayman",
+    id: "mohamed-sherif",
+    name: "Mohamed Sherif",
     role: "Main",
-    committee: "Information Technology",
-    image: "/COMMITTEES/Ziad Ayman.webp",
-    cutoutImage: "/COMMITTEES/cutouts/ziad-ayman.webp",
-    order: 18,
+    committee: "Organizing Committee",
+    image: "/COMMITTEES/Mohamed Sherif.webp",
+    cutoutImage: "/COMMITTEES/cutouts/mohamed-sherif.webp",
+    order: 26,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
-    needsReview: false,
-  },
-  {
-    id: "merna",
-    name: "Merna",
-    role: "Main",
-    committee: "Social Media",
-    image: "/COMMITTEES/Merna.webp",
-    cutoutImage: "/COMMITTEES/cutouts/merna.webp",
-    order: 19,
-    countryName: "EGYPT",
-    countryFlag: "🇪🇬",
-    countryCode: "EG",
+    isAlumni: true,
     needsReview: false,
   },
   {
@@ -588,7 +719,7 @@ export const teamMembers: TeamMember[] = [
     committee: "Organizing Committee",
     image: "/COMMITTEES/Sherif.webp",
     cutoutImage: "/COMMITTEES/cutouts/sherif-hamdy.webp",
-    order: 21,
+    order: 27,
     countryName: "EGYPT",
     countryFlag: "🇪🇬",
     countryCode: "EG",
@@ -599,28 +730,39 @@ export const teamMembers: TeamMember[] = [
 
 export const unverifiedLeadershipPositions = [
   {
-    role: "Head",
-    committee: "Public Relations",
+    role: "CLUB_SUP",
+    committee: "IT Club",
+    name: "Fatma (فاطمه)",
     status: "UNRESOLVED",
-    notes: "Head of Public Relations identity and photo not yet confirmed in project assets.",
+    notes: "Club Supervisor (CLUB SUP) shown on organizational chart; no canonical record or portrait asset exists in project assets.",
   },
   {
-    role: "Head",
-    committee: "Human Resources",
+    role: "SUPERVISOR",
+    committee: "Social Media",
+    name: "Hosny (حسني)",
     status: "UNRESOLVED",
-    notes: "Head of Human Resources identity and photo not yet confirmed in project assets.",
+    notes: "Social Media Supervisor (SUP SM) shown on organizational chart; no canonical record or portrait asset exists in project assets.",
   },
   {
-    role: "Head",
+    role: "HEAD",
+    committee: "Organizing Committee",
+    name: "Mariam (مريم)",
+    status: "UNRESOLVED",
+    notes: "Organizing Committee Co-Head (HEAD OC) shown on organizational chart alongside Habiba Mounir; no canonical record or portrait asset exists in project assets.",
+  },
+  {
+    role: "VICE_HEAD",
+    committee: "Information Technology",
+    name: "Adham (أدهم - IT)",
+    status: "UNRESOLVED",
+    notes: "IT Vice Head (VICE IT) shown on organizational chart with first name Adham; canonical Adham record is assigned to Club Head with existing portrait asset, leaving secondary IT Vice Head unmapped.",
+  },
+  {
+    role: "HEAD",
     committee: "Research & Development",
+    name: "Unassigned",
     status: "UNRESOLVED",
     notes: "Head of Research & Development identity and photo not yet confirmed in project assets.",
-  },
-  {
-    role: "Head",
-    committee: "Social Media",
-    status: "UNRESOLVED",
-    notes: "Head of Social Media identity and photo not yet confirmed in project assets.",
   },
 ] as const;
 

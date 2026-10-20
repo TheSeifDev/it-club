@@ -18,6 +18,7 @@ export interface CommunityToolbarProps {
 
 export const ROLE_OPTIONS = [
   { label: "All Roles", value: "ALL" },
+  { label: "Supervisors", value: "SUPERVISOR" },
   { label: "Heads", value: "HEAD" },
   { label: "Vice Heads", value: "VICE HEAD" },
   { label: "Leaders", value: "LEADER" },

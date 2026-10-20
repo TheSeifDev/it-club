@@ -114,7 +114,7 @@ export default function ProcessHero() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#00e599] text-[#050708] font-bold text-sm tracking-wide uppercase hover:bg-[#3bf5ad] transition-all duration-200 shadow-[0_0_25px_rgba(0,229,153,0.3)] hover:shadow-[0_0_40px_rgba(0,229,153,0.5)]"
                 style={{ borderRadius: 0 }}
               >
-                Apply Now
+                Register Now
               </Link>
             </div>
           </div>

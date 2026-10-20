@@ -109,7 +109,7 @@ export const IT_CLUB_EVENTS: EventItem[] = [
     shortDescription:
       "The comprehensive annual member intake connecting prospective tech students across all six specialized IT Club tracks.",
     fullDescription:
-      "Our annual recruitment cycle welcomes hundreds of ambitious university students to apply, interview, and join the IT Club family. Over the course of the selection period, candidates undergo technical and behavioral interviews held on October 17, 2026 conducted by our committee heads, concluding with an induction day and cross-track team integration.",
+      "Our annual recruitment cycle welcomes hundreds of ambitious university students to Register, interview, and join the IT Club family. Over the course of the selection period, candidates undergo technical and behavioral interviews held on October 17, 2026 conducted by our committee heads, concluding with an induction day and cross-track team integration.",
     featured: true,
     coverImage: "/spotlight-stage.webp",
     trackAffiliation: "All Tracks",

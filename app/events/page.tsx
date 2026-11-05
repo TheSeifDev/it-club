@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import ResponsiveNav from "@/src/components/interview/navigation/ResponsiveNav";
-import Footer from "@/src/components/interview/Home/Footer";
-import { EventsDirectory } from "@/src/components/interview/Events";
+import SiteMaintenanceNotice from "@/src/components/interview/SiteMaintenanceNotice";
 
 export const metadata: Metadata = {
   title: "Events & Archives",
@@ -23,16 +21,5 @@ export const metadata: Metadata = {
 };
 
 export default function EventsPage() {
-  return (
-    <main className="min-h-screen bg-[#050708] text-white">
-      {/* Reusable Primary Site Navigation */}
-      <ResponsiveNav />
-
-      {/* Community Events Archive & Detail Modal */}
-      <EventsDirectory />
-
-      {/* Reusable Site Footer */}
-      <Footer />
-    </main>
-  );
+  return <SiteMaintenanceNotice />;
 }

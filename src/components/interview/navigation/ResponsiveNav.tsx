@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 import MobileNav, { MobileNavToggle } from "./MobileNav";
 import Nav from "./Nav";
-import { BRAND, NAV_CTA } from "./NavLinks";
+import { BRAND } from "./NavLinks";
 
 const DESKTOP_QUERY = "(min-width: 768px)"; // Tailwind `md`
 
@@ -81,14 +81,6 @@ export default function ResponsiveNav() {
         {/* Links + button — right */}
         <div className="flex items-center gap-4 md:gap-6">
           <Nav pathname={pathname} className="hidden md:block" />
-
-          <Link
-            href={NAV_CTA.href}
-            onClick={close}
-            className="inline-flex h-10 items-center bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-          >
-            {NAV_CTA.label}
-          </Link>
 
           <MobileNavToggle
             isOpen={isOpen}

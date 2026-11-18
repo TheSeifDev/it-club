@@ -29,13 +29,13 @@ export function ClubPractice() {
     <section
       className={styles.section}
       data-club-about
+      id="about"
       aria-labelledby="about-title"
     >
       <div className={styles.panel}>
         <div className={styles.panelHeader}>
           <p className={styles.kicker}>
             <span>01</span>
-            <i aria-hidden="true" />
             The club, in practice
           </p>
           <p className={styles.headerNote}>

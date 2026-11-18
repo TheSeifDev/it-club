@@ -9,6 +9,7 @@ import {
   Share2,
   Users,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import styles from "./TrackShowcase.module.css";
 
 export type ShowcaseTrack = {
@@ -36,149 +37,180 @@ const TRACK_ICONS: Record<string, IconType> = {
   rnd: FlaskConical,
 };
 
-function EditorialTrackVisual({ track }: { track: ShowcaseTrack }) {
-  const Icon = TRACK_ICONS[track.slug] ?? TRACK_ICONS[track.id] ?? Code2;
+const visualVariants = [
+  styles.visualSignal,
+  styles.visualOrbit,
+  styles.visualGrid,
+  styles.visualType,
+  styles.visualRings,
+  styles.visualSplit,
+];
+
+function EditorialTrackVisual({
+  track,
+  index,
+}: {
+  track: ShowcaseTrack;
+  index: number;
+}) {
+  const Icon = TRACK_ICONS[track.slug] ?? Code2;
   const visualCapabilities = track.capabilities.slice(0, 3);
+  const number = String(index + 1).padStart(2, "0");
+  const variant = visualVariants[index % visualVariants.length];
 
   return (
     <div
-      className={styles.editorialVisual}
-      aria-label={`${track.title} capabilities`}
-    >
-      <div className={styles.visualGrid} aria-hidden="true" />
-      <div className={styles.visualHeader}>
-        <span>IT CLUB / {track.slug.toUpperCase()}</span>
-        <span>FIELD NOTES</span>
-      </div>
-      <div className={styles.visualCenter}>
-        <span className={styles.iconFrame}>
-          <Icon size={42} strokeWidth={1.25} aria-hidden="true" />
-        </span>
-        <span className={styles.visualTitle}>{track.title}</span>
-      </div>
-      <div className={styles.visualList}>
-        {visualCapabilities.map((capability, index) => (
-          <span key={capability}>
-            <b>0{index + 1}</b>
-            {capability}
-          </span>
-        ))}
-      </div>
-      <span className={styles.visualAccent} aria-hidden="true" />
-    </div>
-  );
-}
-
-function TrackMedia({ track }: { track: ShowcaseTrack }) {
-  if (track.image) {
-    return (
-      <Image
-        src={track.image}
-        alt={`${track.title} track visual`}
-        width={1500}
-        height={940}
-        unoptimized
-        loading="lazy"
-        className={styles.mediaImage}
-        sizes="(min-width: 1100px) 56vw, 100vw"
-      />
-    );
-  }
-
-  return <EditorialTrackVisual track={track} />;
-}
-
-function TrackCard({ track, index }: { track: ShowcaseTrack; index: number }) {
-  const number = String(index + 1).padStart(2, "0");
-  const reverse = index % 2 === 1;
-  const summary =
-    track.summary ??
-    `${track.title} is a place to learn the tools, habits, and ways of working that make good ideas useful.`;
-
-  return (
-    <article
-      className={`${styles.card} ${reverse ? styles.cardReverse : ""}`}
-      data-showcase-card
-      data-spotlight
-      data-current={index === 0 ? "true" : "false"}
+      className={`${styles.editorialVisual} ${variant}`}
+      aria-hidden="true"
       style={
         {
           "--track-color": track.color,
           "--track-rgb": track.rgb,
           "--track-ink": track.ink,
-        } as React.CSSProperties
+        } as CSSProperties
       }
-      aria-labelledby={`showcase-${track.slug}`}
     >
-      <span className={styles.spotlightBorder} aria-hidden="true" />
-      <div className={styles.cardSurface}>
-        <div className={styles.mediaColumn}>
-          <Link
-            className={styles.mediaLink}
-            href={`/tracks#${track.slug}`}
-            aria-label={`Explore ${track.title}`}
-          >
-            <TrackMedia track={track} />
-            <span className={styles.mediaShade} aria-hidden="true" />
-            <span className={styles.mediaArrow}>
-              <ArrowUpRight size={17} strokeWidth={1.8} aria-hidden="true" />
-            </span>
-          </Link>
-        </div>
-
-        <div className={styles.copyColumn}>
-          <div className={styles.cardMeta}>
-            <p>
-              <span className={styles.index}>{number}</span>
-              <span className={styles.metaRule} aria-hidden="true" />
-              <span>{track.category ?? "Club track"}</span>
-            </p>
-            {track.arabicTitle ? (
-              <span className={styles.arabicTitle} dir="rtl" lang="ar">
-                {track.arabicTitle}
-              </span>
-            ) : null}
-          </div>
-
-          <div className={styles.copyMain}>
-            <h3 id={`showcase-${track.slug}`}>
-              <Link href={`/tracks#${track.slug}`}>{track.title}</Link>
-            </h3>
-            <p className={styles.summary}>{summary}</p>
-          </div>
-
-          <div className={styles.cardFooter}>
-            <ul
-              className={styles.capabilities}
-              aria-label={`${track.title} capabilities`}
-            >
-              {track.capabilities.map((capability) => (
-                <li key={capability}>{capability}</li>
-              ))}
-            </ul>
-            <Link
-              className={styles.cardLink}
-              href={`/tracks#${track.slug}`}
-              aria-label={`Explore ${track.title}`}
-            >
-              <span>Explore track</span>
-              <ArrowUpRight size={17} strokeWidth={1.7} aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
+      <span className={styles.visualIndex}>{number}</span>
+      <span className={styles.visualHalo} />
+      <span className={styles.visualBeam} />
+      <div className={styles.visualTopline}>
+        <span>{track.slug.toUpperCase()}</span>
+        {track.category ? <span>{track.category}</span> : null}
       </div>
-    </article>
+      <div className={styles.visualCore}>
+        <span className={styles.iconFrame}>
+          <Icon size={42} strokeWidth={1.25} />
+        </span>
+        <span className={styles.visualTitle}>{track.title}</span>
+      </div>
+      {visualCapabilities.length ? (
+        <ul className={styles.visualList}>
+          {visualCapabilities.map((capability) => (
+            <li key={capability}>{capability}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
-/** A parent-animated portfolio sequence for the club's six original tracks. */
+function TrackMedia({ track, index }: { track: ShowcaseTrack; index: number }) {
+  const number = String(index + 1).padStart(2, "0");
+
+  return (
+    <Link
+      className={styles.mediaLink}
+      href={`/tracks#${track.slug}`}
+      aria-label={`Explore ${track.title}`}
+    >
+      {track.image ? (
+        <Image
+          src={track.image}
+          alt={`${track.title} track visual`}
+          width={1500}
+          height={940}
+          unoptimized
+          loading="lazy"
+          className={styles.mediaImage}
+          sizes="(min-width: 1024px) 44vw, 100vw"
+        />
+      ) : (
+        <EditorialTrackVisual track={track} index={index} />
+      )}
+      <span className={styles.mediaIndex} aria-hidden="true">
+        {number}
+      </span>
+      <span className={styles.mediaArrow} aria-hidden="true">
+        <ArrowUpRight size={18} strokeWidth={1.8} />
+      </span>
+    </Link>
+  );
+}
+
+function TrackSlab({ track, index }: { track: ShowcaseTrack; index: number }) {
+  const number = String(index + 1).padStart(2, "0");
+  const reverse = index % 2 === 1;
+  const light = index === 1 || index === 4;
+
+  return (
+    <li className={styles.slabSlot}>
+      <article
+        className={`${styles.slab} ${reverse ? styles.slabReverse : ""} ${light ? styles.slabLight : ""}`}
+        data-stack-panel
+        data-spotlight
+        data-stack-current={index === 0 ? "true" : "false"}
+        style={
+          {
+            "--track-color": track.color,
+            "--track-rgb": track.rgb,
+            "--track-ink": track.ink,
+          } as CSSProperties
+        }
+        aria-labelledby={`showcase-${track.slug}`}
+      >
+        <div className={styles.slabLayout}>
+          <span className={styles.slabNumber} aria-hidden="true">
+            {number}
+          </span>
+          <div className={styles.mediaColumn}>
+            <TrackMedia track={track} index={index} />
+          </div>
+          <div className={styles.copyColumn}>
+            <div className={styles.slabMeta}>
+              {track.category ? (
+                <span>{track.category}</span>
+              ) : (
+                <span>{track.slug}</span>
+              )}
+              {track.arabicTitle ? (
+                <span className={styles.arabicTitle} dir="rtl" lang="ar">
+                  {track.arabicTitle}
+                </span>
+              ) : null}
+            </div>
+            <div className={styles.copyMain}>
+              <h3 id={`showcase-${track.slug}`}>
+                <Link href={`/tracks#${track.slug}`}>{track.title}</Link>
+              </h3>
+              {track.summary ? (
+                <p className={styles.summary}>{track.summary}</p>
+              ) : null}
+            </div>
+            <div className={styles.slabFooter}>
+              {track.capabilities.length ? (
+                <ul
+                  className={styles.capabilities}
+                  aria-label={`${track.title} capabilities`}
+                >
+                  {track.capabilities.map((capability) => (
+                    <li key={capability}>{capability}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <Link
+                className={styles.slabLink}
+                href={`/tracks#${track.slug}`}
+                aria-label={`Explore ${track.title}`}
+              >
+                <span>Explore track</span>
+                <ArrowUpRight size={17} strokeWidth={1.7} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </article>
+    </li>
+  );
+}
+
+/** Full-width editorial track slabs with a desktop-only pinned rise sequence. */
 export function TrackShowcase({ tracks }: { tracks: ShowcaseTrack[] }) {
   const total = String(tracks.length).padStart(2, "0");
 
   return (
     <section
       className={styles.showcase}
-      data-showcase
+      data-track-stack
       aria-labelledby="tracks-title"
       id="tracks"
     >
@@ -203,20 +235,17 @@ export function TrackShowcase({ tracks }: { tracks: ShowcaseTrack[] }) {
         </div>
 
         {tracks.length ? (
-          <>
-            <div className={styles.viewport} data-showcase-viewport>
-              <ol className={styles.track} data-showcase-track>
+          <div className={styles.stackPin} data-stack-pin>
+            <div className={styles.stackViewport}>
+              <ol className={styles.stackList} aria-label="Published tracks">
                 {tracks.map((track, index) => (
-                  <li className={styles.cardSlot} key={track.slug}>
-                    <TrackCard track={track} index={index} />
-                  </li>
+                  <TrackSlab track={track} index={index} key={track.slug} />
                 ))}
               </ol>
             </div>
-
             <div className={styles.progressRow}>
               <p className={styles.counter}>
-                <span data-showcase-current>01</span> / {total}
+                <span data-stack-counter>01</span> / {total}
               </p>
               <span
                 className={styles.progressTrack}
@@ -226,11 +255,11 @@ export function TrackShowcase({ tracks }: { tracks: ShowcaseTrack[] }) {
                 aria-valuemax={100}
                 aria-valuenow={0}
               >
-                <span data-showcase-progress className={styles.progressFill} />
+                <span data-stack-progress className={styles.progressFill} />
               </span>
               <p className={styles.scrollHint}>Scroll to explore</p>
             </div>
-          </>
+          </div>
         ) : (
           <div className={styles.empty}>
             <h3>The track index is being prepared.</h3>

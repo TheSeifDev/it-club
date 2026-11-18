@@ -67,3 +67,17 @@ Logo Teal `#28cdb7` وTeal Ink `#087969` يحلان محل Light Blue في ال�
 
 
 في التحقيق المرئي المحدد لملاحظات المستخدم: شعار Hero له background شفاف وborder0؛ فعال spotlight مع إحداثيات المؤشر. Identity فعّل pin ووصل WebGL إلى ready مع خلفية host/canvas rgba(0,0,0,0) وتقدم0.525 تقريبًا. Showcase مثبت بارتفاع1100px في viewport1100px وكرت570px مع counter يتغير أثناء التمرير. بقي progressbar داخل الشاشة، وصُحح تحديث aria-valuenow إلى عنصر role الصحيح. أزيل blur كامل بعرض header فوق Paper مع بقاء blur الكبسولات. لا تُقدّم هذه الملاحظات كقياس FPS.
+
+
+## تحديث About / Tracks / layouts — الإصدار الرابع
+
+- About في Header/Footer أصبح /#about مع section فعلي في Home؛ /about القديم يحول إلى Home ولا يظهر صفحة مستقلة في sitemap.
+- Home tracks أصبح full-width stacked sections بمشهد GSAP منفصل، لا slider أفقي. يصعد كل لوح فوق السابق ويتراجع السابق قليلاً، مع العداد والتقدم الأصليين. hook العداد منفصل عن حالة اللوح، والاختيار يتبع timeline الفعلية حتى مع scrub؛ keyboard jumps تهبط بعد اكتمال ظهور اللوح. الفوكس ينتقل إلى stage مستقرة قبل جعل اللوح السابق inert، ولا يُسرق عند scroll إذا كان خارج اللوح.
+- unpinned/reduced-motion/compact flow يملك height فعلية لكل الأقسام؛ لا تتراكب عليه Skills/الصفحات التالية. pin يبدأ تحت Nav بمسافة96px.
+- /tracks معرض SSR rich مع jump index، هوية ومشاهد HR/PR/SM/OC/IT/R&D، قدرات ومسؤوليات منشورة تسبق المرجع الثابت وروابط أفراد منشورين فقط؛ لا صور أحداث أو screenshots أو إنجازات مختلقة.
+- Nav يحتفظ بالكبسولات، height52px، padding متوازن، خلفيات opaque دون backdrop-filter، mobile menu وEscape وحلقة focus؛ لا طبقة blur تتغير أثناء scroll.
+- مراجعات قراءة مستقلة لـCommunity/Profiles/Events/Sponsors/Alumni/Contact أصلحت header offset/أعمدة الصور المفقودة/tablet stacking/title wrap/back-link spacing/سهم الراعي غير المرتبط، مع إزالة hairline/border decoration. حقول Contact تبقى واضحة بسطح وخلفية وفوكس، ولا تتغير APIs/auth/CMS/المقابلات.
+- نجحت29/29 فحوص pure، وTypeScript وESLint. نجح البناء النهائي بعد دمج هذه الإصلاحات؛ تُحفظ النسخة على نفس فرع العمل. لا يوجد نشر أو كتابة إنتاجية.
+
+
+الدليل المرئي النهائي: عند viewport1280×1100، Header computed backdrop-filter=none، height52px، top16px؛ stage pinned يبدأ96px ويبلغ720px، العداد04/06 يطابق لوح OC الظاهر، وCTA والنص ينتهيان داخل حدود اللوح. overflow89px ناتج عن الرقم الزخرفي المقصوص عمدًا، لا عن قص النص. progressbar42 يتبع timeline المعروضة؛ هذه ليست دعوى FPS أو اختبارات أجهزة حقيقية.

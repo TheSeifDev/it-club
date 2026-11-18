@@ -1,4 +1,5 @@
 import "./public-hover.css";
+import "./public-layout.css";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -45,7 +46,6 @@ export function SectionLabel({
       className={`site-section-label site-section-label--${tone} ${className}`.trim()}
     >
       <span>{number ?? ""}</span>
-      <span className="site-section-label__rule" aria-hidden="true" />
       <span>{children}</span>
     </div>
   );

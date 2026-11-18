@@ -5,23 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-const links = [
-  { href: "/about", label: "About", arabic: "عن النادي" },
-  { href: "/community", label: "Community", arabic: "المجتمع" },
-  { href: "/tracks", label: "Tracks", arabic: "المسارات" },
-  { href: "/events", label: "Events", arabic: "الفعاليات" },
-  { href: "/sponsors", label: "Partners", arabic: "الشركاء" },
-];
-
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+import { SITE_NAV_LINKS, isSitePageActive } from "@/lib/ui/site-navigation";
+import styles from "./SiteHeader.module.css";
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -31,9 +22,29 @@ export default function SiteHeader() {
         setOpen(false);
         toggleRef.current?.focus();
       }
+      if (event.key === "Tab") {
+        const nodes = [
+          toggleRef.current,
+          ...Array.from(
+            panelRef.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ??
+              [],
+          ),
+        ].filter((node): node is HTMLButtonElement | HTMLAnchorElement =>
+          Boolean(node),
+        );
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     };
     const onResize = () => {
-      if (window.matchMedia("(min-width: 900px)").matches) setOpen(false);
+      if (window.matchMedia("(min-width: 1040px)").matches) setOpen(false);
     };
     document.addEventListener("keydown", onKeyDown);
     window.addEventListener("resize", onResize);
@@ -48,40 +59,43 @@ export default function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="site-header">
-      <div className="site-header__inner">
-        <Link className="site-brand" href="/" aria-label="IT Club BATU — home">
-          <Image src="/logo.webp" alt="" width={42} height={42} priority />
-          <span className="site-brand__wordmark">
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <Link
+          className={styles.brand}
+          href="/"
+          aria-label="IT Club BATU — home"
+        >
+          <Image src="/logo.webp" alt="" width={36} height={36} priority />
+          <span className={styles.wordmark}>
             <span>IT</span>
             <b>CLUB</b>
             <i>BATU</i>
           </span>
         </Link>
-        <nav className="site-nav" aria-label="Main navigation">
-          {links.map((link) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={active ? "page" : undefined}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav className={styles.nav} aria-label="Main navigation">
+          {SITE_NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={
+                isSitePageActive(pathname, link.href) ? "page" : undefined
+              }
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
-        <Link className="site-header__contact" href="/contact">
+        <Link className={styles.contact} href="/contact">
           <span>Join the conversation</span>
-          <span className="site-header__contact-arrow" aria-hidden="true">
+          <span className={styles.contactArrow} aria-hidden="true">
             <ArrowUpRight size={16} />
           </span>
         </Link>
         <button
           ref={toggleRef}
           type="button"
-          className="site-menu-toggle"
+          className={styles.toggle}
           aria-label={open ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={open}
           aria-controls="site-mobile-navigation"
@@ -95,34 +109,32 @@ export default function SiteHeader() {
         </button>
       </div>
       <div
+        ref={panelRef}
         id="site-mobile-navigation"
-        className="site-mobile-nav"
+        className={styles.mobile}
         hidden={!open}
       >
         <nav aria-label="Mobile navigation">
-          {links.map((link, index) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <Link
-                key={link.href}
-                ref={index === 0 ? firstLinkRef : undefined}
-                href={link.href}
-                aria-current={active ? "page" : undefined}
-                onClick={() => setOpen(false)}
-              >
-                <span className="site-mobile-nav__index">0{index + 1}</span>
-                <span>
-                  <strong>{link.label}</strong>
-                  <small lang="ar" dir="rtl">
-                    {link.arabic}
-                  </small>
-                </span>
-                <ArrowUpRight size={18} aria-hidden="true" />
-              </Link>
-            );
-          })}
+          {SITE_NAV_LINKS.map((link, index) => (
+            <Link
+              key={link.href}
+              ref={index === 0 ? firstLinkRef : undefined}
+              href={link.href}
+              aria-current={
+                isSitePageActive(pathname, link.href) ? "page" : undefined
+              }
+              onClick={() => setOpen(false)}
+            >
+              <span>
+                <strong>{link.label}</strong>
+                <small lang="ar" dir="rtl">
+                  {link.arabic}
+                </small>
+              </span>
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </Link>
+          ))}
           <Link href="/contact" onClick={() => setOpen(false)}>
-            <span className="site-mobile-nav__index">06</span>
             <span>
               <strong>Contact</strong>
               <small lang="ar" dir="rtl">

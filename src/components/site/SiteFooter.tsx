@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { ABOUT_HREF } from "@/lib/ui/site-navigation";
 
 const siteLinks = [
-  { href: "/about", label: "About" },
+  { href: ABOUT_HREF, label: "About" },
   { href: "/community", label: "Community" },
   { href: "/tracks", label: "Tracks" },
   { href: "/events", label: "Events" },

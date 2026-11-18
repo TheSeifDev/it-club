@@ -108,3 +108,13 @@
 يُعاد THE CLUB, IN PRACTICE بحجم عنوان متوازن وصورة editorial تقنية جديدة بدل spotlight-stage. لا يُستخدم scroll opacity منخفض للنص المقروء على Paper. كروت tracks تستخدم لوح Paper وشكل featured cards في portfolio، مع media/copy متناوبين وpointer-following surface/border spotlight وتكبير طفيف وسهم تفاعلي وcounter/progress. تبقى ألوان tracks الستة مستقلة ولا يُستبدل مضمونها بمهارات أو ادعاءات شخصية.
 
 يزال المستطيل/gradient backdrop الخاص بـClubNetwork مع المحافظة على alpha canvas الحقيقي. يصبح لون الـcore والضوء teal متسقًا، دون إزالة 3D أو إلغاء الرسم الكسول ووقفه خارج الشاشة. لا تتغير CMS/المقابلات/الحسابات أو APIs أو قاعدة بيانات الإنتاج.
+
+## تعديل الأقسام والـlayouts — 18 نوفمبر 2026
+
+About يصبح قسم التعريف في الصفحة الرئيسية /#about، لا وجهة /about مستقلة. تتحول روابط Nav/Footer/المحتوى إلى القسم نفسه، و/about يحافظ على الروابط القديمة بتحويل إلى /#about؛ sitemap لا يدرجه كصفحة مستقلة.
+
+عرض tracks في Home يتحول من slider كروت أفقية إلى أقسام full-width تظهر فوق بعضها أثناء GSAP scroll، بألوان المسارات الأصلية ونصوص وصور CMS المعتمدة. الجوال والـreduced-motion يعرضان الأقسام في document flow دون pin/clipping؛ تبقى الروابط إلى /tracks#slug صالحة.
+
+/Tracks يصبح معرضًا تحريريًا غنيًا: Hero قوي، فهرس مسارات قابل للاستخدام، مشاهد مختلفة لقدرات اللجان الموثقة، motion ذات غرض، وروابط إلى الأشخاص/الهيكل. لا تُختلق إنجازات أو أرقام أو أعمال أو أعضاء لتعبئة المشاهد. أي media مصممة تكون illustration واضحة، لا screenshot أو حدثًا مختلقًا.
+
+يُزال ازدحام keylines/borders الزخرفية في صفحات الموقع العامة، مع بناء الفصل بالألوان والأسطح والفراغات. تبقى focus indicators والمعلومات/الحقول الوظيفية واضحة. Nav يحتفظ بالكبسولات الحالية لكن بأبعاد وpadding ثابتة متوازنة، بلا backdrop-filter أو ضبابية أو هالة عند scroll. إصلاح shell/type/spacing/overflow متسق عبر community/profiles/events/sponsors/alumni/contact؛ لا يشمل مسارات CMS والمقابلات والطلاب.

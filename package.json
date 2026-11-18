@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --env-file=.env.local --env-file=config/test.env --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/**/*.test.ts",
-    "test:pure": "node --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/auth-routing-security-pure.test.ts tests/site-content-backend.test.ts tests/site-content-public.test.ts tests/track-theme.test.ts",
+    "test:pure": "node --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/auth-routing-security-pure.test.ts tests/site-content-backend.test.ts tests/site-content-public.test.ts tests/track-theme.test.ts tests/site-navigation.test.ts",
     "generate:assets": "node scripts/generate-assets.js"
   },
   "dependencies": {

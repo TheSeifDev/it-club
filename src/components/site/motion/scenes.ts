@@ -1,5 +1,7 @@
 "use client";
 
+import { setupTrackStack } from "./track-stack";
+
 import { gsap, motionQueries, type ScrollTrigger } from "./gsap";
 import { setupSpotlights } from "./spotlight";
 
@@ -482,128 +484,6 @@ function setupIdentity(root: HTMLElement, mm: MotionMedia) {
   });
 }
 
-function setupShowcase(root: HTMLElement, mm: MotionMedia) {
-  const showcase = one(root, "[data-showcase]");
-  if (!showcase) return;
-  const viewport = one(showcase, "[data-showcase-viewport]");
-  const track = one(showcase, "[data-showcase-track]");
-  if (!viewport || !track) return;
-  const cards = () => all(showcase, "[data-showcase-card]");
-
-  mm.add(motionQueries.stage, () => {
-    const progress = one(showcase, "[data-showcase-progress]");
-    const current = one(showcase, "[data-showcase-current]");
-    const slides = cards();
-    if (slides.length < 2) return;
-
-    showcase.dataset.showcaseMode = "horizontal";
-    let active = -1;
-    const distance = () =>
-      Math.max(0, track.scrollWidth - viewport.clientWidth);
-    const setCurrent = (index: number) => {
-      const next = Math.max(0, Math.min(index, slides.length - 1));
-      if (
-        next === active &&
-        slides.every(
-          (slide, slideIndex) =>
-            slide.hasAttribute("data-current") === (slideIndex === next),
-        )
-      )
-        return;
-      active = next;
-      slides.forEach((slide, slideIndex) =>
-        slide.toggleAttribute("data-current", slideIndex === next),
-      );
-      if (current) current.textContent = String(next + 1).padStart(2, "0");
-    };
-
-    const tween = gsap.to(track, {
-      x: () => -distance(),
-      ease: "none",
-      scrollTrigger: {
-        id: "site-showcase-horizontal",
-        trigger: showcase,
-        pin: true,
-        start: "top top",
-        end: () => `+=${Math.max(1, distance())}`,
-        scrub: 0.62,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-        snap: {
-          snapTo: 1 / (slides.length - 1),
-          duration: { min: 0.24, max: 0.56 },
-          delay: 0.08,
-          ease: "power2.inOut",
-          inertia: false,
-        },
-        onUpdate: (self: ScrollTrigger) => {
-          if (progress) {
-            progress.style.setProperty(
-              "--showcase-progress",
-              String(self.progress),
-            );
-            (
-              progress.closest<HTMLElement>('[role="progressbar"]') ?? progress
-            ).setAttribute(
-              "aria-valuenow",
-              String(Math.round(self.progress * 100)),
-            );
-            gsap.set(progress, { scaleX: self.progress });
-          }
-          setCurrent(Math.round(self.progress * (slides.length - 1)));
-        },
-      },
-    });
-    setCurrent(0);
-
-    const onFocusIn = (event: FocusEvent) => {
-      const slide = (event.target as HTMLElement).closest<HTMLElement>(
-        "[data-showcase-card]",
-      );
-      const trigger = tween.scrollTrigger;
-      if (!slide || !trigger) return;
-      const index = slides.indexOf(slide);
-      if (index < 0 || slides.length < 2) return;
-      window.scrollTo({
-        top:
-          trigger.start +
-          (trigger.end - trigger.start) * (index / (slides.length - 1)),
-      });
-    };
-    track.addEventListener("focusin", onFocusIn);
-
-    return () => {
-      track.removeEventListener("focusin", onFocusIn);
-      showcase.removeAttribute("data-showcase-mode");
-      slides.forEach((slide) => slide.removeAttribute("data-current"));
-      gsap.set(track, { clearProps: "transform" });
-      if (progress) gsap.set(progress, { clearProps: "transform" });
-    };
-  });
-
-  mm.add(motionQueries.compact, () => {
-    const slides = cards();
-    slides.forEach((slide, index) => {
-      gsap.fromTo(
-        slide,
-        { y: 42, autoAlpha: 0 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          ease: "power2.out",
-          scrollTrigger: {
-            id: `site-showcase-card-${index + 1}`,
-            trigger: slide,
-            start: "top 92%",
-            end: "top 64%",
-            scrub: 0.52,
-          },
-        },
-      );
-    });
-  });
-}
-
 function setupMagnetic(root: HTMLElement, mm: MotionMedia) {
   mm.add(motionQueries.finePointer, () => {
     const nodes = all(root, "[data-magnetic]");
@@ -645,7 +525,7 @@ export function setupSiteScenes(root: HTMLElement, mm: MotionMedia) {
   setupHero(root, mm);
   setupAbout(root, mm);
   setupIdentity(root, mm);
-  setupShowcase(root, mm);
+  setupTrackStack(root, mm);
   setupMagnetic(root, mm);
   setupSpotlights(root, mm);
 }

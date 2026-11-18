@@ -12,7 +12,7 @@ import type {
   Vector3,
   WebGLRenderer,
 } from "three";
-import { CLUB_NETWORK_COLORS, type ClubNetworkState } from "./club-network-config";
+import { CLUB_NETWORK_COLORS, CLUB_NETWORK_TEAL, type ClubNetworkState } from "./club-network-config";
 
 export type ClubNetworkHandle = {
   setState(state: ClubNetworkState): void;
@@ -33,7 +33,7 @@ const smooth = (value: number) => value * value * (3 - 2 * value);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
- * A blue holographic network rather than a wireframe globe: a physically shaded
+ * A teal holographic network rather than a wireframe globe: a physically shaded
  * faceted core is surrounded by emissive orbit planes, depth-layered nodes, and
  * fine links that converge on the core.
  */
@@ -206,6 +206,7 @@ export async function createClubNetwork(
       premultipliedAlpha: true,
     });
     renderer.setClearColor(0x000000, 0);
+    renderer.setClearAlpha(0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -215,11 +216,11 @@ export async function createClubNetwork(
     camera.position.set(0, 0.08, 7.15);
     camera.lookAt(0, 0, 0);
 
-    const ambient = new THREE.AmbientLight(0x205078, 0.5);
-    const hemisphere = new THREE.HemisphereLight(0xdff7ff, 0x06101f, 1.15);
-    const key = new THREE.DirectionalLight(0xe8f8ff, 2.6);
+    const ambient = new THREE.AmbientLight(0x145b55, 0.5);
+    const hemisphere = new THREE.HemisphereLight(0x9cf4e7, 0x061a1d, 1.15);
+    const key = new THREE.DirectionalLight(0xc8fff7, 2.6);
     key.position.set(-3.5, 4.4, 5.5);
-    const rim = new THREE.PointLight(0x168dff, 8, 14, 2);
+    const rim = new THREE.PointLight(CLUB_NETWORK_TEAL, 8, 14, 2);
     rim.position.set(3.2, -1.4, 2.5);
     scene.add(ambient, hemisphere, key, rim);
 
@@ -241,7 +242,7 @@ export async function createClubNetwork(
     const starsGeometry = new THREE.BufferGeometry();
     starsGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
     starMaterial = new THREE.PointsMaterial({
-      color: 0x83cfff,
+      color: 0x84e7d7,
       size: smallViewport ? 0.025 : 0.032,
       transparent: true,
       opacity: 0.55,
@@ -263,8 +264,8 @@ export async function createClubNetwork(
     geometries.push(coreGeometry, shellGeometry, innerGeometry, edgeGeometry);
 
     coreMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x6dbcf5,
-      emissive: 0x092d62,
+      color: 0x6de3d2,
+      emissive: 0x064d48,
       emissiveIntensity: 1.35,
       metalness: 0.5,
       roughness: 0.23,
@@ -274,7 +275,7 @@ export async function createClubNetwork(
       opacity: 0.92,
     });
     shellMaterial = new THREE.MeshBasicMaterial({
-      color: 0x51b9ff,
+      color: CLUB_NETWORK_TEAL,
       transparent: true,
       opacity: 0.13,
       side: THREE.BackSide,
@@ -282,14 +283,14 @@ export async function createClubNetwork(
       depthWrite: false,
     });
     const innerMaterial = new THREE.MeshBasicMaterial({
-      color: 0x0c3b77,
+      color: 0x0b5c56,
       transparent: true,
       opacity: 0.72,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     const edgeMaterial = new THREE.LineBasicMaterial({
-      color: 0x9cddff,
+      color: 0xb8fff4,
       transparent: true,
       opacity: 0.38,
       blending: THREE.AdditiveBlending,
@@ -310,7 +311,7 @@ export async function createClubNetwork(
     const ringGroup = new THREE.Group();
     ringGroup.rotation.set(0.33, -0.18, -0.25);
     network.add(ringGroup);
-    const ringColors = [0x61c9ff, 0x2b83e6, 0xaadfff];
+    const ringColors = [0x55e3d1, 0x1b9f91, 0x9cfff2];
     ringColors.forEach((color, index) => {
       const material = new THREE.MeshBasicMaterial({
         color,

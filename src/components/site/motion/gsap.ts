@@ -10,10 +10,13 @@ if (typeof window !== "undefined") {
 }
 
 export const motionQueries = {
-  stage: "(min-width: 1024px) and (min-height: 760px) and (prefers-reduced-motion: no-preference)",
+  stage:
+    "(hover: hover) and (pointer: fine) and (min-width: 1024px) and (min-height: 760px) and (prefers-reduced-motion: no-preference)",
   motion: "(prefers-reduced-motion: no-preference)",
-  compact: "(prefers-reduced-motion: no-preference) and ((max-width: 1023px) or (max-height: 759px))",
-  finePointer: "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+  compact:
+    "(prefers-reduced-motion: no-preference) and ((max-width: 1023px) or (max-height: 759px) or (pointer: coarse) or (hover: none))",
+  finePointer:
+    "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
 } as const;
 
 export { gsap, ScrollTrigger };

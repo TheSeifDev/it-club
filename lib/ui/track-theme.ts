@@ -39,9 +39,9 @@ function paperInk(color: string): string {
 }
 
 const fallback: TrackTheme = {
-  color: "#4db6ff",
-  ink: "#0a6cc0",
-  rgb: "77, 182, 255",
+  color: "#28cdb7",
+  ink: "#087969",
+  rgb: "40, 205, 183",
   arabic: "",
   short: "CLUB",
 };

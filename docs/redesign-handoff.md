@@ -6,7 +6,7 @@
 
 ## ما تغير
 
-الموقع العام أصبح هوية رئيسية للنادي بدل حملة مقابلات: Home وAbout وCommunity والأعضاء وTracks وEvents وSponsors وAlumni وContact. بناءً على تصحيح المستخدم في 18 نوفمبر 2026، يعاد استخدام تكوين portfolio مباشرة مع Night/Paper/Sky وradius بسيط وGSAP choreography وThree.js حقيقي، بدل اتجاه charcoal/emerald الموحد في النسخة الأولى. ألوان المسارات الستة الأصلية محفوظة، والإنجليزية أساسية مع عناوين عربية طبيعية داخل المحتوى، دون نسخة عربية منفصلة أو رموز يابانية. يعرض الهيكل المعتمد من الكود ويستبعد Head PR من العرض العام.
+الموقع العام أصبح هوية رئيسية للنادي بدل حملة مقابلات: Home وAbout وCommunity والأعضاء وTracks وEvents وSponsors وAlumni وContact. بناءً على تصحيح المستخدم في 18 نوفمبر 2026، يعاد استخدام تكوين portfolio مباشرة مع Night/Paper/Logo Teal وradius بسيط وGSAP choreography وThree.js حقيقي، بدل اتجاه charcoal/emerald الموحد في النسخة الأولى. ألوان المسارات الستة الأصلية محفوظة، والإنجليزية أساسية مع عناوين عربية طبيعية داخل المحتوى، دون نسخة عربية منفصلة أو رموز يابانية. يعرض الهيكل المعتمد من الكود ويستبعد Head PR من العرض العام.
 
 بوابة الموظفين وواجهات المقابلات انتقلت إلى `/interview/...`، بما فيها `/interview/login`. مسار `/login` وواجهات العمليات القديمة تحت `/admin/...` لها تحويلات انتقائية. لم تتغير `/api/admin/...` ولا وجهة الـcron. المسار `/admin` أصبح Content Studio جديدًا للـowner فقط؛ تسجيل دخوله عبر `/interview/login?mode=content`. لا تمنح قيمة `next` صلاحيات CMS ولا يُوثق دور في metadata العميل.
 
@@ -18,7 +18,7 @@ CMS يملك نماذج محددة للأشخاص والـboards والمسار�
 
 | الفحص | النتيجة |
 |---|---|
-| اختبارات auth/routing وCMS والمحتوى العام والألوان/العربية المعزولة | 23 اختبارًا ناجحًا؛ استخدم `npm run test:pure` |
+| اختبارات auth/routing وCMS والمحتوى العام والألوان/العربية المعزولة | 24 اختبارًا ناجحًا؛ استخدم `npm run test:pure` |
 | TypeScript وESLint للمصدر الجديد | ناجحان |
 | Next.js production build | ناجح بعد تفعيل SSR؛ كل صفحات المحتوى والجلسات وsitemap ديناميكية |
 | صفحات النادي في HTTP المحلي | 200 مع عناوين حقيقية لكل صفحة |
@@ -43,7 +43,7 @@ CMS يملك نماذج محددة للأشخاص والـboards والمسار�
 
 ## مواقع الحركة والتصميم الثانية
 
-`src/components/site/motion/scenes.ts` يملك GSAP Hero masked entrance، تداخل Paper، كشف كلمات About، Identity pin/scroll، وShowcase أفقي محسوب من العرض الحقيقي مع تنظيف كامل عند تغيير المسار/viewport. `motion/filter-motion.ts` يملك GSAP Flip لفلاتر المجتمع. `SkillsMarquee.tsx` يعرض قدرات اللجان الموثقة مع Pause، وإيقاف hover/focus وreduced-motion.
+`src/components/site/motion/scenes.ts` يملك GSAP Hero masked entrance، تداخل Paper، كشف خطوط About بدون تبهت النص المقروء، Identity pin/scroll، وShowcase أفقي محسوب من العرض الحقيقي مع تنظيف كامل عند تغيير المسار/viewport. `motion/filter-motion.ts` يملك GSAP Flip لفلاتر المجتمع. `SkillsMarquee.tsx` يعرض قدرات اللجان الموثقة مع Pause، وإيقاف hover/focus وreduced-motion.
 
 `src/components/site/visuals/ClubNetwork.tsx` و`lib/visuals/club-network-scene.ts` يملكان Three.js WebGLRenderer الحقيقي. حدث `club:network` ينقل progress من GSAP إلى الدوران والعمق والخامات. مشهد شبكي مضاء مع core ثلاثي الأبعاد وعناقيد بالألوان الستة، لا صورة تدعي أنها 3D. التحميل قريب الشاشة، والرسم فقط عند الظهور الفعلي؛ DPR1 للأجهزة المتوسطة وحتى1.5 لغيرها. الأجهزة منخفضة الموارد أو reduced-motion أو WebGL failure ترى fallback، مع disposal لكل مورد.
 
@@ -52,3 +52,18 @@ CMS يملك نماذج محددة للأشخاص والـboards والمسار�
 المراجعة المستقلة رصدت وصُححت: selector الهوية المثبتة، layout غير المثبت في document flow، فصل preload عن render visibility، منع reveal timelines متنافسة، تباين labels على ألوان المسارات، بقايا الأخضر في Hero، وتنسيق newline. إصلاح allowedDevOrigins يعالج حجب HMR في المعاينة، دون تغيير حراس المصادقة أو CSP الإنتاجية.
 
 في فحص المتصفح للنسخة المصححة: Identity مُثبت والعرض الأفقي مُفعل، وحدث `club:network` حمل progress≈0.525 أثناء التمرير. ظهر `data-webgl=ready` وcanvas578×578/DPR1 فعليًا على جهاز deviceMemory4/cores6؛ يُخفض DPR على الأجهزة المتوسطة بدل حذف المشهد. هذه ملاحظة تشغيل وليست benchmark أداء.
+
+## إعادة ضبط Hero وPractice والكروت — ملاحظات المستخدم الأخيرة
+
+`HomeHero.tsx` يفصل Hero عن صفحة البيانات، مع شعار النادي الأصلي ذي alpha كبيرًا خلف الأشخاص، دون دائرة أو لوح خلف الشعار أو إطار مجموعة مستطيل. glow وdrop-shadow عند hover/focus، وpointer spotlight عبر `motion/spotlight.ts`. لوحة العرض الأولى تحافظ على صور CMS المخصصة وأسماء/أدوار المنشور.
+
+`ClubPractice.tsx` يستخدم عنوانًا متوازنًا ونصوصًا داكنة مقروءة وصورة workbench تقنية جديدة بدل spotlight-stage. الصورة editorial مولدة وليست توثيقًا لحدث أو صورة أعضاء؛ الملف الحقيقي WEBP1920×1440 بحجم163134 بايت، في `public/manus-storage/async-images/sRVj1Lb2UBtRXgo0s9Dro9/image-1.webp`. مساره النسبي الرسمي كما عاد من Managed Storage محفوظ؛ أدرج الأصل أيضًا في public لعمل فرع GitHub/Vercel دون الاعتماد على بوابة Manus. لا توجد صورة توليد placeholder في الفرع.
+
+`TrackShowcase.tsx` يتبع featured cards في مرجع https://theseif.vercel.app/ : Paper panel، كروت Night2 عريضة، media/copy يتبادلان الجانب، capabilities موثقة، أسهم وspotlight وprogress فعلي في الوضع الأفقي فقط. لا يعرض 01/00 عند غياب tracks منشورة. التابلت/touch والـreduced-motion يحتفظون بقائمة قراءة متتابعة بدون pin مضلل.
+
+Logo Teal `#28cdb7` وTeal Ink `#087969` يحلان محل Light Blue في الواجهة والمشهد. درجة النص على Paper تباينها4.83:1. الشعار نفسه هو الأصل، لم تُرسم هوية بديلة؛ درجة accent اختيرت أكثر خضرة وفق الطلب لا كادعاء تطابق كل بكسل. ألوان المسارات الستة لم تتغير.
+
+الـ3D ذو alpha يبقى مرتبطًا بـGSAP، مع إزالة الـroot background والـpseudo backdrops المستطيلة وإعادة تلوين الخامات المحايدة والضوء إلى teal. النظافة وDPR والـoffscreen stop وfallback كما هي. لا يتضمن هذا التعديل أي تغيير مصادقة أو API أو migration أو كتابة قاعدة بيانات أو إطلاق إنتاجي.
+
+
+في التحقيق المرئي المحدد لملاحظات المستخدم: شعار Hero له background شفاف وborder0؛ فعال spotlight مع إحداثيات المؤشر. Identity فعّل pin ووصل WebGL إلى ready مع خلفية host/canvas rgba(0,0,0,0) وتقدم0.525 تقريبًا. Showcase مثبت بارتفاع1100px في viewport1100px وكرت570px مع counter يتغير أثناء التمرير. بقي progressbar داخل الشاشة، وصُحح تحديث aria-valuenow إلى عنصر role الصحيح. أزيل blur كامل بعرض header فوق Paper مع بقاء blur الكبسولات. لا تُقدّم هذه الملاحظات كقياس FPS.

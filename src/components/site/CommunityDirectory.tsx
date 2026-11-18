@@ -123,6 +123,7 @@ export default function CommunityDirectory({
             return (
               <article
                 className="site-member-row"
+                data-spotlight
                 style={style}
                 key={member.slug}
                 data-reveal

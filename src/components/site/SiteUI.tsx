@@ -1,3 +1,4 @@
+import "./public-hover.css";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -188,7 +189,7 @@ export function EntryRow({
   const description = entry.data.summary?.trim() || entry.data.body?.trim();
   const link = safeHref(href) ?? "/";
   return (
-    <article className="site-entry-row" data-reveal>
+    <article className="site-entry-row" data-reveal data-spotlight>
       <span className="site-entry-row__number">
         {String(index + 1).padStart(2, "0")}
       </span>
@@ -292,7 +293,7 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
         ) : null}
       </div>
       {image ? (
-        <figure className="site-detail-portrait">
+        <figure className="site-detail-portrait" data-spotlight>
           <Image
             src={image}
             alt={entry.data.title}

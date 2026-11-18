@@ -43,9 +43,9 @@ export async function POST(request: Request) {
     confirmPassword?: string;
   }
 
-  let body: ChangePasswordPayload;
+  let body: unknown;
   try {
-    body = (await request.json()) as ChangePasswordPayload;
+    body = await request.json();
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON request body.", code: "MALFORMED_JSON" },
@@ -53,8 +53,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const newPassword = body.newPassword;
-  const confirmPassword = body.confirmPassword;
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: "Request body must be a JSON object.", code: "INVALID_INPUT" },
+      { status: 400 }
+    );
+  }
+
+  const payload = body as ChangePasswordPayload;
+
+  const newPassword = payload.newPassword;
+  const confirmPassword = payload.confirmPassword;
 
   if (!newPassword || typeof newPassword !== "string" || !confirmPassword || typeof confirmPassword !== "string") {
     return NextResponse.json(

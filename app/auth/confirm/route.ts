@@ -1,15 +1,26 @@
 import { type EmailOtpType, type SupabaseClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server.js";
 import { cookies } from "next/headers.js";
+import { getCurrentStaff } from "../../../lib/auth/server.ts";
+import { getAuthConfirmationDestination } from "../../../lib/auth/redirect.ts";
 import { createClient } from "../../../utils/supabase/server.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function activationDestination(rawNext: string | null): string {
+function studentActivationDestination(rawNext: string | null): string {
   // Auth redirects must remain inside this application. The activation endpoint
   // does not need arbitrary query parameters or external destinations.
   return rawNext === "/student/activate" ? rawNext : "/student/activate";
+}
+
+async function confirmationDestination(type: string | null, rawNext: string | null): Promise<string> {
+  const staff = type === "recovery" ? await getCurrentStaff() : null;
+  return getAuthConfirmationDestination({
+    verificationType: type,
+    verifiedStaffRole: staff?.role,
+    studentNext: studentActivationDestination(rawNext),
+  });
 }
 
 function isSupportedActivationVerificationType(
@@ -36,25 +47,19 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
-  const next = activationDestination(searchParams.get("next"));
+  const rawNext = searchParams.get("next");
 
   // Fast check: Fallback if neither token_hash nor code is provided
   if (!tokenHash && !code) {
     return activationError(request, "missing_credentials");
   }
 
-  let supabase: SupabaseClient | null = null;
+  let supabase: SupabaseClient;
   try {
     const cookieStore = await cookies();
     supabase = createClient(cookieStore);
   } catch {
-    // Fallback for standalone test runners where cookies() request scope is absent
-    const { createClient: createSupabaseClient } = await import("@supabase/supabase-js");
-    supabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wzendwuoankwiahbrwqt.supabase.co",
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy",
-      { auth: { persistSession: false } }
-    );
+    return activationError(request, "auth_unavailable");
   }
 
   // 1. Token Hash verification (custom email provider link)
@@ -65,7 +70,8 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
-      const response = NextResponse.redirect(new URL(next, request.url));
+      const destination = await confirmationDestination(type, rawNext);
+      const response = NextResponse.redirect(new URL(destination, request.url));
       response.headers.set("Cache-Control", "private, no-store");
       return response;
     }
@@ -82,7 +88,8 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const response = NextResponse.redirect(new URL(next, request.url));
+      const destination = await confirmationDestination(type, rawNext);
+      const response = NextResponse.redirect(new URL(destination, request.url));
       response.headers.set("Cache-Control", "private, no-store");
       return response;
     }

@@ -6,13 +6,12 @@ import {
   reissueAdminTemporaryPassword,
   changeStaffPassword,
   updateStaffAccount,
-  FIXED_ADMIN_TEMPORARY_PASSWORD,
 } from "../lib/admin/staff-service.ts";
 import {
   verifyStaffApiRequest,
   getStaffMember,
 } from "../lib/auth/server.ts";
-import { generateSecureTemporaryPassword } from "../lib/auth/provisioning.ts";
+import { generateStaffTemporaryPassword } from "../lib/auth/staff-credentials.ts";
 import { queryAuditLogs } from "../lib/audit/service.ts";
 import { POST as postInviteAdmin } from "../app/api/admin/staff/invite/route.ts";
 import { POST as postReissueCredential } from "../app/api/admin/staff/reissue/route.ts";
@@ -98,16 +97,12 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
   // --------------------------------------------------------------------------
   describe("1. Cryptographic Temporary Password Security", () => {
     it("generates unpredictable, high-entropy passwords with required character classes", () => {
-      const pwd1 = generateSecureTemporaryPassword();
-      const pwd2 = generateSecureTemporaryPassword();
+      const pwd1 = generateStaffTemporaryPassword();
+      const pwd2 = generateStaffTemporaryPassword();
 
       assert.notEqual(pwd1, pwd2, "Subsequent passwords must be unique");
-      assert.ok(pwd1.length >= 14, "Password length must be at least 14 characters");
-      assert.notEqual(pwd1, "0123456789", "Must never use the shared default 0123456789 password");
-      assert.match(pwd1, /[A-Z]/, "Must contain uppercase characters");
-      assert.match(pwd1, /[a-z]/, "Must contain lowercase characters");
-      assert.match(pwd1, /[0-9]/, "Must contain numeric characters");
-      assert.match(pwd1, /[!@#$%*&]/, "Must contain symbol characters");
+      assert.equal(pwd1.length, 32, "24 random bytes should encode as a 32-character base64url password");
+      assert.match(pwd1, /^[A-Za-z0-9_-]+$/, "Password must use the URL-safe random token alphabet");
     });
   });
 
@@ -212,16 +207,7 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       assert.equal(result.email, testEmail);
       assert.equal(result.role, "admin", "Invited account must be assigned role 'admin'");
       assert.ok(result.temporaryPassword, "Must return temporary password only to Owner");
-      assert.equal(
-        result.temporaryPassword,
-        FIXED_ADMIN_TEMPORARY_PASSWORD,
-        "Must use the exact required fixed password 0123456789"
-      );
-      assert.equal(
-        result.temporaryPassword,
-        "0123456789",
-        "Required initial password is exactly 0123456789"
-      );
+      assert.match(result.temporaryPassword!, /^[A-Za-z0-9_-]{32}$/);
       assert.ok(result.expiresAt, "Must specify expiration timestamp");
 
       // Calculate expiry window: exactly ~24 hours
@@ -463,16 +449,9 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       });
 
       assert.ok(reissueRes.success, `Reissue failed: ${reissueRes.error}`);
-      assert.equal(
-        reissueRes.temporaryPassword,
-        "0123456789",
-        "Reissued password must be exactly 0123456789"
-      );
-      assert.equal(
-        reissueRes.temporaryPassword,
-        FIXED_ADMIN_TEMPORARY_PASSWORD,
-        "Must use the exact fixed password 0123456789"
-      );
+      assert.ok(inv.temporaryPassword && reissueRes.temporaryPassword);
+      assert.notEqual(reissueRes.temporaryPassword, inv.temporaryPassword);
+      assert.match(reissueRes.temporaryPassword, /^[A-Za-z0-9_-]{32}$/);
 
       // Check DB updated with new expiry in future
       const { data: reissuedStaff } = await serviceClient
@@ -518,7 +497,7 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       const failEvent = auditEvents.find((e) => e.outcome === "FAILURE");
       assert.ok(failEvent, "Must record FAILURE outcome");
       assert.equal(failEvent.error_category, "CANNOT_RESET_OWNER");
-      assert.equal(JSON.stringify(failEvent).includes("0123456789"), false, "Must never record password in audit metadata");
+      assert.equal(JSON.stringify(failEvent).includes("temporaryPassword"), false, "Must never record plaintext credentials in audit metadata");
     });
 
     it("resets password for an admin whose password was previously changed and re-enforces change requirement", async () => {
@@ -552,7 +531,9 @@ describe("IT Club — Owner-Only Admin Invitation & Mandatory First-Login Passwo
       });
 
       assert.ok(resetRes.success);
-      assert.equal(resetRes.temporaryPassword, "0123456789");
+      assert.ok(inv.temporaryPassword && resetRes.temporaryPassword);
+      assert.notEqual(resetRes.temporaryPassword, inv.temporaryPassword);
+      assert.match(resetRes.temporaryPassword, /^[A-Za-z0-9_-]{32}$/);
 
       // 4. Verify DB state has re-enforced password change and cleared password_changed_at
       const { data: staffAfterReset } = await serviceClient

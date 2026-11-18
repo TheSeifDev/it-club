@@ -126,6 +126,7 @@ export async function GET() {
 
         created_at: application.created_at,
         consented_at: application.consented_at,
+        activated_at: application.activated_at,
       },
       qr: qrInfo,
       activatedAt: student.activatedAt,

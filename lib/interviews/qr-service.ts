@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { getServiceRoleClient } from "../auth/service-role.ts";
 import { isQrEligibleStatus } from "../auth/student.ts";
 import { recordAuditEvent } from "../audit/service.ts";
-import type { StaffRole } from "../auth/roles.ts";
+import { canStaffAccessCommittee, type CommitteeTrack, type StaffRole } from "../auth/roles.ts";
 
 export type InterviewRating = "STRONG_HIRE" | "HIRE" | "NEUTRAL" | "NO_HIRE";
 
@@ -49,6 +49,7 @@ export interface CandidateLookupResult {
     | "REVOKED_TOKEN"
     | "EXPIRED_TOKEN"
     | "INELIGIBLE_STATUS"
+    | "COMMITTEE_SCOPE_DENIED"
     | "DATABASE_ERROR";
   error?: string;
   candidate?: CandidateInterviewProfile;
@@ -76,6 +77,7 @@ export interface CandidateCheckInResult {
     | "REVOKED_TOKEN"
     | "EXPIRED_TOKEN"
     | "INELIGIBLE_STATUS"
+    | "COMMITTEE_SCOPE_DENIED"
     | "DATABASE_ERROR";
   error?: string;
   checkedInAt?: string;
@@ -271,7 +273,8 @@ export async function renderQrDataUrl(text: string): Promise<string> {
 export async function verifyAndCheckInInterviewQr(
   rawToken: string,
   staffUserId: string,
-  staffRole: StaffRole = "admin"
+  staffRole: StaffRole = "admin",
+  staffCommittee?: CommitteeTrack | null
 ): Promise<CandidateCheckInResult> {
   const token = parseQrPayload(rawToken);
 
@@ -334,6 +337,27 @@ export async function verifyAndCheckInInterviewQr(
     };
   }
 
+  if (!canStaffAccessCommittee(staffRole, staffCommittee, app.primary_track)) {
+    await recordAuditEvent({
+      actor: { id: staffUserId, role: staffRole },
+      action: "COMMITTEE_ACCESS_DENIED",
+      entityType: "interview_qr",
+      entityId: tokenRow.id,
+      outcome: "FAILURE",
+      errorCategory: "COMMITTEE_SCOPE_DENIED",
+      metadata: {
+        operation: "INTERVIEW_CHECK_IN",
+        staffCommittee: staffCommittee || "NONE",
+        applicationCommittee: app.primary_track,
+      },
+    });
+    return {
+      success: false,
+      code: "COMMITTEE_SCOPE_DENIED",
+      error: "Access denied: this candidate is outside your assigned committee.",
+    };
+  }
+
   if (tokenRow.status === "CHECKED_IN") {
     await recordAuditEvent({
       actor: { id: staffUserId, role: staffRole },
@@ -379,7 +403,7 @@ export async function verifyAndCheckInInterviewQr(
 
   // 4. Atomically record check-in
   const now = new Date().toISOString();
-  const { error: updateErr } = await serviceClient
+  const { data: updatedToken, error: updateErr } = await serviceClient
     .from("interview_qr_tokens")
     .update({
       status: "CHECKED_IN",
@@ -388,7 +412,9 @@ export async function verifyAndCheckInInterviewQr(
       updated_at: now,
     })
     .eq("id", tokenRow.id)
-    .eq("status", "ACTIVE"); // Optimistic concurrency check
+    .eq("status", "ACTIVE") // Optimistic concurrency check
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     console.error("[qr-service] Failed to record check-in:", updateErr.message);
@@ -396,6 +422,27 @@ export async function verifyAndCheckInInterviewQr(
       success: false,
       code: "DATABASE_ERROR",
       error: "Failed to record check-in timestamp.",
+    };
+  }
+
+  if (!updatedToken) {
+    const { data: currentToken, error: currentTokenErr } = await serviceClient
+      .from("interview_qr_tokens")
+      .select("status, checked_in_at")
+      .eq("id", tokenRow.id)
+      .maybeSingle();
+    if (!currentTokenErr && currentToken?.status === "CHECKED_IN") {
+      return {
+        success: false,
+        code: "ALREADY_CHECKED_IN",
+        error: "Candidate has already checked in for this interview.",
+        checkedInAt: currentToken.checked_in_at || undefined,
+      };
+    }
+    return {
+      success: false,
+      code: "DATABASE_ERROR",
+      error: "Unable to confirm the interview check-in state.",
     };
   }
 
@@ -478,7 +525,8 @@ export async function revokeInterviewQrToken(
 export async function lookupInterviewCandidateByQr(
   rawToken: string,
   staffUserId: string,
-  staffRole: StaffRole = "interviewer"
+  staffRole: StaffRole = "interviewer",
+  staffCommittee?: CommitteeTrack | null
 ): Promise<CandidateLookupResult> {
   const token = parseQrPayload(rawToken);
 
@@ -547,6 +595,27 @@ export async function lookupInterviewCandidateByQr(
       success: false,
       code: "INVALID_TOKEN",
       error: "Linked application record could not be found.",
+    };
+  }
+
+  if (!canStaffAccessCommittee(staffRole, staffCommittee, app.primary_track)) {
+    await recordAuditEvent({
+      actor: { id: staffUserId, role: staffRole },
+      action: "COMMITTEE_ACCESS_DENIED",
+      entityType: "interview_qr",
+      entityId: tokenRow.id,
+      outcome: "FAILURE",
+      errorCategory: "COMMITTEE_SCOPE_DENIED",
+      metadata: {
+        operation: "INTERVIEW_CANDIDATE_LOOKUP",
+        staffCommittee: staffCommittee || "NONE",
+        applicationCommittee: app.primary_track,
+      },
+    });
+    return {
+      success: false,
+      code: "COMMITTEE_SCOPE_DENIED",
+      error: "Access denied: this candidate is outside your assigned committee.",
     };
   }
 
@@ -775,4 +844,3 @@ export async function saveInterviewEvaluation(
     },
   };
 }
-

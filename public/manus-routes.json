@@ -1,0 +1,116 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "title": "IT Club"
+    },
+    {
+      "path": "/about",
+      "title": "about"
+    },
+    {
+      "path": "/admin",
+      "title": "admin"
+    },
+    {
+      "path": "/admin/login",
+      "title": "login"
+    },
+    {
+      "path": "/alumni",
+      "title": "alumni"
+    },
+    {
+      "path": "/community",
+      "title": "community"
+    },
+    {
+      "path": "/community/:slug"
+    },
+    {
+      "path": "/contact",
+      "title": "contact"
+    },
+    {
+      "path": "/events",
+      "title": "events"
+    },
+    {
+      "path": "/events/:slug"
+    },
+    {
+      "path": "/interview",
+      "title": "interview"
+    },
+    {
+      "path": "/interview/applications",
+      "title": "applications"
+    },
+    {
+      "path": "/interview/applications/:id"
+    },
+    {
+      "path": "/interview/audit-logs",
+      "title": "audit logs"
+    },
+    {
+      "path": "/interview/change-password",
+      "title": "change password"
+    },
+    {
+      "path": "/interview/interviews/scan",
+      "title": "scan"
+    },
+    {
+      "path": "/interview/login",
+      "title": "login"
+    },
+    {
+      "path": "/interview/settings",
+      "title": "settings"
+    },
+    {
+      "path": "/interview/staff",
+      "title": "staff"
+    },
+    {
+      "path": "/pages/:slug"
+    },
+    {
+      "path": "/privacy",
+      "title": "privacy"
+    },
+    {
+      "path": "/register",
+      "title": "register"
+    },
+    {
+      "path": "/sponsors",
+      "title": "sponsors"
+    },
+    {
+      "path": "/student",
+      "title": "student"
+    },
+    {
+      "path": "/student/activate",
+      "title": "activate"
+    },
+    {
+      "path": "/student/change-password",
+      "title": "change password"
+    },
+    {
+      "path": "/student/login",
+      "title": "login"
+    },
+    {
+      "path": "/terms",
+      "title": "terms"
+    },
+    {
+      "path": "/tracks",
+      "title": "tracks"
+    }
+  ]
+}

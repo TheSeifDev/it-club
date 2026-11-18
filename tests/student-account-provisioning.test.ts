@@ -10,6 +10,7 @@ import {
   isQrEligibleStatus,
   isStudentPasswordChangeRequired,
   isStudentCredentialExpired,
+  type StudentCredentialState,
 } from "../lib/auth/student.ts";
 
 describe("Immediate Student Account Provisioning & 24-Hour Password Enforcement Suite", () => {
@@ -460,17 +461,8 @@ describe("Immediate Student Account Provisioning & 24-Hour Password Enforcement 
   // 7, 8, 9, 10, 12. Password Lifecycle, Expiration & Route Enforcement
   describe("6. Password Lifecycle, 24-Hour Expiry & Guard Enforcement", () => {
     it("correctly evaluates pending password change requirement and expiration", () => {
-      const now = Date.now();
-
-      // Active temporary password (issued 1 hour ago, expires in 23 hours)
-      const activeStudent = {
-        user: { id: "u1", email: "test@batechu.com" } as unknown as import("@supabase/supabase-js").User,
-        application: { id: "a1", status: "SHORTLISTED" } as unknown as import("../lib/admin/types.ts").ApplicationDetail,
-        activatedAt: new Date(now - 3600000).toISOString(),
+      const activeStudent: StudentCredentialState = {
         passwordChangeRequired: true,
-        tempPasswordIssuedAt: new Date(now - 3600000).toISOString(),
-        tempPasswordExpiresAt: new Date(now + 23 * 3600000).toISOString(),
-        passwordChangedAt: null,
         isTempPasswordExpired: false,
       };
 
@@ -478,9 +470,8 @@ describe("Immediate Student Account Provisioning & 24-Hour Password Enforcement 
       assert.equal(isStudentCredentialExpired(activeStudent), false);
 
       // Expired temporary password (expiresAt was 2 hours ago)
-      const expiredStudent = {
+      const expiredStudent: StudentCredentialState = {
         ...activeStudent,
-        tempPasswordExpiresAt: new Date(now - 2 * 3600000).toISOString(),
         isTempPasswordExpired: true,
       };
 
@@ -488,10 +479,9 @@ describe("Immediate Student Account Provisioning & 24-Hour Password Enforcement 
       assert.equal(isStudentCredentialExpired(expiredStudent), true);
 
       // Password already changed (permanent credential active)
-      const permanentStudent = {
+      const permanentStudent: StudentCredentialState = {
         ...activeStudent,
         passwordChangeRequired: false,
-        passwordChangedAt: new Date(now - 1000).toISOString(),
         isTempPasswordExpired: false,
       };
 

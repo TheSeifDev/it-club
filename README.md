@@ -1,6 +1,6 @@
-# IT Club Recruitment
+# IT Club — BATU
 
-> **A secure, high-throughput recruitment and interview management platform built for IT Club at Borg El Arab Technological University (BATU).**
+> **The public home of IT Club at Borg El Arab Technological University (BATU), with a separate student application portal, interview operations area, and owner-only content studio.**
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.3.8-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.8-61dafb?style=flat-square&logo=react&logoColor=black)
@@ -14,7 +14,7 @@
 
 ## Arabic Summary | ملخص المشروع بالعربية
 
-منصة **IT Club Recruitment** هي نظام متكامل لإدارة عمليات التوظيف والمقابلات الشخصية لنادي تكنولوجيا المعلومات بجامعة برج العرب التكنولوجية (**BATU**). توفر المنصة موقعاً تعريفياً وتفاعلياً للطلاب، واستمارة تسجيل متعددة المراحل تدعم التحقق الصارم من الرقم القومي والبريد الجامعي، ونظاماً متطوراً لمنع التكرار على مستوى قاعدة البيانات PostgreSQL. كما تشمل بوابة إدارية آمنة للجان لمراجعة الطلبات، ونظام إشعارات بريدية فورية عبر Gmail SMTP، وبوابة للطلاب المقبولين مع بطاقة تعريف رقمية ورمز QR مشفر لحضور المقابلات الشخصية، وسجل تدقيق غير قابل للتعديل خاص بإدارة المنصة.
+الموقع الرئيسي لـ **IT Club** بجامعة برج العرب التكنولوجية (**BATU**) يعرّف الطلاب بالنادي وقيادته والـboards والأنشطة والشركاء. وتظل بوابة التقديم والطلاب وعمليات المقابلات متاحة منفصلة، بينما يدير الـowner المحتوى المنشور من **`/admin`**. واجهات عمليات الموظفين موجودة تحت **`/interview`**؛ وتبقى APIs التشغيلية الحالية تحت **`/api/admin/...`** للحفاظ على توافقها.
 
 ---
 
@@ -46,13 +46,15 @@
 
 ## Overview and Goals
 
-IT Club Recruitment is engineered to manage high-volume student recruitment drives without manual spreadsheets, duplicate submissions, or untracked candidate communications. Designed specifically for university technology clubs, the platform operates across four primary operational boundaries:
+IT Club is now the public home of the club; recruitment and interviews remain separate protected workflows. The platform operates across five boundaries:
 
-1. **Public Recruitment & Discovery**: A modern public portal introducing candidates to the club's technical committees, event archives, sponsorship network, and the recruitment process.
+1. **Public Club Website**: An editorial, English-first website introducing the club, its verified people and boards, tracks, published events, partners, alumni, and contact channels.
 2. **Student Registration & Lifecycle Tracking**: A multi-step application wizard enforcing strict Egyptian academic and identity constraints, issuing tamper-proof application reference codes, and providing real-time submission tracking.
-3. **Staff Evaluation & Decision Management**: A role-based administrative portal where committee heads and executive officers review submissions, record private evaluation notes, execute state-machine transitions, and inspect analytics charts.
+3. **Interview Operations (`/interview`)**: A role-based area where authorized staff review submissions, record private evaluation notes, manage interviews and staff, and inspect operational records. Existing operations APIs remain under `/api/admin/...`.
 4. **Candidate Credentialing & On-Site Attendance**: An authenticated portal for accepted candidates featuring an exportable Candidate Information Card and opaque QR check-in token, paired with an on-site camera scanner for instant interview verification.
-5. **Operational Integrity & Telemetry**: Immutable audit logging restricted to project owners, distributed sliding-window rate limiting to absorb campus Wi-Fi traffic bursts, and transactional outbox email processing.
+5. **Owner-only Public Content CMS (`/admin`)**: A separate content studio for boards, member profiles, events, sponsors, announcements, and published pages. Drafts do not appear on the public website.
+
+> **Database safety:** use a separate isolated Supabase development project for migrations and integration tests. The full test suite includes Supabase integration probes (including an anonymous insert expected to be rejected); never aim it or CMS migrations at production.
 
 ---
 
@@ -69,10 +71,11 @@ flowchart TD
     end
 
     subgraph NextServer ["Next.js Application Server (Node.js Runtime)"]
-        Middleware["Session Middleware (/middleware.ts)"]
-        PublicPages["Public Pages & Registration Flow"]
+        SessionGuard["Session / role guards (proxy.ts + server)"]
+        PublicPages["Public Club Website & Registration Flow"]
         StudentPortal["Student Dashboard (/student)"]
-        AdminPortal["Admin Dashboard (/admin)"]
+        InterviewOps["Interview Operations (/interview)"]
+        ContentCMS["Owner-only public Content CMS (/admin)"]
         
         subgraph RouteHandlers ["API Route Handlers"]
             RegisterAPI["POST /api/register"]
@@ -112,12 +115,13 @@ flowchart TD
     PublicUser --> RegisterAPI
     StudentUser --> StudentPortal
     StudentUser --> ActivateAPI
-    StaffUser --> AdminPortal
+    StaffUser --> InterviewOps
+    StaffUser --> ContentCMS
     StaffUser --> AdminAppAPI
     StaffUser --> CheckInAPI
 
     %% Routing & Middleware
-    Middleware --> AuthGuard
+    SessionGuard --> AuthGuard
     RegisterAPI --> RateLimiter
     RegisterAPI --> Validator
     RegisterAPI --> AuditService
@@ -187,12 +191,12 @@ flowchart TD
 - **One-Time Owner Bootstrap**: CLI tool (`scripts/bootstrap-owner.ts`) to initialize the first system Owner. The script locks against subsequent promotion once an Owner exists.
 - **Owner vs. Admin Capabilities**:
   - **Admin**: Review applications, save internal feedback, update candidate statuses, operate the interview QR scanner.
-  - **Owner**: All Admin capabilities, plus access to the immutable audit log (`/admin/audit-logs`) and staff member roster inspection (`/admin/settings`).
+  - **Owner**: All Admin capabilities, plus access to the immutable audit log (`/interview/audit-logs`) and staff member roster inspection (`/interview/settings`).
 
 ### 5. Application Review & State Machine Management
 - **Dashboard Telemetry (`/admin`)**: Summary metrics, 24-hour velocity counters, pipeline funnel charts, and track preference distributions.
-- **Searchable Roster (`/admin/applications`)**: Server-paginated table supporting full-text search across applicant name, reference code, email, academic ID, and track filters.
-- **Candidate Dossier (`/admin/applications/[id]`)**: Full submission review, National ID masking (`88******`), reviewer note autosave, and status transition selector.
+- **Searchable Roster (`/interview/applications`)**: Server-paginated table supporting full-text search across applicant name, reference code, email, academic ID, and track filters.
+- **Candidate Dossier (`/interview/applications/[id]`)**: Full submission review, National ID masking (`88******`), reviewer note autosave, and status transition selector.
 - **State Machine Enforcement**: Transition validation prevents invalid lifecycle jumps (e.g., from `PENDING_REVIEW` straight to `INTERVIEWED` without review).
 - **Automatic Acceptance Flow**: Transitioning a candidate to `ACCEPTED` dispatches an acceptance invitation email containing a secure Supabase Auth account activation link.
 
@@ -203,12 +207,12 @@ flowchart TD
 
 ### 7. QR Issuance & On-Site Interview Check-In
 - **Opaque Token Issuance**: Generates secure random tokens (`itc_qr_...`) stored as SHA-256 hashes (`token_hash`) in `public.interview_qr_tokens`. QR codes encode only the opaque token and protocol, preventing student PII leaks if photographed.
-- **Camera Scanner (`/admin/interviews/scan`)**: Real-time camera scanner with automated error diagnostics (detecting denied permissions, insecure HTTP contexts, and missing hardware).
+- **Camera Scanner (`/interview/interviews/scan`)**: Real-time camera scanner with automated error diagnostics (detecting denied permissions, insecure HTTP contexts, and missing hardware).
 - **Manual Verification Fallback**: Allows staff to manually type in candidate tokens or reference codes if camera access is unavailable.
 - **Instant Attendance Feedback**: Audio chimes, device vibration, and visual confirmation cards indicating attendance status (`CHECK_IN_SUCCESS` or `ALREADY_CHECKED_IN`). Automatically updates candidate status to `INTERVIEWED`.
 
 ### 8. Auditing, Security & Burst Hardening
-- **Immutable Audit Trail (`/admin/audit-logs`)**: Append-only log recording user logins, status transitions, reviewer notes, check-ins, and notification attempts.
+- **Immutable Audit Trail (`/interview/audit-logs`)**: Append-only log recording user logins, status transitions, reviewer notes, check-ins, and notification attempts.
 - **Sensitive Data Redaction**: Automatically sanitizes National IDs, passwords, session tokens, and raw QR strings before writing audit rows.
 - **Distributed Rate Limiting**: Upstash Redis sliding-window limiter with configurable IP limits (supporting shared campus NAT gateways) and email rate limits. Gracefully falls back to local memory if Redis is unreachable.
 - **Observability Logging**: Formatted structured JSON logs tracking request correlation IDs, latency percentiles, database execution times, and HTTP outcomes.
@@ -226,11 +230,11 @@ flowchart TD
 > - [ ] **Public Landing Page** (`/`): Desktop & Mobile Hero with track navigation.
 > - [ ] **Multi-Step Registration Wizard** (`/register`): Step 1 (Personal Info) and Step 4 (Track Selection).
 > - [ ] **Admin Metrics Dashboard** (`/admin`): KPI cards and review pipeline distribution charts.
-> - [ ] **Applications Review Table** (`/admin/applications`): Search and filter bar with masked National IDs.
-> - [ ] **Candidate Dossier** (`/admin/applications/[id]`): Reviewer note drawer and state machine controls.
-> - [ ] **Interview QR Scanner** (`/admin/interviews/scan`): Live camera viewfinder with successful check-in card.
+> - [ ] **Applications Review Table** (`/interview/applications`): Search and filter bar with masked National IDs.
+> - [ ] **Candidate Dossier** (`/interview/applications/[id]`): Reviewer note drawer and state machine controls.
+> - [ ] **Interview QR Scanner** (`/interview/interviews/scan`): Live camera viewfinder with successful check-in card.
 > - [ ] **Student Dashboard & Card** (`/student`): Candidate Information Card with rendered QR code.
-> - [ ] **Owner Audit Logs** (`/admin/audit-logs`): Filtered event table showing timestamped transitions.
+> - [ ] **Owner Audit Logs** (`/interview/audit-logs`): Filtered event table showing timestamped transitions.
 
 ---
 
@@ -286,19 +290,21 @@ flowchart TD
 
 ## Application Routes
 
-### Public Pages
+### Public Website
 | Route Path | Access Level | Description |
 | :--- | :--- | :--- |
-| `/` | Public | Official landing page, about club, committees, interview information, and partners. |
+| `/` | Public | IT Club home, mission, verified people, boards, events, and partners. |
+| `/about` | Public | Club identity and the way its community works. |
 | `/register` | Public | Multi-step candidate registration wizard with client and server validation. |
-| `/tracks` | Public | In-depth breakdown of the six technical and operational committee tracks. |
-| `/process` | Public | Step-by-step recruitment roadmap, timeline, and candidate guidelines. |
-| `/events` | Public | Community archives, hackathons, and technical workshop gallery. |
-| `/community` | Public | Student member directory and committee team rosters. |
-| `/sponsors` | Public | Partnership tiers and university collaboration opportunities. |
-| `/contact` | Public | Contact channels, physical campus location, and support email. |
-| `/terms` | Public | Official recruitment participation and code-of-conduct terms. |
-| `/privacy` | Public | Candidate data privacy, retention policies, and applicant protection terms. |
+| `/tracks` | Public | Published missions for the club's boards and learning tracks. |
+| `/community` | Public | Verified leadership, boards, member roles, and team scope. |
+| `/community/[slug]` | Public | Published member profile. |
+| `/events` and `/events/[slug]` | Public | Published upcoming and archived event details only. |
+| `/sponsors` | Public | Approved partners and partnership information. |
+| `/alumni` | Public | Published alumni profiles. |
+| `/pages/[slug]` | Public | Published CMS-managed editorial page. |
+| `/contact` | Public | Contact channels and server-validated enquiry form. |
+| `/terms`, `/privacy` | Public | Legal and candidate-data information. |
 
 ### Student Authentication & Dashboard
 | Route Path | Access Level | Description |
@@ -307,24 +313,25 @@ flowchart TD
 | `/student/activate` | Token Auth | Password setup page for candidates arriving from acceptance email links. |
 | `/student` | Student | Personal candidate portal, status badge, interview details, and Information Card. |
 
-### Staff Authentication & Administration
+### Interview Operations & Content Administration
 | Route Path | Access Level | Description |
 | :--- | :--- | :--- |
-| `/login` | Public / Staff | Secure staff authentication portal with redirect preservation (`?next=`). |
-| `/admin` | Admin / Owner | Primary administration overview: recruitment metrics, funnel charts, velocity. |
-| `/admin/applications` | Admin / Owner | Paginated candidate roster with full-text search, track filters, and quick actions. |
-| `/admin/applications/[id]` | Admin / Owner | Detailed candidate dossier, response viewer, reviewer notes, and status transition. |
-| `/admin/interviews/scan` | Admin / Owner | Real-time camera QR scanner with check-in feedback and manual fallback input. |
-| `/admin/audit-logs` | **Owner Only** | Immutable system audit log with actor, action, date, and outcome filtering. |
-| `/admin/settings` | Admin / Owner | Telemetry overview, SMTP status, rate limiter mode, and staff roster (Owner only). |
+| `/interview/login` | Public / Staff | Shared staff sign-in; `mode=content` selects the owner CMS destination only after server verification. |
+| `/login` | Public / Staff alias | Compatibility redirect to `/interview/login`. |
+| `/interview` | Staff | Interview operations entry point. |
+| `/interview/applications`, `/interview/applications/[id]` | Staff | Candidate review and assigned-committee workflows. |
+| `/interview/interviews/scan` | Staff | Interview QR check-in and manual fallback. |
+| `/interview/audit-logs`, `/interview/settings`, `/interview/staff` | Owner / Staff | Protected operations functions according to existing role policy. |
+| `/admin` | **Owner Only** | New content studio for public pages and CMS records; not an interview-operations dashboard. |
+| `/admin/login` | Redirect | Compatibility redirect to `/interview/login?mode=content`. |
 
 ### API Endpoints
 | Endpoint | Method | Access Level | Description |
 | :--- | :--- | :--- | :--- |
 | `/api/register` | `POST` | Public (Rate Limited) | Validates and persists new applications; dispatches confirmation receipt. |
 | `/api/auth/verify-staff` | `POST` | Authenticated | Validates whether the active session has an assigned staff role. |
-| `/app/auth/confirm` | `GET` | Public (Token/Code) | Handles Supabase Auth OTP verification and PKCE exchange; sets cookies. |
-| `/app/auth/signout` | `POST`, `GET` | Authenticated | Terminates user session and redirects to `/login`. |
+| `/auth/confirm` | `GET` | Public (Token/Code) | Handles Supabase Auth OTP verification and PKCE exchange; sets cookies. |
+| `/auth/signout` | `POST`, `GET` | Authenticated | Terminates user session and redirects to `/login`. |
 | `/api/student/activate` | `POST` | Authenticated Invite | Verifies reference code, sets account password, and links student account. |
 | `/api/student/me` | `GET` | Student | Returns authenticated student profile and linked application record. |
 | `/api/student/qr` | `GET` | Student | Generates or fetches active interview QR code for accepted candidates. |
@@ -507,12 +514,12 @@ The application enforces a 4-tier authorization model:
 ```
 [ Anonymous Visitor ]  ──► Public pages, /register (write-only via API)
 [ Candidate / Student ] ──► /student/login, /student/activate, /student (Self-read only)
-[ Staff Admin ]         ──► /admin, /admin/applications, /admin/interviews/scan
-[ System Owner ]        ──► All Admin routes + /admin/audit-logs + Staff Roster Management
+[ Staff Admin ]         ──► /interview operations permitted by role and committee
+[ System Owner ]        ──► Owner interview tools + the separate public Content CMS at /admin
 ```
 
 ### Server-Side Session Verification
-- `middleware.ts` guards all `/admin` routes. Unauthenticated requests are redirected to `/login?next=<path>`.
+- `proxy.ts` applies route policy while Server Components and Route Handlers re-check staff roles against `public.staff_members`. The interview sign-in lives at `/interview/login`; `/admin` is owner-only CMS, and its login mode is never granted by a client-supplied `next` parameter.
 - Route Handlers (`verifyStaffApiRequest`) and Server Components (`requireStaffRole`) query `public.staff_members` using the privileged client to verify database roles. Client-supplied JWT claims or mutable metadata are strictly ignored.
 
 ### One-Time Owner Bootstrap Procedure
@@ -541,7 +548,7 @@ When setting up a fresh project, no Owner exists. Arbitrary elevation is blocked
 - **SQL Injection Prevention**: All queries use parameterized Supabase PostgREST client methods. No raw SQL concatenation is performed in application routes.
 - **Cross-Site Scripting (XSS) Defenses**: React automatically escapes rendered strings. HTML email templates pass user inputs through a strict `escapeHtml()` utility.
 - **Strict Content Security Policy (CSP)**: `next.config.ts` enforces a strict CSP restricting `connect-src` to Supabase endpoints, `script-src` to self, and `frame-ancestors` to `'none'`.
-- **Camera Permission Fallback**: The CSP sets `Permissions-Policy: camera=()`. On environments where this policy or browser permissions block camera access, `/admin/interviews/scan` seamlessly provides a manual token entry fallback verified by `camera-diagnostics.ts`.
+- **Camera Permission Fallback**: The CSP sets `Permissions-Policy: camera=()`. On environments where this policy or browser permissions block camera access, `/interview/interviews/scan` seamlessly provides a manual token entry fallback verified by `camera-diagnostics.ts`.
 - **Salted Hash Rate Limiting**: Client IP addresses and email keys are hashed using SHA-256 with a secret salt (`RATE_LIMIT_SALT`) before rate limit checking. Plain-text IPs are never stored in cache keys.
 - **Payload Size Limits**: The registration API rejects non-JSON Content-Types with `415 Unsupported Media Type` and enforces a strict `64 KB` request body cap with `413 Payload Too Large`.
 

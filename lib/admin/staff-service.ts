@@ -9,8 +9,7 @@ import {
 import { getEmailConfig } from "../email/config.ts";
 import { renderAdminInvitationEmail } from "../email/templates/admin-invitation.ts";
 import { type StaffRole, type CommitteeTrack, isCommitteeTrack } from "../auth/roles.ts";
-
-export const FIXED_ADMIN_TEMPORARY_PASSWORD = "0123456789";
+import { generateStaffTemporaryPassword } from "../auth/staff-credentials.ts";
 
 export interface InviteAdminInput {
   email: string;
@@ -81,6 +80,11 @@ export interface RetryAdminInvitationResult {
   code?: string;
   error?: string;
   emailDelivery?: AdminEmailDeliveryInfo;
+  userId?: string;
+  email?: string;
+  temporaryPassword?: string;
+  expiresAt?: string;
+  issuedAt?: string;
 }
 
 export interface ChangeStaffPasswordInput {
@@ -178,7 +182,7 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
   }
 
   // 5. Generate fixed temporary password & 24-hour expiration
-  const temporaryPassword = FIXED_ADMIN_TEMPORARY_PASSWORD;
+  const temporaryPassword = generateStaffTemporaryPassword();
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 24 * 60 * 60 * 1000);
 
@@ -303,7 +307,7 @@ export async function inviteAdminAccount(input: InviteAdminInput): Promise<Invit
 
   // 9. Email dispatch (if configured)
   const emailConfig = getEmailConfig();
-  const loginUrl = `${emailConfig.appBaseUrl}/login`;
+  const loginUrl = `${emailConfig.appBaseUrl}/interview/login`;
 
   const emailDeliveryResult: AdminEmailDeliveryInfo = {
     configured: isEmailProviderActive(),
@@ -481,7 +485,7 @@ export async function reissueAdminTemporaryPassword(
   }
 
   // 3. Set fixed temporary password and reset expiry
-  const temporaryPassword = FIXED_ADMIN_TEMPORARY_PASSWORD;
+  const temporaryPassword = generateStaffTemporaryPassword();
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 24 * 60 * 60 * 1000);
 
@@ -580,7 +584,7 @@ export async function reissueAdminTemporaryPassword(
 
   // 7. Dispatch email if target email exists and mailer is active
   const emailConfig = getEmailConfig();
-  const loginUrl = `${emailConfig.appBaseUrl}/login`;
+  const loginUrl = `${emailConfig.appBaseUrl}/interview/login`;
 
   const emailDeliveryResult: AdminEmailDeliveryInfo = {
     configured: isEmailProviderActive(),
@@ -745,7 +749,7 @@ export async function retryAdminInvitationEmail(
     };
   }
 
-  // 3. Double-submission / Rate-limiting guard (prevent spamming within 30 seconds)
+  // 3. Double-submission / rate-limiting guard (prevent repeated rotation within 30 seconds)
   const thirtySecondsAgo = new Date(Date.now() - 30 * 1000).toISOString();
   const { data: recentEvents } = await serviceClient
     .from("audit_events")
@@ -755,6 +759,7 @@ export async function retryAdminInvitationEmail(
       "ADMIN_INVITATION_DELIVERY_SUCCESS",
       "ADMIN_INVITATION_DELIVERY_FAILURE",
       "ADMIN_INVITATION_RETRY_DISPATCHED",
+      "ADMIN_TEMPORARY_PASSWORD_REISSUED",
     ])
     .gte("created_at", thirtySecondsAgo)
     .limit(1);
@@ -763,66 +768,40 @@ export async function retryAdminInvitationEmail(
     return {
       success: false,
       code: "RATE_LIMITED",
-      error: "An invitation email was dispatched recently. Please wait 30 seconds before retrying.",
+      error: "An invitation or credential update was dispatched recently. Please wait 30 seconds before retrying.",
     };
   }
 
-  // 4. Send email (NEVER resets password, NEVER creates a new user)
-  const emailConfig = getEmailConfig();
-  const loginUrl = `${emailConfig.appBaseUrl}/login`;
-
-  const emailTemplate = renderAdminInvitationEmail({
-    recipientEmail: targetStaff.email,
-    loginUrl,
-    expiresInHours: 24,
-    temporaryPassword: FIXED_ADMIN_TEMPORARY_PASSWORD,
-    role: "Admin",
+  // The previous plaintext credential cannot be recovered. Retrying therefore
+  // issues a fresh random one-time password, invalidates the previous one, and
+  // emails/returns only the newly generated value to the Owner.
+  const result = await reissueAdminTemporaryPassword({
+    targetUserId: input.targetUserId,
+    ownerUser: input.ownerUser,
   });
 
-  const sendResult = await sendMail({
-    to: targetStaff.email,
-    subject: emailTemplate.subject,
-    html: emailTemplate.html,
-    text: emailTemplate.text,
-  });
+  if (result.success) {
+    await recordAuditEvent({
+      action: "ADMIN_INVITATION_RETRY_DISPATCHED",
+      entityType: "staff_member",
+      entityId: input.targetUserId,
+      entityReference: targetStaff.email,
+      actor: {
+        id: input.ownerUser.id,
+        email: input.ownerUser.email || undefined,
+        role: "owner",
+      },
+      outcome: "SUCCESS",
+      metadata: {
+        targetEmail: targetStaff.email,
+        provider: "gmail-smtp",
+        credentialRotated: true,
+        deliveryConfirmed: false,
+      },
+    });
+  }
 
-  const emailDelivery: AdminEmailDeliveryInfo = {
-    configured: isEmailProviderActive(),
-    sent: sendResult.success,
-    status: sendResult.status,
-    messageId: sendResult.messageId,
-    response: sendResult.response,
-    error: sendResult.errorMessage,
-  };
-
-  await recordAuditEvent({
-    action: "ADMIN_INVITATION_RETRY_DISPATCHED",
-    entityType: "staff_member",
-    entityId: input.targetUserId,
-    entityReference: targetStaff.email,
-    actor: {
-      id: input.ownerUser.id,
-      email: input.ownerUser.email || undefined,
-      role: "owner",
-    },
-    outcome: sendResult.success ? "SUCCESS" : "FAILURE",
-    errorCategory: sendResult.success ? undefined : (sendResult.safeCategory || sendResult.status),
-    metadata: {
-      targetEmail: targetStaff.email,
-      provider: "gmail-smtp",
-      status: sendResult.status,
-      messageId: sendResult.messageId,
-      response: sendResult.response,
-      deliveryConfirmed: false,
-      error: sendResult.errorMessage,
-    },
-  });
-
-  return {
-    success: sendResult.success,
-    emailDelivery,
-    error: sendResult.errorMessage,
-  };
+  return result;
 }
 
 /**

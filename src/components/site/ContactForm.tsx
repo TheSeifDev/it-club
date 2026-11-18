@@ -1,0 +1,67 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+
+type FormState = "idle" | "sending" | "sent" | "error";
+
+export default function ContactForm() {
+  const [status, setStatus] = useState<FormState>("idle");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (status === "sending") return;
+    const form = event.currentTarget;
+    const values = new FormData(form);
+    const subject = String(values.get("subject") ?? "general");
+    const kind = subject === "partnership" || subject === "sponsorship" ? "partnership" : "contact";
+    const body = {
+      kind,
+      name: String(values.get("name") ?? "").trim(),
+      email: String(values.get("email") ?? "").trim(),
+      subject,
+      message: String(values.get("message") ?? "").trim(),
+      website: String(values.get("website") ?? "").trim(),
+    };
+    setStatus("sending");
+    try {
+      const response = await fetch("/api/site-contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.ok) throw new Error("The message endpoint did not confirm delivery.");
+      setStatus("sent");
+      form.reset();
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <form className="site-contact-form" onSubmit={handleSubmit}>
+      <div className="site-form-grid">
+        <label className="site-field"><span>YOUR NAME</span><input name="name" type="text" autoComplete="name" required maxLength={120} /></label>
+        <label className="site-field"><span>EMAIL ADDRESS</span><input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
+      </div>
+      <label className="site-field site-field--select"><span>WHAT IS THIS ABOUT?</span>
+        <select name="subject" defaultValue="general" required>
+          <option value="general">A general question</option>
+          <option value="partnership">A partnership</option>
+          <option value="sponsorship">Sponsorship</option>
+          <option value="other">Something else</option>
+        </select>
+      </label>
+      <label className="site-field"><span>YOUR MESSAGE</span><textarea name="message" rows={5} required maxLength={5000} /></label>
+      <label className="site-honeypot" aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" /></label>
+      <div className="site-contact-form__actions">
+        <p>We&apos;ll use your details only to respond to this message. For anything urgent, email <a href="mailto:contact@itclub.one">contact@itclub.one</a>.</p>
+        <button type="submit" className="site-button site-button--emerald" disabled={status === "sending"}>
+          {status === "sending" ? "SENDING…" : "SEND MESSAGE"}<span aria-hidden="true">↗</span>
+        </button>
+      </div>
+      {status === "sent" ? <p className="site-form-feedback site-form-feedback--success" role="status">Your message was accepted. Thank you for reaching out.</p> : null}
+      {status === "error" ? <p className="site-form-feedback" role="alert">We couldn&apos;t confirm that your message was delivered. Please email contact@itclub.one directly; your message has not been marked as sent.</p> : null}
+    </form>
+  );
+}

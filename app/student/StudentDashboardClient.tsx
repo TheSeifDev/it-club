@@ -12,8 +12,6 @@ import {
   Clock,
   Copy,
   Download,
-  Eye,
-  EyeOff,
   FileText,
   GraduationCap,
   LogOut,
@@ -21,7 +19,7 @@ import {
   QrCode,
   User,
 } from "lucide-react";
-import type { ApplicationDetail } from "../../lib/admin/types.ts";
+import type { StudentApplicationView } from "../../lib/auth/student-projection.ts";
 import {
   ACADEMIC_YEAR_METADATA,
   STATUS_METADATA,
@@ -32,7 +30,7 @@ import ResponsiveNav from "@/src/components/interview/navigation/ResponsiveNav";
 import Footer from "@/src/components/interview/Home/Footer";
 
 interface StudentDashboardProps {
-  application: ApplicationDetail;
+  application: StudentApplicationView;
   userEmail: string;
   activatedAt: string;
   qrInfo: {
@@ -50,7 +48,6 @@ export default function StudentDashboardClient({
   activatedAt,
   qrInfo,
 }: StudentDashboardProps) {
-  const [showNationalId, setShowNationalId] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
   const [isExportingCard, setIsExportingCard] = useState(false);
 
@@ -319,22 +316,6 @@ export default function StudentDashboardClient({
             <InfoPanel title="Personal" icon={User}>
               <Field label="University email" value={application.university_email} />
               <Field label="Account email" value={userEmail} />
-              <div className="border-t border-white/5 pt-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">National ID</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white/82">
-                    {showNationalId ? application.national_id : application.national_id_masked}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowNationalId((value) => !value)}
-                    className="border border-white/10 p-1 text-white/45 hover:text-white"
-                    aria-label={showNationalId ? "Hide National ID" : "Show National ID"}
-                  >
-                    {showNationalId ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-              </div>
             </InfoPanel>
 
             <InfoPanel title="Experience" icon={Briefcase}>
@@ -432,7 +413,7 @@ function CredentialCard({
   onDownloadQr,
   isExporting,
 }: {
-  application: ApplicationDetail;
+  application: StudentApplicationView;
   qrInfo: StudentDashboardProps["qrInfo"];
   statusLabel: string;
   primaryTrack: string;

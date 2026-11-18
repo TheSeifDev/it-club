@@ -1,53 +1,42 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+import { getPreviewCookieOptions, hasSupabasePublicConfig } from "./config.ts";
 
 export const createClient = async (request: NextRequest) => {
-  // Create an unmodified response
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  // Without configured Supabase credentials, leave the user logged out and let
+  // server-side guards present their normal sign-in/configuration state.
+  if (!hasSupabasePublicConfig()) {
+    return NextResponse.next({ request: { headers: request.headers } });
+  }
 
+  let supabaseResponse = NextResponse.next({
+    request: { headers: request.headers },
+  });
+  const previewCookieOptions = getPreviewCookieOptions();
   const supabase = createServerClient(
-    supabaseUrl!,
-    supabaseKey!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      cookieOptions: previewCookieOptions,
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              ...previewCookieOptions,
+            })
           );
         },
       },
-    },
+    }
   );
 
-  // Refresh auth token if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    if (!user) {
-      const redirectUrl = new URL("/login", request.url);
-      redirectUrl.searchParams.set("next", pathname + request.nextUrl.search);
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
+  // Refresh auth tokens when required. Authorization remains in route/page guards.
+  await supabase.auth.getUser();
   return supabaseResponse;
 };

@@ -4,7 +4,7 @@ export interface AdminInvitationEmailData {
   recipientEmail: string;
   loginUrl: string;
   expiresInHours?: number;
-  temporaryPassword?: string;
+  temporaryPassword: string;
   role?: string;
 }
 
@@ -17,7 +17,7 @@ export function renderAdminInvitationEmail(data: AdminInvitationEmailData): {
   const safeLoginUrl = escapeHtml(data.loginUrl);
   const hours = data.expiresInHours || 24;
   const roleTitle = data.role ? escapeHtml(data.role) : "Admin";
-  const tempPassword = data.temporaryPassword || "0123456789";
+  const tempPassword = data.temporaryPassword;
 
   const subject = "IT Club Staff Invitation — Administrator Access";
 

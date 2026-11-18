@@ -13,7 +13,7 @@ import { renderAdminInvitationEmail } from "../lib/email/templates/admin-invitat
 import { renderAcceptanceInvitationEmail } from "../lib/email/templates/acceptance-invitation.ts";
 import { renderShortlistedInvitationEmail } from "../lib/email/templates/shortlisted-invitation.ts";
 import { renderRegistrationReceiptEmail } from "../lib/email/templates/registration-receipt.ts";
-import { FIXED_ADMIN_TEMPORARY_PASSWORD } from "../lib/admin/staff-service.ts";
+import { generateStaffTemporaryPassword } from "../lib/auth/staff-credentials.ts";
 import { POST as postDiagnostics } from "../app/api/admin/staff/email-diagnostics/route.ts";
 import { POST as postRetryInvite } from "../app/api/admin/staff/retry-invite/route.ts";
 
@@ -191,19 +191,20 @@ describe("IT Club — Email Deliverability, Truthful Provider State & Safe Retry
   describe("4. Admin Invitation Template Rendering & Security", () => {
     it("renders branded email with login URL from appBaseUrl, temporary password, 24h expiry, and forced change notice", () => {
       const emailConfig = getEmailConfig();
-      const expectedLoginUrl = `${emailConfig.appBaseUrl}/login`;
+      const expectedLoginUrl = `${emailConfig.appBaseUrl}/interview/login`;
+      const temporaryPassword = generateStaffTemporaryPassword();
 
       const email = renderAdminInvitationEmail({
         recipientEmail: "safalmoaz16@gmail.com",
         loginUrl: expectedLoginUrl,
         expiresInHours: 24,
-        temporaryPassword: FIXED_ADMIN_TEMPORARY_PASSWORD,
+        temporaryPassword,
         role: "Admin",
       });
 
       // Assert password IS in HTML and text body
-      assert.ok(email.html.includes(FIXED_ADMIN_TEMPORARY_PASSWORD));
-      assert.ok(email.text.includes(FIXED_ADMIN_TEMPORARY_PASSWORD));
+      assert.ok(email.html.includes(temporaryPassword));
+      assert.ok(email.text.includes(temporaryPassword));
 
       // Assert valid subject and login portal link from appBaseUrl
       assert.equal(email.subject, "IT Club Staff Invitation — Administrator Access");
@@ -226,7 +227,8 @@ describe("IT Club — Email Deliverability, Truthful Provider State & Safe Retry
     it("escapes untrusted recipient inputs in admin invitation", () => {
       const email = renderAdminInvitationEmail({
         recipientEmail: "malicious<script>alert(1)</script>@gmail.com",
-        loginUrl: "https://dev.itclub.one/login",
+        loginUrl: "https://dev.itclub.one/interview/login",
+        temporaryPassword: generateStaffTemporaryPassword(),
         role: "Admin<b>bold</b>",
       });
 
@@ -430,4 +432,3 @@ describe("IT Club — Email Deliverability, Truthful Provider State & Safe Retry
     });
   });
 });
-

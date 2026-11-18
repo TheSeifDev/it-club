@@ -1,7 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createClient } from "@supabase/supabase-js";
-import { sanitizeRedirectPath } from "../lib/auth/redirect.ts";
+import {
+  getStaffLoginDestination,
+  sanitizeRedirectPath,
+} from "../lib/auth/redirect.ts";
+import { getLegacyRouteRedirect } from "../lib/auth/route-policy.ts";
 import { getStaffRole, verifyStaffApiRequest } from "../lib/auth/server.ts";
 import { isStaffRole } from "../lib/auth/roles.ts";
 import { checkBootstrapStatus, bootstrapFirstOwner } from "../lib/auth/bootstrap.ts";
@@ -15,23 +19,46 @@ describe("Staff Authentication & Role Foundation (Phase 1)", () => {
 
   // 1. Safe Redirect Validation (Open Redirect Defense)
   describe("1. Open Redirect Defense (sanitizeRedirectPath)", () => {
-    it("sanitizes unsafe external URLs and protocol-relative links to default /admin", () => {
-      assert.equal(sanitizeRedirectPath("//evil.com"), "/admin");
-      assert.equal(sanitizeRedirectPath("//evil.com/phish"), "/admin");
-      assert.equal(sanitizeRedirectPath("https://attacker.com"), "/admin");
-      assert.equal(sanitizeRedirectPath("javascript:alert(1)"), "/admin");
-      assert.equal(sanitizeRedirectPath("data:text/html,evil"), "/admin");
-      assert.equal(sanitizeRedirectPath("/\\evil.com"), "/admin");
-      assert.equal(sanitizeRedirectPath(""), "/admin");
-      assert.equal(sanitizeRedirectPath(null), "/admin");
-      assert.equal(sanitizeRedirectPath(undefined), "/admin");
+    it("sanitizes unsafe external URLs and protocol-relative links to /interview", () => {
+      assert.equal(sanitizeRedirectPath("//evil.com"), "/interview");
+      assert.equal(sanitizeRedirectPath("//evil.com/phish"), "/interview");
+      assert.equal(sanitizeRedirectPath("https://attacker.com"), "/interview");
+      assert.equal(sanitizeRedirectPath("javascript:alert(1)"), "/interview");
+      assert.equal(sanitizeRedirectPath("data:text/html,evil"), "/interview");
+      assert.equal(sanitizeRedirectPath("/\\evil.com"), "/interview");
+      assert.equal(sanitizeRedirectPath(""), "/interview");
+      assert.equal(sanitizeRedirectPath(null), "/interview");
+      assert.equal(sanitizeRedirectPath(undefined), "/interview");
     });
 
-    it("permits legitimate relative internal administrative paths", () => {
-      assert.equal(sanitizeRedirectPath("/admin"), "/admin");
-      assert.equal(sanitizeRedirectPath("/admin/"), "/admin/");
-      assert.equal(sanitizeRedirectPath("/admin/applicants"), "/admin/applicants");
-      assert.equal(sanitizeRedirectPath("/admin?track=it"), "/admin?track=it");
+    it("permits interview operations routes but never treats /admin CMS as an operations destination", () => {
+      assert.equal(sanitizeRedirectPath("/interview"), "/interview");
+      assert.equal(sanitizeRedirectPath("/interview/"), "/interview/");
+      assert.equal(sanitizeRedirectPath("/interview/applications"), "/interview/applications");
+      assert.equal(sanitizeRedirectPath("/interview?track=it"), "/interview?track=it");
+      assert.equal(sanitizeRedirectPath("/admin"), "/interview");
+      assert.equal(sanitizeRedirectPath("/admin/applicants"), "/interview");
+    });
+
+    it("allows the fixed CMS destination only in content mode for a DB-verified owner", () => {
+      assert.equal(
+        getStaffLoginDestination({ mode: "content", verifiedRole: "owner", next: "/interview" }),
+        "/admin"
+      );
+      assert.equal(
+        getStaffLoginDestination({ mode: "content", verifiedRole: "admin", next: "/admin" }),
+        null
+      );
+      assert.equal(
+        getStaffLoginDestination({ mode: "interview", verifiedRole: "owner", next: "/admin" }),
+        "/interview"
+      );
+    });
+
+    it("retains only known operations aliases and leaves /admin itself untouched", () => {
+      assert.equal(getLegacyRouteRedirect("/login"), "/interview/login");
+      assert.equal(getLegacyRouteRedirect("/admin/applications/123"), "/interview/applications/123");
+      assert.equal(getLegacyRouteRedirect("/admin"), null);
     });
   });
 

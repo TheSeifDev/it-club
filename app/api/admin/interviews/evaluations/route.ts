@@ -2,9 +2,13 @@ import { NextResponse } from "next/server.js";
 import { verifyStaffApiRequest } from "../../../../../lib/auth/server.ts";
 import {
   saveInterviewEvaluation,
-  type InterviewRating,
 } from "../../../../../lib/interviews/qr-service.ts";
 import { getServiceRoleClient } from "../../../../../lib/auth/service-role.ts";
+import { verifyEvaluationTarget } from "../../../../../lib/interviews/security.ts";
+import {
+  parseInterviewEvaluationPayload,
+  readBoundedJsonBody,
+} from "../../../../../lib/interviews/request-validation.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,34 +23,38 @@ export async function POST(request: Request) {
     );
   }
 
-  // 2. Parse request body
-  let body: {
-    applicationId?: string;
-    evaluationNotes?: string;
-    rating?: InterviewRating | null;
-    recommendation?: string | null;
-  };
-
-  try {
-    body = await request.json();
-  } catch {
+  // 2. Parse a bounded JSON object and validate each field before use.
+  const body = await readBoundedJsonBody(request, 64 * 1024);
+  if (!body.ok) {
     return NextResponse.json(
-      { error: "Invalid JSON request body.", code: "MALFORMED_JSON" },
-      { status: 400 }
+      {
+        error: body.code === "PAYLOAD_TOO_LARGE" ? "Request payload is too large." : "Invalid JSON request body.",
+        code: body.code,
+      },
+      { status: body.code === "PAYLOAD_TOO_LARGE" ? 413 : 400 }
     );
   }
 
-  const applicationId = body.applicationId?.trim();
-  if (!applicationId) {
+  const parsedPayload = parseInterviewEvaluationPayload(body.value);
+  if (!parsedPayload.ok) {
     return NextResponse.json(
-      { error: "Application ID is required.", code: "MISSING_APPLICATION_ID" },
-      { status: 400 }
+      { error: `Invalid evaluation request: ${parsedPayload.code}.`, code: parsedPayload.code },
+      { status: parsedPayload.code.endsWith("TOO_LONG") ? 413 : 400 }
     );
   }
+  const { applicationId, evaluationNotes, rating, recommendation } = parsedPayload.payload;
 
-  const evaluationNotes = typeof body.evaluationNotes === "string" ? body.evaluationNotes : "";
-  const rating = body.rating || null;
-  const recommendation = body.recommendation?.trim() || null;
+  const targetAccess = await verifyEvaluationTarget({
+    applicationId,
+    role: auth.role,
+    assignedCommittee: auth.staffMember?.committee,
+  });
+  if (!targetAccess.allowed) {
+    return NextResponse.json(
+      { error: targetAccess.error, code: targetAccess.code },
+      { status: targetAccess.status }
+    );
+  }
 
   // 3. Save or update evaluation
   const result = await saveInterviewEvaluation({
@@ -59,9 +67,10 @@ export async function POST(request: Request) {
   });
 
   if (!result.success) {
+    const status = result.code === "INVALID_RATING" ? 400 : 500;
     return NextResponse.json(
       { error: result.error, code: result.code },
-      { status: 400 }
+      { status }
     );
   }
 
@@ -94,6 +103,18 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { error: "applicationId query parameter is required.", code: "MISSING_APPLICATION_ID" },
       { status: 400 }
+    );
+  }
+
+  const targetAccess = await verifyEvaluationTarget({
+    applicationId,
+    role: currentRole,
+    assignedCommittee: auth.staffMember?.committee,
+  });
+  if (!targetAccess.allowed) {
+    return NextResponse.json(
+      { error: targetAccess.error, code: targetAccess.code },
+      { status: targetAccess.status }
     );
   }
 

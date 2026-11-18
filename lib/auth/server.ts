@@ -4,6 +4,7 @@ import { createClient as createServerSupabaseClient } from "../../utils/supabase
 import { getServiceRoleClient } from "./service-role.ts";
 import type { StaffRole, StaffMember } from "./roles.ts";
 import { isStaffRole } from "./roles.ts";
+import { hasSupabasePublicConfig, hasSupabaseServiceRoleConfig } from "../../utils/supabase/config.ts";
 
 export interface StaffContext {
   user: User;
@@ -17,6 +18,7 @@ export interface StaffContext {
  * Returns the currently authenticated Supabase Auth user from SSR cookies, or null if unauthenticated.
  */
 export async function getCurrentUser(): Promise<User | null> {
+  if (!hasSupabasePublicConfig()) return null;
   try {
     const cookieStore = await cookies();
     const supabase = createServerSupabaseClient(cookieStore);
@@ -106,7 +108,7 @@ export async function verifyStaffApiRequest(
   options?: VerifyStaffApiOptions
 ): Promise<{
   authorized: boolean;
-  status: 200 | 401 | 403;
+  status: 200 | 401 | 403 | 503;
   error?: string;
   code?: string;
   user?: User;
@@ -115,6 +117,15 @@ export async function verifyStaffApiRequest(
   passwordChangeRequired?: boolean;
   isTempPasswordExpired?: boolean;
 }> {
+  if (!hasSupabasePublicConfig() || !hasSupabaseServiceRoleConfig()) {
+    return {
+      authorized: false,
+      status: 503,
+      error: "Staff authentication is unavailable because Supabase is not configured.",
+      code: "CONFIG_UNAVAILABLE",
+    };
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return {

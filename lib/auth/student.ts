@@ -2,12 +2,11 @@ import { cookies } from "next/headers.js";
 import type { User } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "../../utils/supabase/server.ts";
 import { getServiceRoleClient } from "./service-role.ts";
-import type { ApplicationDetail } from "../admin/types.ts";
-import { maskNationalId } from "../admin/transitions.ts";
+import { projectStudentApplication, type StudentApplicationView } from "./student-projection.ts";
 
 export interface StudentContext {
   user: User;
-  application: ApplicationDetail;
+  application: StudentApplicationView;
   activatedAt: string;
   passwordChangeRequired: boolean;
   tempPasswordIssuedAt: string | null;
@@ -15,6 +14,11 @@ export interface StudentContext {
   passwordChangedAt: string | null;
   isTempPasswordExpired: boolean;
 }
+
+export type StudentCredentialState = Pick<
+  StudentContext,
+  "passwordChangeRequired" | "isTempPasswordExpired"
+>;
 
 /**
  * Retrieves the authenticated student context by verifying the session
@@ -52,7 +56,9 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
     // Verify the linked application exists and belongs to the authenticated applicant
     const { data: app, error: appErr } = await serviceClient
       .from("applications")
-      .select("*")
+      .select(
+        "id, application_reference, full_name, national_id, academic_id, phone, whatsapp, university_email, google_email, academic_year, department, experience_level, skills, experience_details, volunteer_experience, primary_track, secondary_track, motivation, learning_goal, contribution, availability, status, interview_date, interview_time, interview_location, activated_at, consented_at, created_at"
+      )
       .eq("id", account.application_id)
       .maybeSingle();
 
@@ -82,20 +88,7 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
 
     return {
       user,
-      application: {
-        ...app,
-        national_id_masked: maskNationalId(app.national_id),
-        student_account: {
-          user_id: user.id,
-          application_id: account.application_id,
-          university_email: account.university_email,
-          activated_at: account.activated_at,
-          password_change_required: passwordChangeRequired,
-          temp_password_issued_at: tempPasswordIssuedAt,
-          temp_password_expires_at: tempPasswordExpiresAt,
-          password_changed_at: passwordChangedAt,
-        },
-      },
+      application: projectStudentApplication(app),
       activatedAt: account.activated_at,
       passwordChangeRequired,
       tempPasswordIssuedAt,
@@ -108,11 +101,11 @@ export async function getCurrentStudent(): Promise<StudentContext | null> {
   }
 }
 
-export function isStudentPasswordChangeRequired(student: StudentContext): boolean {
+export function isStudentPasswordChangeRequired(student: StudentCredentialState): boolean {
   return student.passwordChangeRequired;
 }
 
-export function isStudentCredentialExpired(student: StudentContext): boolean {
+export function isStudentCredentialExpired(student: StudentCredentialState): boolean {
   return student.isTempPasswordExpired;
 }
 
@@ -145,4 +138,3 @@ export function isQrEligibleStatus(status: string | null | undefined): boolean {
     status === "ACCEPTED"
   );
 }
-

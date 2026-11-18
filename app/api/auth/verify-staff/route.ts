@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server.js";
 import { getCurrentUser, getCurrentStaff } from "../../../../lib/auth/server.ts";
+import { hasSupabasePublicConfig, hasSupabaseServiceRoleConfig } from "../../../../utils/supabase/config.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!hasSupabasePublicConfig() || !hasSupabaseServiceRoleConfig()) {
+    return NextResponse.json(
+      { error: "Staff authentication is unavailable because Supabase is not configured.", code: "CONFIG_UNAVAILABLE" },
+      { status: 503 }
+    );
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json(

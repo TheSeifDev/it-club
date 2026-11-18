@@ -44,3 +44,17 @@ export interface StaffMember {
 export function isStaffRole(val: unknown): val is StaffRole {
   return val === "owner" || val === "admin" || val === "interviewer";
 }
+
+/** Owners are global; all other staff require an exact assigned committee match. */
+export function canStaffAccessCommittee(
+  role: StaffRole,
+  assignedCommittee: unknown,
+  applicationCommittee: unknown
+): boolean {
+  if (role === "owner") return true;
+  return (
+    isCommitteeTrack(assignedCommittee) &&
+    isCommitteeTrack(applicationCommittee) &&
+    assignedCommittee === applicationCommittee
+  );
+}

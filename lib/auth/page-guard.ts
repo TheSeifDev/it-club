@@ -2,16 +2,24 @@ import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getCurrentUser, getCurrentStaff, type StaffContext } from "./server.ts";
 import type { StaffRole } from "./roles.ts";
+import { getStaffPasswordChangeUrl } from "./redirect.ts";
 
 export interface PageGuardOptions {
   allowPendingPasswordChange?: boolean;
+  loginPath?: "/interview/login" | "/interview/login?mode=content";
+  returnTo?: string;
+}
+
+function unauthorizedLoginPath(loginPath: PageGuardOptions["loginPath"]): string {
+  const path = loginPath || "/interview/login";
+  return `${path}${path.includes("?") ? "&" : "?"}error=unauthorized`;
 }
 
 /**
  * Ensures an authenticated user exists in Server Components.
- * Redirects to /login if unauthenticated.
+ * Redirects to the interview login if unauthenticated.
  */
-export async function requireAuthenticatedUser(redirectTo = "/login"): Promise<User> {
+export async function requireAuthenticatedUser(redirectTo = "/interview/login"): Promise<User> {
   const user = await getCurrentUser();
   if (!user) {
     redirect(redirectTo);
@@ -31,20 +39,21 @@ export async function requireStaffRole(
 ): Promise<StaffContext> {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login");
+    redirect(options?.loginPath || "/interview/login");
   }
 
   const staff = await getCurrentStaff();
   if (!staff || !allowedRoles.includes(staff.role)) {
-    redirect("/login?error=unauthorized");
+    redirect(unauthorizedLoginPath(options?.loginPath));
   }
 
   // Enforce password lifecycle unless explicitly allowed
   if (!options?.allowPendingPasswordChange && staff.passwordChangeRequired) {
-    if (staff.isTempPasswordExpired) {
-      redirect("/admin/change-password?error=expired");
-    }
-    redirect("/admin/change-password");
+    redirect(getStaffPasswordChangeUrl({
+      verifiedRole: staff.role,
+      returnTo: options?.returnTo,
+      error: staff.isTempPasswordExpired ? "expired" : null,
+    }));
   }
 
   return staff;

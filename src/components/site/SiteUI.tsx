@@ -5,25 +5,47 @@ import SiteFooter from "@/src/components/site/SiteFooter";
 import SiteHeader from "@/src/components/site/SiteHeader";
 import SiteMotion from "@/src/components/site/SiteMotion";
 import type { ContentEntry } from "@/lib/site-content/types";
-import { displayResponsibilities, safeHref, safeImage } from "@/src/components/site/content-utils";
+import {
+  displayResponsibilities,
+  safeHref,
+  safeImage,
+} from "@/src/components/site/content-utils";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
     <div className="site-root" id="top">
-      <a className="site-skip-link" href="#main-content">Skip to content</a>
+      <a className="site-skip-link" href="#main-content">
+        Skip to content
+      </a>
       <SiteMotion>
         <SiteHeader />
-        <main id="main-content" tabIndex={-1}>{children}</main>
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
         <SiteFooter />
       </SiteMotion>
     </div>
   );
 }
 
-export function SectionLabel({ number, children, tone = "light" }: { number: string; children: ReactNode; tone?: "light" | "dark" }) {
+export function SectionLabel({
+  number,
+  children,
+  tone = "light",
+  className = "",
+}: {
+  number?: string;
+  children: ReactNode;
+  tone?: "light" | "dark";
+  className?: string;
+}) {
   return (
-    <div className={`site-section-label site-section-label--${tone}`}>
-      <span>{number}</span><span className="site-section-label__rule" aria-hidden="true" /><span>{children}</span>
+    <div
+      className={`site-section-label site-section-label--${tone} ${className}`.trim()}
+    >
+      <span>{number ?? ""}</span>
+      <span className="site-section-label__rule" aria-hidden="true" />
+      <span>{children}</span>
     </div>
   );
 }
@@ -46,12 +68,25 @@ export function PageIntro({
   return (
     <section className={`site-page-intro site-page-intro--${tone}`}>
       <div className="site-container">
-        <SectionLabel number={number} tone={tone === "paper" ? "dark" : "light"}>{eyebrow}</SectionLabel>
+        <SectionLabel
+          number={number}
+          tone={tone === "paper" ? "dark" : "light"}
+        >
+          {eyebrow}
+        </SectionLabel>
         <div className="site-page-intro__body" data-reveal>
-          <h1 className="site-display site-page-title">{title}</h1>
+          <div>
+            <h1 className="site-display site-page-title" data-line-heading>
+              {title}
+            </h1>
+            {arabic ? (
+              <p className="site-intro-arabic" lang="ar" dir="rtl">
+                {arabic}
+              </p>
+            ) : null}
+          </div>
           <div className="site-page-intro__copy">
             <p>{description}</p>
-            {arabic ? <p className="site-arabic" lang="ar" dir="rtl">{arabic}</p> : null}
           </div>
         </div>
       </div>
@@ -59,11 +94,21 @@ export function PageIntro({
   );
 }
 
-export function SectionHeading({ eyebrow, title, note }: { eyebrow: string; title: string; note?: string }) {
+export function SectionHeading({
+  eyebrow,
+  title,
+  note,
+}: {
+  eyebrow: string;
+  title: string;
+  note?: string;
+}) {
   return (
     <div className="site-section-heading" data-reveal>
       <p className="site-eyebrow">{eyebrow}</p>
-      <h2 className="site-display">{title}</h2>
+      <h2 className="site-display" data-line-heading>
+        {title}
+      </h2>
       {note ? <p className="site-section-heading__note">{note}</p> : null}
     </div>
   );
@@ -85,12 +130,19 @@ export function EmptyState({
   const destination = safeHref(href);
   return (
     <div className="site-empty-state" data-reveal>
-      <span className="site-empty-state__index" aria-hidden="true">—</span>
+      <span className="site-empty-state__index" aria-hidden="true">
+        —
+      </span>
       <div>
         <p className="site-eyebrow">{label}</p>
         <h2>{title}</h2>
         <p>{text}</p>
-        {destination && linkLabel ? <Link className="site-text-link" href={destination}>{linkLabel}<span aria-hidden="true">↗</span></Link> : null}
+        {destination && linkLabel ? (
+          <Link className="site-text-link" href={destination}>
+            {linkLabel}
+            <span aria-hidden="true">↗</span>
+          </Link>
+        ) : null}
       </div>
     </div>
   );
@@ -98,25 +150,62 @@ export function EmptyState({
 
 export function SiteUnavailable() {
   return (
-    <section className="site-data-unavailable site-container" aria-labelledby="site-data-unavailable-title">
+    <section
+      className="site-data-unavailable site-container"
+      aria-labelledby="site-data-unavailable-title"
+    >
       <SectionLabel number="00">PUBLISHED INFORMATION</SectionLabel>
-      <h1 className="site-display" id="site-data-unavailable-title">This page is taking a pause.</h1>
-      <p>The published site information could not be loaded just now. Please try again later, or contact the team. No draft or archived content has been substituted.</p>
-      <Link className="site-button site-button--emerald" href="/contact">CONTACT THE TEAM <span aria-hidden="true">↗</span></Link>
+      <h1
+        className="site-display"
+        id="site-data-unavailable-title"
+        data-line-heading
+      >
+        This page is taking a pause.
+      </h1>
+      <p>
+        The published site information could not be loaded just now. Please try
+        again later, or contact the team. No draft or archived content has been
+        substituted.
+      </p>
+      <Link className="site-button site-button--sky" href="/contact">
+        CONTACT THE TEAM <span aria-hidden="true">↗</span>
+      </Link>
     </section>
   );
 }
 
-export function EntryRow({ entry, index, href, kind }: { entry: ContentEntry; index: number; href: string; kind: string }) {
+export function EntryRow({
+  entry,
+  index,
+  href,
+  kind,
+}: {
+  entry: ContentEntry;
+  index: number;
+  href: string;
+  kind: string;
+}) {
   const description = entry.data.summary?.trim() || entry.data.body?.trim();
   const link = safeHref(href) ?? "/";
   return (
     <article className="site-entry-row" data-reveal>
-      <span className="site-entry-row__number">{String(index + 1).padStart(2, "0")}</span>
+      <span className="site-entry-row__number">
+        {String(index + 1).padStart(2, "0")}
+      </span>
       <div className="site-entry-row__main">
-        <p className="site-eyebrow">{kind}{entry.data.category ? ` / ${entry.data.category}` : ""}</p>
-        <h3><Link href={link}>{entry.data.title}<span aria-hidden="true">↗</span></Link></h3>
-        {description ? <p className="site-entry-row__summary">{description}</p> : null}
+        <p className="site-eyebrow">
+          {kind}
+          {entry.data.category ? ` / ${entry.data.category}` : ""}
+        </p>
+        <h3>
+          <Link href={link}>
+            {entry.data.title}
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </h3>
+        {description ? (
+          <p className="site-entry-row__summary">{description}</p>
+        ) : null}
       </div>
       <div className="site-entry-row__meta">
         {entry.data.role ? <span>{entry.data.role}</span> : null}
@@ -126,7 +215,15 @@ export function EntryRow({ entry, index, href, kind }: { entry: ContentEntry; in
   );
 }
 
-export function Portrait({ entry, cutout = false, priority = false }: { entry: ContentEntry; cutout?: boolean; priority?: boolean }) {
+export function Portrait({
+  entry,
+  cutout = false,
+  priority = false,
+}: {
+  entry: ContentEntry;
+  cutout?: boolean;
+  priority?: boolean;
+}) {
   const src = safeImage(entry.data.image);
   if (!src) return null;
   return (
@@ -137,7 +234,9 @@ export function Portrait({ entry, cutout = false, priority = false }: { entry: C
       height={cutout ? 700 : 800}
       unoptimized
       priority={priority}
-      className={cutout ? "site-portrait site-portrait--cutout" : "site-portrait"}
+      className={
+        cutout ? "site-portrait site-portrait--cutout" : "site-portrait"
+      }
     />
   );
 }
@@ -145,24 +244,65 @@ export function Portrait({ entry, cutout = false, priority = false }: { entry: C
 export function ProfileDetail({ entry }: { entry: ContentEntry }) {
   const responsibilities = displayResponsibilities(entry);
   const image = safeImage(entry.data.image);
-  const links = entry.data.links?.map((item) => ({ ...item, href: safeHref(item.href) })).filter((item): item is { label: string; href: string } => Boolean(item.href));
+  const links = entry.data.links
+    ?.map((item) => ({ ...item, href: safeHref(item.href) }))
+    .filter((item): item is { label: string; href: string } =>
+      Boolean(item.href),
+    );
   return (
     <article className="site-detail-layout">
       <div className="site-detail-layout__copy">
-        <SectionLabel number="01">PROFILE / {entry.data.committee ?? "COMMUNITY"}</SectionLabel>
-        <h1 className="site-display site-detail-title">{entry.data.title}</h1>
-        <p className="site-detail-role">{[entry.data.role, entry.data.committee].filter(Boolean).join(" · ")}</p>
-        {entry.data.summary ? <p className="site-detail-lede">{entry.data.summary}</p> : null}
-        {entry.data.body ? <p className="site-detail-body">{entry.data.body}</p> : null}
+        <SectionLabel number="01">
+          PROFILE / {entry.data.committee ?? "COMMUNITY"}
+        </SectionLabel>
+        <h1 className="site-display site-detail-title" data-line-heading>
+          {entry.data.title}
+        </h1>
+        <p className="site-detail-role">
+          {[entry.data.role, entry.data.committee].filter(Boolean).join(" · ")}
+        </p>
+        {entry.data.summary ? (
+          <p className="site-detail-lede">{entry.data.summary}</p>
+        ) : null}
+        {entry.data.body ? (
+          <p className="site-detail-body">{entry.data.body}</p>
+        ) : null}
         {responsibilities.length ? (
           <div className="site-detail-responsibilities">
             <p className="site-eyebrow">PUBLISHED TEAM SCOPE</p>
-            <ul>{responsibilities.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul>
+              {responsibilities.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
         ) : null}
-        {links?.length ? <nav className="site-detail-links" aria-label={`${entry.data.title} links`}>{links.map((item) => <a key={`${item.label}-${item.href}`} href={item.href}>{item.label}<span aria-hidden="true">↗</span></a>)}</nav> : null}
+        {links?.length ? (
+          <nav
+            className="site-detail-links"
+            aria-label={`${entry.data.title} links`}
+          >
+            {links.map((item) => (
+              <a key={`${item.label}-${item.href}`} href={item.href}>
+                {item.label}
+                <span aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </nav>
+        ) : null}
       </div>
-      {image ? <figure className="site-detail-portrait"><Image src={image} alt={entry.data.title} width={640} height={800} unoptimized /><figcaption>{entry.data.role ?? "IT Club community"}</figcaption></figure> : null}
+      {image ? (
+        <figure className="site-detail-portrait">
+          <Image
+            src={image}
+            alt={entry.data.title}
+            width={640}
+            height={800}
+            unoptimized
+          />
+          <figcaption>{entry.data.role ?? "IT Club community"}</figcaption>
+        </figure>
+      ) : null}
     </article>
   );
 }

@@ -1,43 +1,32 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { usePathname } from "next/navigation";
+import { gsap } from "./motion/gsap";
+import { bindMotionRefresh } from "./motion/refresh";
+import { setupSiteScenes } from "./motion/scenes";
 
 export default function SiteMotion({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!root.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const context = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
-        gsap.fromTo(
-          element,
-          { opacity: 0, y: 18 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.72,
-            ease: "power2.out",
-            scrollTrigger: { trigger: element, start: "top 91%", once: true },
-          },
-        );
-      });
+    const scope = root.current;
+    if (!scope) return;
 
-      const hero = root.current?.querySelector<HTMLElement>("[data-site-hero]");
-      const portrait = root.current?.querySelector<HTMLElement>("[data-parallax]");
-      if (hero && portrait) {
-        gsap.to(portrait, {
-          yPercent: -3,
-          ease: "none",
-          scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 0.6 },
-        });
-      }
-    }, root);
-    return () => context.revert();
-  }, []);
+    let media: ReturnType<typeof gsap.matchMedia> | undefined;
+    const context = gsap.context(() => {
+      media = gsap.matchMedia();
+      setupSiteScenes(scope, media);
+    }, scope);
+
+    const unbindRefresh = bindMotionRefresh();
+    return () => {
+      unbindRefresh();
+      media?.revert();
+      context.revert();
+    };
+  }, [pathname]);
 
   return <div className="site-motion-root" ref={root}>{children}</div>;
 }

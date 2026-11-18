@@ -1,3 +1,4 @@
+import "./public-design.css";
 import "./public-hover.css";
 import "./public-layout.css";
 import Image from "next/image";
@@ -15,7 +16,7 @@ import {
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="site-root" id="top">
+    <div className="site-root" data-design="club" id="top">
       <a className="site-skip-link" href="#main-content">
         Skip to content
       </a>

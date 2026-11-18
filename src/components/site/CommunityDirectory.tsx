@@ -1,19 +1,14 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { animateFilterLayout } from "@/src/components/site/motion/filter-motion";
 import { getTrackTheme } from "@/lib/ui/track-theme";
+import CommunityPersonCard, {
+  type CommunityPerson,
+} from "@/src/components/site/CommunityPersonCard";
+import styles from "@/src/components/site/Community.module.css";
 
-type MemberItem = {
-  slug: string;
-  name: string;
-  role: string;
-  committee: string;
-  summary: string;
-  image?: string;
-};
+type MemberItem = CommunityPerson;
 
 type ThemeVars = React.CSSProperties & {
   "--track-color"?: string;
@@ -52,31 +47,34 @@ export default function CommunityDirectory({
     }
   };
 
+  const filterOptions = ["All teams", ...committees];
+
   return (
     <section
-      className="site-directory site-container"
+      className={`${styles.directory} ${styles.container}`}
       aria-label="Published team members"
     >
-      <div className="site-directory__tools">
+      <div className={styles.directoryTools}>
         <div
-          className="site-directory__filter-list"
+          className={styles.filterList}
           role="group"
           aria-label="Filter members by team"
         >
-          {["All teams", ...committees].map((committee) => {
+          {filterOptions.map((committee) => {
             const theme = getTrackTheme(committee);
             const style: ThemeVars = {
               "--track-color": theme.color,
               "--track-rgb": theme.rgb,
               "--track-ink": theme.ink,
             };
+            const isActive = activeCommittee === committee;
             return (
               <button
                 key={committee}
                 type="button"
                 style={style}
-                className={activeCommittee === committee ? "is-active" : ""}
-                aria-pressed={activeCommittee === committee}
+                className={isActive ? styles.activeFilter : undefined}
+                aria-pressed={isActive}
                 onClick={() =>
                   updateResults(() => setActiveCommittee(committee))
                 }
@@ -91,7 +89,7 @@ export default function CommunityDirectory({
             );
           })}
         </div>
-        <label className="site-search">
+        <label className={styles.search}>
           <span>Search people</span>
           <input
             type="search"
@@ -103,89 +101,20 @@ export default function CommunityDirectory({
           />
         </label>
       </div>
-      <p
-        className="site-directory__count"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {visible.length}{" "}
-        {visible.length === 1 ? "published profile" : "published profiles"}
+      <p className={styles.count} aria-live="polite" aria-atomic="true">
+        {visible.length} {visible.length === 1 ? "person" : "people"}
       </p>
       {visible.length ? (
-        <div className="site-directory__list" ref={listRef}>
-          {visible.map((member, index) => {
-            const theme = getTrackTheme(member.committee);
-            const style: ThemeVars = {
-              "--track-color": theme.color,
-              "--track-rgb": theme.rgb,
-              "--track-ink": theme.ink,
-            };
-            return (
-              <article
-                className="site-member-row"
-                data-spotlight
-                style={style}
-                key={member.slug}
-                data-reveal
-              >
-                <span className="site-member-row__number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                {member.image ? (
-                  <Link
-                    className="site-member-row__portrait"
-                    href={`/community/${member.slug}`}
-                    aria-label={`View ${member.name}'s profile`}
-                  >
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      width={88}
-                      height={112}
-                      unoptimized
-                    />
-                  </Link>
-                ) : null}
-                <div className="site-member-row__info">
-                  <p className="site-eyebrow">
-                    <span className="site-track-swatch" aria-hidden="true" />
-                    {member.committee} / TEAM REMIT{" "}
-                    {theme.arabic ? (
-                      <span lang="ar" dir="rtl">
-                        · {theme.arabic}
-                      </span>
-                    ) : null}
-                  </p>
-                  <h2>
-                    <Link href={`/community/${member.slug}`}>
-                      {member.name}
-                      <span aria-hidden="true">↗</span>
-                    </Link>
-                  </h2>
-                  <p className="site-member-row__role">{member.role}</p>
-                  <p className="site-member-row__summary">{member.summary}</p>
-                </div>
-                <Link
-                  className="site-member-row__link"
-                  href={`/community/${member.slug}`}
-                  aria-label={`View ${member.name}'s profile`}
-                >
-                  VIEW PROFILE <span aria-hidden="true">↗</span>
-                </Link>
-              </article>
-            );
-          })}
+        <div className={styles.directoryGrid} ref={listRef}>
+          {visible.map((member) => (
+            <CommunityPersonCard key={member.slug} person={member} />
+          ))}
         </div>
       ) : (
-        <div
-          className="site-empty-state site-empty-state--compact"
-          role="status"
-        >
-          <span className="site-empty-state__index" aria-hidden="true">
-            —
-          </span>
+        <div className={styles.noMatches} role="status">
+          <span aria-hidden="true">—</span>
           <div>
-            <p className="site-eyebrow">NO MATCHES</p>
+            <p className={styles.eyebrow}>NO MATCHES</p>
             <h2>Nothing fits that search.</h2>
             <p>
               Try a different name or team, or clear the search to see every

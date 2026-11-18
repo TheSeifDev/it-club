@@ -1,24 +1,23 @@
-import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import CommunityDirectory from "@/src/components/site/CommunityDirectory";
+import CommunityPersonCard, {
+  type CommunityPerson,
+} from "@/src/components/site/CommunityPersonCard";
+import communityStyles from "@/src/components/site/Community.module.css";
 import { getTrackTheme } from "@/lib/ui/track-theme";
 import {
   displayResponsibilities,
   publicBoards,
   publicMembers,
+  publicMetadata,
   readPublicSiteContent,
   safeImage,
 } from "@/src/components/site/content-utils";
-import {
-  EmptyState,
-  PageIntro,
-  SectionLabel,
-  SiteFrame,
-} from "@/src/components/site/SiteUI";
-import { publicMetadata } from "@/src/components/site/content-utils";
+import { SiteFrame } from "@/src/components/site/SiteUI";
 
-type ThemeVars = React.CSSProperties & {
+type ThemeVars = CSSProperties & {
   "--track-color"?: string;
   "--track-rgb"?: string;
   "--track-ink"?: string;
@@ -29,6 +28,19 @@ export const metadata: Metadata = publicMetadata(
   "Meet the people and published boards behind IT Club at BATU, with verified roles, responsibilities, and committee filters.",
   "/community",
 );
+
+function personFromEntry(
+  entry: Parameters<typeof displayResponsibilities>[0],
+): CommunityPerson {
+  return {
+    slug: entry.slug,
+    name: entry.data.title,
+    role: entry.data.role ?? "",
+    committee: entry.data.committee ?? "",
+    summary: displayResponsibilities(entry).join(" "),
+    image: safeImage(entry.data.image),
+  };
+}
 
 export default async function CommunityPage() {
   const content = await readPublicSiteContent();
@@ -44,200 +56,188 @@ export default async function CommunityPage() {
         .filter((value): value is string => Boolean(value)),
     ),
   ].sort((a, b) => a.localeCompare(b));
-  const directoryMembers = members.map((member) => ({
-    slug: member.slug,
-    name: member.data.title,
-    role: member.data.role ?? "",
-    committee: member.data.committee ?? "",
-    summary: displayResponsibilities(member).join(" "),
-    image: safeImage(member.data.image),
-  }));
+  const directoryMembers = members.map(personFromEntry);
+  const leadership = leaders.map(personFromEntry);
 
   return (
     <SiteFrame>
-      <PageIntro
-        number="02"
-        eyebrow="COMMUNITY / THE PEOPLE"
-        title="A club is its people."
-        description="Meet the members, leaders, and boards whose published work makes IT Club run. Profiles show approved roles and team remit; no private or unresolved record is substituted."
-        arabic="وراء كل فكرة فريق، ووراء كل فريق أشخاص يصنعون الفرق."
-      />
-      {leaders.length ? (
-        <section className="site-leadership site-container">
-          <SectionLabel number="01">
-            CLUB LEADERSHIP / قيادة النادي
-          </SectionLabel>
-          <div className="site-leadership__list">
-            {leaders.map((leader, index) => {
-              const image = safeImage(leader.data.image);
-              const theme = getTrackTheme("IT Club");
-              const style: ThemeVars = {
-                "--track-color": theme.color,
-                "--track-rgb": theme.rgb,
-                "--track-ink": theme.ink,
-              };
-              return (
-                <article
-                  className="site-leader-feature"
-                  key={leader.id}
-                  data-reveal
-                  style={style}
-                >
-                  {image ? (
-                    <Link
-                      className="site-leader-feature__portrait"
-                      href={`/community/${leader.slug}`}
-                      aria-label={`View ${leader.data.title}'s profile`}
-                    >
-                      <Image
-                        src={image}
-                        alt={leader.data.title}
-                        width={340}
-                        height={430}
-                        unoptimized
-                        priority={index === 0}
-                      />
-                    </Link>
-                  ) : null}
-                  <div className="site-leader-feature__copy">
-                    <p className="site-eyebrow">
-                      <span className="site-track-swatch" aria-hidden="true" />
-                      {leader.data.role} · IT CLUB
-                    </p>
-                    <h2 className="site-display">
-                      <Link href={`/community/${leader.slug}`}>
-                        {leader.data.title}
-                        <span aria-hidden="true">↗</span>
-                      </Link>
-                    </h2>
-                    <p>{displayResponsibilities(leader)[0]}</p>
-                    <Link
-                      className="site-text-link"
-                      href={`/community/${leader.slug}`}
-                    >
-                      View profile <span aria-hidden="true">↗</span>
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
+      <div className={communityStyles.page}>
+        <section className={communityStyles.intro}>
+          <div className={communityStyles.container}>
+            <div className={communityStyles.sectionLabel}>
+              <span className={communityStyles.sectionNumber}>02</span>
+              <span>COMMUNITY / THE PEOPLE</span>
+            </div>
+            <div className={communityStyles.introBody} data-reveal>
+              <div>
+                <h1 className={communityStyles.title}>A club is its people.</h1>
+                <p className={communityStyles.arabic} lang="ar" dir="rtl">
+                  وراء كل فكرة فريق، ووراء كل فريق أشخاص يصنعون الفرق.
+                </p>
+              </div>
+              <p className={communityStyles.introCopy}>
+                Meet the people moving IT Club forward. Explore our leadership,
+                find your team, and see how every role contributes.
+              </p>
+            </div>
           </div>
         </section>
-      ) : null}
 
-      <section className="site-board-index">
-        <div className="site-container">
-          <SectionLabel number="02" tone="dark">
-            THE BOARDS / اللجان
-          </SectionLabel>
-          <div className="site-board-index__intro">
-            <h2 className="site-display" data-line-heading>
-              Many disciplines.
-              <br />
-              <span>One community.</span>
-            </h2>
-            <p>
-              Each board has its own responsibilities. Browse the published
-              teams below, then find the people doing that work.
-            </p>
-          </div>
-          {boards.length ? (
-            <div className="site-board-rows">
-              {boards.map((board, index) => {
-                const theme = getTrackTheme(board.slug || board.data.title);
-                const style: ThemeVars = {
-                  "--track-color": theme.color,
-                  "--track-rgb": theme.rgb,
-                  "--track-ink": theme.ink,
-                };
-                return (
-                  <article
-                    className="site-board-row"
-                    key={board.id}
-                    data-reveal
-                    style={style}
-                  >
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div>
-                      <p className="site-eyebrow">
+        {leadership.length ? (
+          <section className={communityStyles.leadership}>
+            <div className={communityStyles.container}>
+              <div className={communityStyles.sectionLabel}>
+                <span className={communityStyles.sectionNumber}>01</span>
+                <span>CLUB LEADERSHIP / قيادة النادي</span>
+              </div>
+              <div className={communityStyles.leadershipHeading} data-reveal>
+                <h2 className={communityStyles.heading}>
+                  The people setting the pace.
+                </h2>
+                <p className={communityStyles.headingNote}>
+                  Meet the leadership bringing our people, ideas, and teams
+                  together.
+                </p>
+              </div>
+              <div className={communityStyles.leadershipGrid}>
+                {leadership.map((person, index) => (
+                  <CommunityPersonCard
+                    key={person.slug}
+                    person={person}
+                    variant="leadership"
+                    priority={index < 3}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className={communityStyles.boardSection}>
+          <div className={communityStyles.container}>
+            <div className={communityStyles.sectionLabel}>
+              <span className={communityStyles.sectionNumber}>02</span>
+              <span>THE BOARDS / اللجان</span>
+            </div>
+            <div className={communityStyles.boardHeading} data-reveal>
+              <h2 className={communityStyles.heading}>
+                Many disciplines. <span>One community.</span>
+              </h2>
+              <p className={communityStyles.headingNote}>
+                Each board has its own responsibilities. Explore the teams, then
+                meet the people doing that work.
+              </p>
+            </div>
+            {boards.length ? (
+              <div className={communityStyles.boardGrid}>
+                {boards.map((board, index) => {
+                  const theme = getTrackTheme(board.slug || board.data.title);
+                  const style: ThemeVars = {
+                    "--track-color": theme.color,
+                    "--track-rgb": theme.rgb,
+                    "--track-ink": theme.ink,
+                  };
+                  const summary = board.data.summary || board.data.body;
+                  return (
+                    <article
+                      className={communityStyles.boardCard}
+                      key={board.id}
+                      data-reveal
+                      style={style}
+                    >
+                      <span className={communityStyles.boardIndex}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <p className={communityStyles.boardCategory}>
                         <span
-                          className="site-track-swatch"
+                          className={communityStyles.boardSwatch}
                           aria-hidden="true"
                         />
-                        {board.data.category || "IT CLUB / BOARD"}
+                        <span>{board.data.category || "IT CLUB / BOARD"}</span>
                         {theme.arabic ? (
                           <span lang="ar" dir="rtl">
-                            {" "}
                             · {theme.arabic}
                           </span>
                         ) : null}
                       </p>
                       <h3>{board.data.title}</h3>
-                      {board.data.summary || board.data.body ? (
-                        <p>{board.data.summary || board.data.body}</p>
-                      ) : null}
-                    </div>
-                    <Link
-                      href="/tracks"
-                      aria-label={`See tracks related to ${board.data.title}`}
-                    >
-                      ↗
-                    </Link>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyState
-              title="Board details are being prepared."
-              text="No board description has been published yet. The directory below only lists people whose profiles have been approved."
-              href="/tracks"
-              linkLabel="Browse the track index"
-            />
-          )}
-        </div>
-      </section>
+                      {summary ? <p>{summary}</p> : null}
+                      <Link
+                        className={communityStyles.boardLink}
+                        href="/tracks"
+                        aria-label={`See tracks related to ${board.data.title}`}
+                      >
+                        ↗
+                      </Link>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={communityStyles.noMatches} role="status">
+                <span aria-hidden="true">—</span>
+                <div>
+                  <p className={communityStyles.eyebrow}>BOARD INDEX</p>
+                  <h2>No board details are available yet.</h2>
+                  <p>
+                    The directory below lists people whose profiles are approved
+                    for public view.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
 
-      <section className="site-directory-section">
-        <div className="site-container">
-          <SectionLabel number="03">
-            MEMBER DIRECTORY / دليل الأعضاء
-          </SectionLabel>
-          <div className="site-directory-section__heading">
-            <h2 className="site-display" data-line-heading>
-              Know who does what.
-            </h2>
-            <p>
-              Search names, roles, or committees. Use the color-coded filters to
-              narrow the published list.
-            </p>
+        <section className={communityStyles.directorySection}>
+          <div className={communityStyles.container}>
+            <div className={communityStyles.sectionLabel}>
+              <span className={communityStyles.sectionNumber}>03</span>
+              <span>MEMBER DIRECTORY / دليل الأعضاء</span>
+            </div>
+            <div className={communityStyles.directoryHeading} data-reveal>
+              <h2 className={communityStyles.heading}>Know who does what.</h2>
+              <p className={communityStyles.headingNote}>
+                Search names, roles, or committees. Use the color-coded filters
+                to find your team.
+              </p>
+            </div>
           </div>
-        </div>
-        {directoryMembers.length ? (
-          <CommunityDirectory
-            members={directoryMembers}
-            committees={committees}
-          />
-        ) : (
-          <div className="site-container">
-            <EmptyState
-              title="No member profiles are published yet."
-              text="The directory will show members once their role, committee, and responsibilities have been approved for public view."
+          {directoryMembers.length ? (
+            <CommunityDirectory
+              members={directoryMembers}
+              committees={committees}
             />
+          ) : (
+            <div
+              className={`${communityStyles.container} ${communityStyles.noMatches}`}
+              role="status"
+            >
+              <span aria-hidden="true">—</span>
+              <div>
+                <p className={communityStyles.eyebrow}>MEMBER DIRECTORY</p>
+                <h2>No member profiles are published yet.</h2>
+                <p>
+                  The directory will show members once their role, committee,
+                  and responsibilities are approved for public view.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className={communityStyles.cta}>
+          <div className={communityStyles.container}>
+            <p className={communityStyles.ctaLabel}>
+              A PLACE FOR PEOPLE WHO WANT TO MAKE
+            </p>
+            <h2>Find your team.</h2>
+            <Link className={communityStyles.ctaLink} href="/tracks">
+              EXPLORE TRACKS <span aria-hidden="true">↗</span>
+            </Link>
           </div>
-        )}
-      </section>
-      <section className="site-cta-band">
-        <div className="site-container">
-          <p className="site-eyebrow">A PLACE FOR PEOPLE WHO WANT TO MAKE</p>
-          <h2 className="site-display" data-line-heading>
-            Find your team.
-          </h2>
-          <Link className="site-button site-button--sky" href="/tracks">
-            EXPLORE TRACKS <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-      </section>
+        </section>
+      </div>
     </SiteFrame>
   );
 }

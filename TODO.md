@@ -74,3 +74,14 @@
 نجح TypeScript وESLint و29/29 pure tests، بما فيها وجهة About وتوقيت keyboard chapters في stack. مراجعة مستقلة لست layouts عامة ومراجعة تكامل للـGSAP أغلقت مشاكل الفوكس والـinert وheight غير المثبت وhook العداد. /about أعاد307 إلى /#about فعليًا، و/Tracks أعاد200 مع anchors الستة ومشهد IT ظهر بعنوان صحيح بعد jump مباشر. فُصل Header عن selector القديم بعد رصد computed blur18px رغم resets؛ أصبح module مستقلًا. نجح البناء النهائي بعد دمج الإصلاحات وتُحفظ نسخة Git على نفس الفرع، ولا يوجد نشر/كتابة إنتاجية.
 
 الدليل المرئي النهائي: Header blur=none/top16px/height52px، stage pinned top96px/height720px، counter04 يطابق OC والنص والـCTA داخل اللوح، وprogressbar42. لم يُنفذ benchmark أو فحص أجهزة حقيقية؛ CSS يضمن document flow في reduced-motion/compact وتبقى المهام المعتمدة والبوابات منفصلة.
+
+
+## تعديل التصميم الخامس — Community وTracks
+
+- [x] **Community أشخاص جنب بعض لا تحت بعض.** القيادة ودليل الأعضاء يعرضان portrait cards في grids متعددة الأعمدة على desktop، عمودين على tablet وتدفق مقروء على الجوال؛ كل شخص منشور موجود باسمه ودوره ولجنته وteam focus وروابطه، دون فقد البحث والفلاتر وFlip ودون نشر أشخاص غير محسومين أو اختراع صور/أدوار.
+- [x] **Tracks نفس design الموقع، لا موقع منفصل.** استعمال Night/Paper/Logo Teal وMontserrat/Alexandria والحاويات والمسافات والعناوين والأسطح وradius والـhover مثل Home وShowcase؛ إزالة الدرجات الثابتة القديمة والعناوين المضغوطة/lines، مع إبقاء الاستعراض والـGSAP وألوان tracks الستة وanchors وروابط الأشخاص والمحتوى المنشور وreduced-motion.
+
+
+## دليل المراجعة الخامسة
+
+نجحت29/29 pure tests وTypeScript/ESLint وNext.js production build. Community يحفظ جميع24 بطاقة منشورة في الدليل، يعرضها4 أعمدة عند1280px، والبحث/no-results/restoration أعاد1/0/24؛ القيادة grid متكيف بعدد الأشخاص، لا صفوف قائمة قديمة. صُححت2-column tablet وRGB syntax وتباين الفلاتر والخطوط الزخرفية. Tracks له نفس Night/Paper/Logo Teal/gutter/type ورadius12px ومشهدIT readableopacity1، معanchors الستة وNav blur=none وعدم overflow أفقي. لا تحولات بيانات/مصادقة أو نشر ضمن هذا الإصدار؛ تحفظ النسخة على نفس فرع العمل وcheckpoint المعاينة.

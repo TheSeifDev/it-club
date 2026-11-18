@@ -18,7 +18,7 @@ CMS يملك نماذج محددة للأشخاص والـboards والمسار�
 
 | الفحص | النتيجة |
 |---|---|
-| اختبارات auth/routing وCMS والمحتوى العام والألوان/العربية المعزولة | 24 اختبارًا ناجحًا؛ استخدم `npm run test:pure` |
+| اختبارات auth/routing وCMS والمحتوى العام والألوان/العربية المعزولة | 29 اختبارًا ناجحًا؛ استخدم `npm run test:pure` |
 | TypeScript وESLint للمصدر الجديد | ناجحان |
 | Next.js production build | ناجح بعد تفعيل SSR؛ كل صفحات المحتوى والجلسات وsitemap ديناميكية |
 | صفحات النادي في HTTP المحلي | 200 مع عناوين حقيقية لكل صفحة |
@@ -81,3 +81,15 @@ Logo Teal `#28cdb7` وTeal Ink `#087969` يحلان محل Light Blue في ال�
 
 
 الدليل المرئي النهائي: عند viewport1280×1100، Header computed backdrop-filter=none، height52px، top16px؛ stage pinned يبدأ96px ويبلغ720px، العداد04/06 يطابق لوح OC الظاهر، وCTA والنص ينتهيان داخل حدود اللوح. overflow89px ناتج عن الرقم الزخرفي المقصوص عمدًا، لا عن قص النص. progressbar42 يتبع timeline المعروضة؛ هذه ليست دعوى FPS أو اختبارات أجهزة حقيقية.
+
+
+## Community وTracks — الإصدار الخامس
+
+`CommunityPersonCard.tsx` بطاقة صور مشتركة للقيادة والدليل، بأسماء كاملة وأدوار ولجنة وTEAM FOCUS من المصدر المعتمد وروابط profiles؛ الصورة الحقيقية أو initials عند غيابها. `.leadershipGrid` يتكيف مع عدد القادة الفعلي على desktop، و`.directoryGrid` يعرض4/3 أعمدة على desktop، عمودين على tablet، وعمودًا مقروءًا على الجوال الصغير. البحث وفلاتر اللجان العربية والإنجليزية والعدد وaria-pressed وGSAP Flip محفوظة، ولا تُستخدم `.site-member-row` التي كانت تحول الأشخاص إلى صفوف تحت بعض. لا يُحذف عضو أو يُخترع منصب أو وجه جديد.
+
+`public-design.css` مرجع Night/Paper/Logo Teal/RGB والطباعة والـgutter1400px والـradius المشترك، scoped عبر `.site-root[data-design="club"]`. HomeHero وCommunity وTracks يستخدمونه، بدل قيم Tracks القديمة#121413/#f0eee5. صفحة Tracks تحتفظ بالاستعراض والوسائط وقدرات المسارات والروابط الستة وروابط أفراد منشورين، لكن بتكوين Home وPaper panels وmixed-case typography؛ النص يظهر كاملًا بعد GSAP entrance بدل scrub fade المستمر. الـmotion teardown محدود بسياق الصفحة ولا يقتل مشاهد أخرى.
+
+مراجعة مستقلة والتصحيح المرئي أغلقت: missing2-column tablet rule، RGB slash syntax مع tokens comma-separated، تباين activefilter على اللون الخام، خطوط boards/labels الزخرفية، والخلفيات القديمة داخل Hero. في viewport1280×1100 ظهر الدليل24 بطاقة/4 أعمدة وأول أربع بطاقات على نفسY؛ بحثSamir رجع1 ثم no-match0 ثم عاد24 بعد مسح البحث. لا توجد legacyRows. الألوان المقرؤة من DOM: Night#05070a/Paper#f3f4f6/Teal#28cdb7/max1400px؛ مشهدIT حافظ على الـanchor وcopy opacity1 وNav blur=none وبدون overflow أفقي. هذه ملاحظات تشغيل وليست قياسFPS أو فحص أجهزة حقيقية. فحوص29/29 pure وTypeScript وESLint ناجحة؛ نجح أيضًا Next.js production build النهائي لهذا الإصدار من دون خدمة dev متزامنة. لا تعديلAPI/Auth/CMS أو migration أو كتابة قاعدة بيانات أو نشر إنتاجي ضمن هذا الإصدار.
+
+
+تأكيد آخر قبل الحفظ: عُدّلت26 قاعدةRGB في Tracks إلىrgba(var(--site-*-rgb),alpha) الصحيحة. مشهدIT الفعلي له backgroundrgb(243,244,246)، textInk rgb(10,13,18)، radius12px، وmediaNight3 rgb(17,21,27). لا تعتمد الهوية على fallback غير مُطبق، والـglow/text alpha يعملان بمرجع واحد. قياسات desktop والبحث فعلية؛ قواعد tablet/mobile/reduced-motion مراجعة في الكود دون ادعاء جهاز حقيقي.

@@ -118,3 +118,10 @@ About يصبح قسم التعريف في الصفحة الرئيسية /#about�
 /Tracks يصبح معرضًا تحريريًا غنيًا: Hero قوي، فهرس مسارات قابل للاستخدام، مشاهد مختلفة لقدرات اللجان الموثقة، motion ذات غرض، وروابط إلى الأشخاص/الهيكل. لا تُختلق إنجازات أو أرقام أو أعمال أو أعضاء لتعبئة المشاهد. أي media مصممة تكون illustration واضحة، لا screenshot أو حدثًا مختلقًا.
 
 يُزال ازدحام keylines/borders الزخرفية في صفحات الموقع العامة، مع بناء الفصل بالألوان والأسطح والفراغات. تبقى focus indicators والمعلومات/الحقول الوظيفية واضحة. Nav يحتفظ بالكبسولات الحالية لكن بأبعاد وpadding ثابتة متوازنة، بلا backdrop-filter أو ضبابية أو هالة عند scroll. إصلاح shell/type/spacing/overflow متسق عبر community/profiles/events/sponsors/alumni/contact؛ لا يشمل مسارات CMS والمقابلات والطلاب.
+
+
+## توحيد Community وTracks — تعديل المستخدم الخامس
+
+Community تتحول من صفوف قائمة صغيرة إلى portrait-card grids متجاوبة: القيادة والأعضاء جنب بعض، صور أكبر وأسماء وأدوار واضحة وteam focus معتمد وروابط profiles، مع الحفاظ على الهيكل والبحث والفلاتر وGSAP Flip. لا يُحذف أو يُخترع أي شخص أو منصب؛ الصور الأصلية أو initials عند غيابها، لا صور وجوه مولدة. على desktop عدة أعمدة، tablet عمودان، والجوال تدفق مقروء بمقاسات آمنة.
+
+Tracks تحتفظ باستعراضها ومشاهدها وقدراتها الموثقة لكن تتبع نفس لغة Home: Night #05070a/Night2 #0b0e13/Paper #f3f4f6/Ink #0a0d12/Logo Teal #28cdb7، Montserrat/Alexandria، حاويات1400px وgutter موحد وradius10–12px، عناوين مثل Hero وليست حروف uppercase بتتلاصق؛ Paper panels وmedia/copy تشبه Showcase. تُلغى palette القديمة الثابتة وأي خط/عرض مختلف، وتستعمل tokens مركزية بنفس ألوان المسارات الأصلية. Motion تبقى مقروءة بلا opacity scrub منخفض للنص، ومع reduced-motion وcleanup. لا تتغير backend/API/CMS/Auth والمقابلات، ولا نشر أو migrations.

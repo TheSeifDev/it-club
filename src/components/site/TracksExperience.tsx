@@ -160,6 +160,7 @@ function TrackScene({
     <article
       id={track.slug}
       className={`${styles.scene} ${index % 2 ? styles.sceneReverse : ""}`}
+      data-stack-panel
       data-tracks-exhibition-scene
       data-is-hovering="false"
       style={
@@ -174,7 +175,12 @@ function TrackScene({
       <div className={styles.sceneMedia} data-tracks-exhibition-visual>
         <TrackMedia track={track} index={index} />
       </div>
-      <div className={styles.sceneCopy}>
+      <div
+        className={styles.sceneCopy}
+        data-stack-scroll
+        role="region"
+        aria-label={`${track.title} track details`}
+      >
         <div className={styles.sceneMeta}>
           <span className={styles.sceneNumber}>{track.number}</span>
           <span>{track.tag}</span>
@@ -359,11 +365,35 @@ export default function TracksExperience({
         {tracks.length ? (
           <section
             className={styles.scenes}
+            data-exhibition-stack
             aria-label="Published track scenes"
           >
-            {tracks.map((track, index) => (
-              <TrackScene track={track} index={index} key={track.id} />
-            ))}
+            <div className={styles.stackPin} data-stack-pin>
+              <div className={styles.stackViewport}>
+                {tracks.map((track, index) => (
+                  <TrackScene track={track} index={index} key={track.id} />
+                ))}
+              </div>
+              <div className={styles.stackProgress}>
+                <div className={styles.stackCount}>
+                  <span data-stack-counter aria-live="polite" aria-atomic="true">
+                    01
+                  </span>
+                  <span aria-hidden="true">/</span>
+                  <span>{String(trackCount).padStart(2, "0")}</span>
+                </div>
+                <div
+                  className={styles.stackProgressMeter}
+                  role="progressbar"
+                  aria-label="Track exhibition progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={0}
+                >
+                  <span data-stack-progress />
+                </div>
+              </div>
+            </div>
           </section>
         ) : null}
 

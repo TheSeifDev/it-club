@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { gsap, motionQueries } from "@/src/components/site/motion/gsap";
+import { setupTrackStack } from "@/src/components/site/motion/track-stack";
 
 export default function TracksExperienceMotion({
   children,
@@ -16,6 +17,9 @@ export default function TracksExperienceMotion({
 
     const context = gsap.context(() => {
       const media = gsap.matchMedia();
+      const scenes = Array.from(
+        scope.querySelectorAll<HTMLElement>("[data-tracks-exhibition-scene]"),
+      );
 
       media.add(motionQueries.motion, () => {
         const hero = scope.querySelector<HTMLElement>(
@@ -44,7 +48,6 @@ export default function TracksExperienceMotion({
             },
           );
         }
-
         if (heroCopy) {
           gsap.fromTo(
             heroCopy,
@@ -58,7 +61,6 @@ export default function TracksExperienceMotion({
             },
           );
         }
-
         if (heroVisual) {
           gsap.fromTo(
             heroVisual,
@@ -83,73 +85,6 @@ export default function TracksExperienceMotion({
             },
           });
         }
-
-        const scenes = Array.from(
-          scope.querySelectorAll<HTMLElement>("[data-tracks-exhibition-scene]"),
-        );
-
-        scenes.forEach((scene, index) => {
-          const title = scene.querySelector<HTMLElement>(
-            "[data-tracks-exhibition-title]",
-          );
-          const copy = scene.querySelector<HTMLElement>(
-            "[data-tracks-exhibition-copy]",
-          );
-          const visual = scene.querySelector<HTMLElement>(
-            "[data-tracks-exhibition-visual]",
-          );
-          const links = scene.querySelector<HTMLElement>(
-            "[data-tracks-exhibition-links]",
-          );
-          const targets = [title, copy, links].filter(
-            (item): item is HTMLElement => Boolean(item),
-          );
-
-          if (targets.length) {
-            gsap.from(targets, {
-              y: 26,
-              autoAlpha: 0,
-              duration: 0.72,
-              stagger: 0.08,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: scene,
-                start: "top 82%",
-                toggleActions: "play none none none",
-              },
-            });
-          }
-
-          if (visual) {
-            gsap.fromTo(
-              visual,
-              { clipPath: "inset(8% 0 8% 0)", scale: 0.97 },
-              {
-                clipPath: "inset(0% 0 0% 0)",
-                scale: 1,
-                ease: "power2.out",
-                scrollTrigger: {
-                  trigger: scene,
-                  start: "top 91%",
-                  end: "top 55%",
-                  scrub: 0.6,
-                },
-              },
-            );
-            gsap.to(visual, {
-              yPercent: -4,
-              ease: "none",
-              scrollTrigger: {
-                trigger: scene,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: 0.7,
-              },
-            });
-          }
-
-          void index;
-        });
 
         const closing = scope.querySelector<HTMLElement>(
           "[data-tracks-exhibition-closing]",
@@ -188,10 +123,8 @@ export default function TracksExperienceMotion({
           const leave = () => {
             scene.dataset.isHovering = "false";
           };
-
           scene.addEventListener("pointermove", move, { passive: true });
           scene.addEventListener("pointerleave", leave, { passive: true });
-
           return () => {
             scene.removeEventListener("pointermove", move);
             scene.removeEventListener("pointerleave", leave);
@@ -200,10 +133,16 @@ export default function TracksExperienceMotion({
             scene.style.removeProperty("--spot-y");
           };
         });
-
         return () => cleanupSpotlights.forEach((cleanup) => cleanup());
       });
 
+      setupTrackStack(scope, media, {
+        selector: "[data-exhibition-stack]",
+        id: "site-tracks-exhibition-stack",
+        hashNavigation: true,
+      });
+
+      // Individual entrances are only for the unpinned flow, never competing with a stack.
       media.add(motionQueries.compact, () => {
         const index = scope.querySelector<HTMLElement>(
           "[data-tracks-exhibition-index]",
@@ -220,8 +159,48 @@ export default function TracksExperienceMotion({
             },
           });
         }
+        scenes.forEach((scene) => {
+          const targets = Array.from(
+            scene.querySelectorAll<HTMLElement>(
+              "[data-tracks-exhibition-title], [data-tracks-exhibition-copy], [data-tracks-exhibition-links]",
+            ),
+          );
+          const visual = scene.querySelector<HTMLElement>(
+            "[data-tracks-exhibition-visual]",
+          );
+          if (targets.length) {
+            gsap.from(targets, {
+              y: 26,
+              autoAlpha: 0,
+              duration: 0.72,
+              stagger: 0.08,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: scene,
+                start: "top 82%",
+                toggleActions: "play none none none",
+              },
+            });
+          }
+          if (visual) {
+            gsap.fromTo(
+              visual,
+              { clipPath: "inset(8% 0 8% 0)", scale: 0.97 },
+              {
+                clipPath: "inset(0% 0 0% 0)",
+                scale: 1,
+                ease: "power2.out",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top 91%",
+                  end: "top 55%",
+                  scrub: 0.6,
+                },
+              },
+            );
+          }
+        });
       });
-
       return () => media.revert();
     }, scope);
 

@@ -85,3 +85,12 @@
 ## دليل المراجعة الخامسة
 
 نجحت29/29 pure tests وTypeScript/ESLint وNext.js production build. Community يحفظ جميع24 بطاقة منشورة في الدليل، يعرضها4 أعمدة عند1280px، والبحث/no-results/restoration أعاد1/0/24؛ القيادة grid متكيف بعدد الأشخاص، لا صفوف قائمة قديمة. صُححت2-column tablet وRGB syntax وتباين الفلاتر والخطوط الزخرفية. Tracks له نفس Night/Paper/Logo Teal/gutter/type ورadius12px ومشهدIT readableopacity1، معanchors الستة وNav blur=none وعدم overflow أفقي. لا تحولات بيانات/مصادقة أو نشر ضمن هذا الإصدار؛ تحفظ النسخة على نفس فرع العمل وcheckpoint المعاينة.
+
+
+## Tracks scroll stack — طلب المستخدم الأخير
+
+- [x] **Tracks GSAP animation ع بعض when scroll.** أقسام الصفحة نفسها تتراكب أثناء التمرير، التالي يصعد فوق السابق مع pin/scrub، وتبقى الهوية والألوان والمحتوى. الروابط المباشرة #slug وفهرس المسارات تعمل مع التراكب، ولا توجد تهيئة GSAP مزدوجة أو نصوص مقصوصة؛ القراءة الطبيعية في compact/reduced-motion/no-JS محفوظة.
+
+## دليل المراجعة السادسة
+
+نجح تراكب GSAP فعليًا في Preview على desktop: pin أعلى96px، واللوح التالي يصعد فوق السابق، والعداد/progress يتبعان scroll. فهرس `#it` وdirect fragment `#rnd` تنقلا إلى اللوحين 05 و06، وسهم Down حرك 05→06 مع بقاء الفوكس. لا timeline منافسة على سطح desktop؛ وcompact/reduced-motion/no-JS يظل تدفقًا طبيعيًا. نجح build وTypeScript وESLint و29/29 pure tests. لم يحدث تعديل CMS/API/Auth أو قاعدة بيانات أو نشر.

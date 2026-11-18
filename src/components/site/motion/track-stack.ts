@@ -1,14 +1,24 @@
 "use client";
 
-import { gsap, motionQueries } from "./gsap";
+import { gsap, motionQueries, ScrollTrigger } from "./gsap";
 import { stackPanelIndex, stackPanelTime } from "@/lib/ui/stack-navigation";
 
+type StackOptions = {
+  selector?: string;
+  id?: string;
+  hashNavigation?: boolean;
+};
+
+/** One stack engine; page-specific selectors prevent duplicate Home/Tracks setup. */
 export function setupTrackStack(
   root: HTMLElement,
   mm: ReturnType<typeof gsap.matchMedia>,
+  options: StackOptions = {},
 ) {
   const stacks = Array.from(
-    root.querySelectorAll<HTMLElement>("[data-track-stack]"),
+    root.querySelectorAll<HTMLElement>(
+      options.selector ?? "[data-track-stack]",
+    ),
   );
   stacks.forEach((stack) => {
     const pin = stack.querySelector<HTMLElement>("[data-stack-pin]");
@@ -24,7 +34,16 @@ export function setupTrackStack(
       const counter = stack.querySelector<HTMLElement>("[data-stack-counter]");
       const originalTabIndex = pin.getAttribute("tabindex");
       const originalLabel = pin.getAttribute("aria-label");
+      const scrollAreas = Array.from(
+        stack.querySelectorAll<HTMLElement>("[data-stack-scroll]"),
+      );
+      const areaTabIndexes = new Map(
+        scrollAreas.map((area) => [area, area.getAttribute("tabindex")]),
+      );
       let active = -1;
+      let alive = true;
+      let initialHashHandled = false;
+      let initialFrame: number | undefined;
       pin.tabIndex = 0;
       if (!originalLabel)
         pin.setAttribute(
@@ -32,6 +51,17 @@ export function setupTrackStack(
           "Track chapters. Scroll or use the up and down arrow keys to explore.",
         );
 
+      const restoreTabIndex = (area: HTMLElement) => {
+        const original = areaTabIndexes.get(area);
+        if (original == null) area.removeAttribute("tabindex");
+        else area.setAttribute("tabindex", original);
+      };
+      const syncScrollableAreas = () => {
+        scrollAreas.forEach((area) => {
+          if (area.scrollHeight > area.clientHeight + 2) area.tabIndex = 0;
+          else restoreTabIndex(area);
+        });
+      };
       const setActive = (index: number) => {
         if (index === active) return;
         const oldPanel = panels[active];
@@ -53,7 +83,7 @@ export function setupTrackStack(
       const sequence = gsap.timeline({
         defaults: { ease: "power2.out" },
         scrollTrigger: {
-          id: "site-track-stack",
+          id: options.id ?? "site-track-stack",
           trigger: pin,
           pin: true,
           start: "top 96px",
@@ -62,6 +92,7 @@ export function setupTrackStack(
           scrub: 0.68,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          onRefresh: syncScrollableAreas,
         },
       });
       panels.slice(1).forEach((panel, index) => {
@@ -93,7 +124,7 @@ export function setupTrackStack(
         panels.length - 1 + 1.04,
       );
 
-      // The counter follows the rendered (scrubbed) timeline, not its scroll target.
+      // Counter and inert state follow the rendered scrub, not its scroll target.
       const renderState = () => {
         setActive(stackPanelIndex(sequence.time(), panels.length));
         const amount = sequence.progress();
@@ -105,7 +136,10 @@ export function setupTrackStack(
         }
       };
       sequence.eventCallback("onUpdate", renderState);
-      const scrollToPanel = (index: number) => {
+      const scrollToPanel = (
+        index: number,
+        behavior: ScrollBehavior = "smooth",
+      ) => {
         const trigger = sequence.scrollTrigger;
         if (!trigger) return;
         const time = stackPanelTime(index, panels.length, sequence.duration());
@@ -113,27 +147,101 @@ export function setupTrackStack(
           top:
             trigger.start +
             (trigger.end - trigger.start) * (time / sequence.duration()),
-          behavior: "smooth",
+          behavior,
         });
+        if (behavior === "instant") {
+          trigger.update();
+          trigger.getTween()?.progress(1);
+          sequence.time(time);
+          renderState();
+        }
+      };
+      const hashIndex = (hash: string) => {
+        try {
+          const id = decodeURIComponent(hash.slice(1));
+          return id ? panels.findIndex((panel) => panel.id === id) : -1;
+        } catch {
+          return -1;
+        }
+      };
+      const onAnchorClick = (event: MouseEvent) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
+        const anchor =
+          event.target instanceof Element
+            ? event.target.closest<HTMLAnchorElement>("a[href]")
+            : null;
+        const href = anchor?.getAttribute("href");
+        if (
+          !href?.startsWith("#") ||
+          anchor?.hasAttribute("download") ||
+          (anchor?.target && anchor.target !== "_self")
+        )
+          return;
+        const index = hashIndex(href);
+        if (index < 0) return;
+        event.preventDefault();
+        initialHashHandled = true;
+        if (window.location.hash !== href)
+          window.history.pushState(null, "", href);
+        scrollToPanel(index);
+      };
+      const onHashChange = () => {
+        initialHashHandled = true;
+        const index = hashIndex(window.location.hash);
+        if (index >= 0) scrollToPanel(index, "instant");
       };
       const onKeyDown = (event: KeyboardEvent) => {
         const target = event.target;
         if (
           !(target instanceof HTMLElement) ||
           target.matches("input, textarea, select") ||
-          target.isContentEditable
+          target.isContentEditable ||
+          target.closest("[data-stack-scroll]")
         )
           return;
         if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
         const next = event.key === "ArrowDown" ? active + 1 : active - 1;
         if (next < 0 || next >= panels.length) return;
         event.preventDefault();
+        initialHashHandled = true;
         scrollToPanel(next);
       };
       pin.addEventListener("keydown", onKeyDown);
+      if (options.hashNavigation) {
+        root.addEventListener("click", onAnchorClick);
+        window.addEventListener("hashchange", onHashChange);
+        // Absolute stacked panels share an origin; resolve incoming hashes AFTER layout.
+        void document.fonts.ready.then(() => {
+          if (!alive || initialHashHandled) return;
+          initialFrame = requestAnimationFrame(() => {
+            if (!alive || initialHashHandled) return;
+            initialHashHandled = true;
+            const index = hashIndex(window.location.hash);
+            if (index >= 0) {
+              ScrollTrigger.refresh();
+              scrollToPanel(index, "instant");
+            }
+          });
+        });
+      }
+      syncScrollableAreas();
       renderState();
       return () => {
+        alive = false;
+        if (initialFrame !== undefined) cancelAnimationFrame(initialFrame);
         pin.removeEventListener("keydown", onKeyDown);
+        if (options.hashNavigation) {
+          root.removeEventListener("click", onAnchorClick);
+          window.removeEventListener("hashchange", onHashChange);
+        }
         sequence.eventCallback("onUpdate", null);
         stack.removeAttribute("data-stack-mode");
         if (originalTabIndex === null) pin.removeAttribute("tabindex");
@@ -145,6 +253,7 @@ export function setupTrackStack(
           panel.removeAttribute("aria-hidden");
           panel.inert = false;
         });
+        scrollAreas.forEach(restoreTabIndex);
         gsap.set(panels, { clearProps: "transform,opacity" });
         if (counter) counter.textContent = "01";
         if (progress) {

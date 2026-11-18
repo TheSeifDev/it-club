@@ -125,3 +125,8 @@ About يصبح قسم التعريف في الصفحة الرئيسية /#about�
 Community تتحول من صفوف قائمة صغيرة إلى portrait-card grids متجاوبة: القيادة والأعضاء جنب بعض، صور أكبر وأسماء وأدوار واضحة وteam focus معتمد وروابط profiles، مع الحفاظ على الهيكل والبحث والفلاتر وGSAP Flip. لا يُحذف أو يُخترع أي شخص أو منصب؛ الصور الأصلية أو initials عند غيابها، لا صور وجوه مولدة. على desktop عدة أعمدة، tablet عمودان، والجوال تدفق مقروء بمقاسات آمنة.
 
 Tracks تحتفظ باستعراضها ومشاهدها وقدراتها الموثقة لكن تتبع نفس لغة Home: Night #05070a/Night2 #0b0e13/Paper #f3f4f6/Ink #0a0d12/Logo Teal #28cdb7، Montserrat/Alexandria، حاويات1400px وgutter موحد وradius10–12px، عناوين مثل Hero وليست حروف uppercase بتتلاصق؛ Paper panels وmedia/copy تشبه Showcase. تُلغى palette القديمة الثابتة وأي خط/عرض مختلف، وتستعمل tokens مركزية بنفس ألوان المسارات الأصلية. Motion تبقى مقروءة بلا opacity scrub منخفض للنص، ومع reduced-motion وcleanup. لا تتغير backend/API/CMS/Auth والمقابلات، ولا نشر أو migrations.
+
+
+## تراكب صفحة Tracks مع scroll — 18 نوفمبر 2026
+
+مشاهد /tracks نفسها تصبح stacked GSAP slabs على desktop: اللوح التالي يصعد فوق السابق مع scrub وpin داخل الصفحة، بنفس التصميم الحالي وألوان المسارات. يعاد استخدام محرك stack المشترك بمحدد منفصل عن Home لمنع تهيئة مزدوجة، وتظل anchors/index والعودة إلى #slug صحيحة مع keyboard/reduced-motion. الأوصاف الطويلة قابلة للقراءة داخل اللوح ولا تقص، بينما compact/no-JS/reduced-motion يحتفظون بالأقسام في document flow. لا تغيير محتوى أو API/Auth/CMS أو نشر إنتاجي.

@@ -904,6 +904,145 @@
   line-height: 1.9;
 }
 
+.stackPin,
+.stackViewport {
+  display: contents;
+}
+
+.stackProgress {
+  display: none;
+}
+
+.scenes[data-stack-mode="pinned"] {
+  display: block;
+}
+
+.scenes[data-stack-mode="pinned"] .stackPin {
+  box-sizing: border-box;
+  display: flex;
+  width: min(var(--site-max), 100%);
+  height: min(900px, calc(100svh - 122px));
+  flex-direction: column;
+  margin-inline: auto;
+}
+
+.scenes[data-stack-mode="pinned"] .stackViewport {
+  display: block;
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--site-panel-radius);
+}
+
+.scenes[data-stack-mode="pinned"] .stackProgress {
+  display: flex;
+  flex: 0 0 28px;
+  align-items: center;
+  gap: 18px;
+  padding-inline: 4px;
+  color: rgba(var(--site-paper-rgb), 0.58);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stackCount {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stackCount [data-stack-counter] {
+  color: var(--site-sky);
+}
+
+.stackProgressMeter {
+  position: relative;
+  flex: 1 1 auto;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(var(--site-paper-rgb), 0.16);
+}
+
+.stackProgressMeter > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--site-sky);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.scenes[data-stack-mode="pinned"] .scene {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  gap: clamp(20px, 3vw, 42px);
+  margin: 0;
+  pointer-events: none;
+}
+
+.scenes[data-stack-mode="pinned"] .scene[data-stack-current="true"] {
+  pointer-events: auto;
+}
+
+.scenes[data-stack-mode="pinned"] .sceneMedia,
+.scenes[data-stack-mode="pinned"] .mediaImage,
+.scenes[data-stack-mode="pinned"] .visual {
+  height: 100%;
+  min-height: 0;
+}
+
+.scenes[data-stack-mode="pinned"] .sceneCopy {
+  height: 100%;
+  min-height: 0;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: clamp(18px, 2vw, 30px);
+}
+
+.scenes[data-stack-mode="pinned"] .sceneHeading {
+  margin-top: clamp(22px, 2vw, 32px);
+}
+
+.scenes[data-stack-mode="pinned"] .sceneHeading h2 {
+  margin-top: 10px;
+  font-size: clamp(2.7rem, 4.2vw, 4.8rem);
+}
+
+.scenes[data-stack-mode="pinned"] .sceneSummary {
+  margin-top: 22px !important;
+}
+
+.scenes[data-stack-mode="pinned"] .sceneDetail {
+  margin-top: 10px !important;
+}
+
+.scenes[data-stack-mode="pinned"] .terrainBlock {
+  margin-top: 24px;
+}
+
+.scenes[data-stack-mode="pinned"] .terrainBlock ul {
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.scenes[data-stack-mode="pinned"] .sceneLinks {
+  gap: 18px;
+  margin-top: 26px;
+}
+
 @media (max-width: 900px) {
   .hero {
     min-height: auto;

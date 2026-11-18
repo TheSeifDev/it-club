@@ -93,3 +93,12 @@ Logo Teal `#28cdb7` وTeal Ink `#087969` يحلان محل Light Blue في ال�
 
 
 تأكيد آخر قبل الحفظ: عُدّلت26 قاعدةRGB في Tracks إلىrgba(var(--site-*-rgb),alpha) الصحيحة. مشهدIT الفعلي له backgroundrgb(243,244,246)، textInk rgb(10,13,18)، radius12px، وmediaNight3 rgb(17,21,27). لا تعتمد الهوية على fallback غير مُطبق، والـglow/text alpha يعملان بمرجع واحد. قياسات desktop والبحث فعلية؛ قواعد tablet/mobile/reduced-motion مراجعة في الكود دون ادعاء جهاز حقيقي.
+
+
+## تراكب مشاهد صفحة Tracks — الإصدار السادس
+
+`TracksExperienceMotion.tsx` يستخدم GSAP/ScrollTrigger المشترك مع Home، لكن بمحدد `[data-exhibition-stack]` ومعرّف trigger مستقل حتى لا تتكرر الحركة. في desktop ذي pointer دقيق مع عدم تفضيل reduced-motion، تثبت مجموعة المشاهد عند أعلى96px؛ يصعد كل track panel فوق السابق ويبتعد السابق قليلًا، مع عداد وprogress يتبعان الـscrub. نسخة الصفحة تعرض 6 ألوان ومسؤولياتها ومحتواها الحالي، لا شرائح جديدة مختلقة.
+
+الفهرس والـdeep-links إلى `#hr` و`#rnd` وغيرها تُحوّل إلى زمن اللوحة الصحيح داخل ScrollTrigger، بينما الأسهم up/down تتحرك بين الفصول وتحافظ على focus. النسخة التي لا تفعّل pin (compact/touch/reduced-motion/بدون JavaScript) تبقي اللوحات في تدفق الصفحة. إذا احتاجت تفاصيل CMS إلى مساحة إضافية، يصبح عمود القراءة داخل اللوح قابلًا للتمرير والتركيز بلوحة المفاتيح. كشف الـscenes التقليدي يعمل فقط في compact؛ لا يتنافس مع timeline المكدس، وتُنظّف listeners وinert/tabindex وScrollTrigger عند الخروج.
+
+الدليل المرئي الفعلي في Preview عند1280×1100: pin height900px في top96px، وviewport872px؛ أثناء زيادة التمرير انتقل العداد01→02، وتحرك اللوح الجديد إلى أعلى اللوح السابق (tops97px و72px)، وأظهر panel الصحيح فقط. اختبار index link إلى `#it` وصل للوحة05 وحدّث hash و`aria-hidden/inert`. فتح الرابط المباشر `#rnd` أظهر لوحة06، والسهم Down نقل من05 إلى06 وبقي focus على pin. نجحت29/29 pure tests، TypeScript وESLint والبناء الإنتاجي؛ لم تُكتب قاعدة البيانات ولم يحدث نشر. قواعد compact/reduced-motion reviewed في الشفرة، لا ادعاء اختبار أجهزة حقيقية.

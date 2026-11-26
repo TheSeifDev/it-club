@@ -1,0 +1,251 @@
+.root {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  min-height: clamp(320px, 42vw, 620px);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  contain: layout paint;
+  border-radius: clamp(18px, 3vw, 34px);
+}
+
+.fallback,
+.host {
+  position: absolute;
+  inset: 0;
+}
+
+.fallback {
+  z-index: 1;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 600ms ease;
+}
+
+.host {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.root[data-renderer="webgl"] .fallback {
+  opacity: 0.12;
+}
+
+.root[data-renderer="webgl"] .host {
+  opacity: 1;
+}
+
+.host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.haze,
+.coreHalo,
+.core,
+.orbit,
+.cluster {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.haze {
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(80, 243, 217, 0.22), rgba(40, 205, 183, 0.08) 38%, transparent 70%);
+  filter: blur(16px);
+}
+
+.coreHalo {
+  top: 50%;
+  left: 50%;
+  width: 30%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(220, 255, 249, 0.74), rgba(40, 205, 183, 0.34) 32%, rgba(14, 97, 88, 0.08) 70%, transparent 72%);
+  filter: blur(6px);
+}
+
+.core {
+  top: 50%;
+  left: 50%;
+  width: 20%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1px solid rgba(215, 255, 249, 0.9);
+  border-radius: 28%;
+  background: linear-gradient(145deg, rgba(199, 255, 246, 0.94), rgba(51, 195, 177, 0.72) 45%, rgba(6, 54, 49, 0.92));
+  box-shadow:
+    inset -10px -12px 18px rgba(5, 54, 49, 0.72),
+    inset 8px 7px 14px rgba(240, 255, 252, 0.55),
+    0 0 28px rgba(82, 230, 211, 0.68),
+    0 0 76px rgba(25, 147, 132, 0.28);
+  animation: coreFloat 7s ease-in-out infinite;
+}
+
+.orbit {
+  top: 50%;
+  left: 50%;
+  width: 73%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(83, 225, 208, 0.42);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(28deg) scaleY(0.28);
+  box-shadow: 0 0 14px rgba(38, 177, 161, 0.14);
+}
+
+.orbit::after {
+  position: absolute;
+  top: 50%;
+  left: -1.2%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b9fff5;
+  box-shadow: 0 0 12px 4px rgba(84, 230, 213, 0.64);
+  content: "";
+}
+
+.orbitA {
+  transform: translate(-50%, -50%) rotate(24deg) scaleY(0.28);
+}
+
+.orbitB {
+  width: 60%;
+  border-color: rgba(86, 184, 170, 0.36);
+  transform: translate(-50%, -50%) rotate(-36deg) scaleY(0.43);
+}
+
+.orbitB::after {
+  top: -2px;
+  left: 50%;
+  background: #86e9db;
+}
+
+.orbitC {
+  width: 88%;
+  border-color: rgba(166, 242, 231, 0.22);
+  transform: translate(-50%, -50%) rotate(74deg) scaleY(0.18);
+}
+
+.orbitC::after {
+  top: 44%;
+  left: auto;
+  right: -1%;
+  background: #e8fffb;
+}
+
+.cluster {
+  width: 17%;
+  height: 17%;
+  transform-origin: center;
+}
+
+.cluster::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 25%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--node-color);
+  box-shadow: 0 0 12px 4px var(--node-glow);
+  content: "";
+}
+
+.cluster::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 1px;
+  transform: translate(-50%, -50%) rotate(var(--link-angle));
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, var(--node-color), transparent);
+  opacity: 0.55;
+  content: "";
+}
+
+.cluster i {
+  position: absolute;
+  z-index: 1;
+  width: 10%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--node-color);
+  box-shadow: 0 0 8px 2px var(--node-glow);
+}
+
+.cluster i:nth-child(1) { top: 9%; left: 18%; }
+.cluster i:nth-child(2) { top: 26%; right: 7%; }
+.cluster i:nth-child(3) { right: 15%; bottom: 8%; }
+.cluster i:nth-child(4) { bottom: 4%; left: 8%; }
+
+.clusterA { top: 24%; left: 70%; --node-color: #35d98a; --node-glow: rgba(53, 217, 138, 0.75); --link-angle: 38deg; }
+.clusterB { top: 17%; left: 24%; --node-color: #ff3ca7; --node-glow: rgba(255, 60, 167, 0.75); --link-angle: -34deg; }
+.clusterC { top: 43%; left: 8%; --node-color: #eaff00; --node-glow: rgba(234, 255, 0, 0.68); --link-angle: 12deg; }
+.clusterD { bottom: 14%; left: 30%; --node-color: #ffab18; --node-glow: rgba(255, 171, 24, 0.75); --link-angle: -12deg; }
+.clusterE { right: 10%; bottom: 20%; --node-color: #18c8ed; --node-glow: rgba(24, 200, 237, 0.8); --link-angle: 42deg; }
+.clusterF { top: 40%; left: 42%; --node-color: #9b7cff; --node-glow: rgba(155, 124, 255, 0.8); --link-angle: 74deg; }
+
+.clusterA,
+.clusterD,
+.clusterF { animation: nodeDrift 6.5s ease-in-out infinite; }
+.clusterB,
+.clusterE { animation: nodeDrift 7.5s -2s ease-in-out infinite reverse; }
+.clusterC { animation: nodeDrift 8.5s -4s ease-in-out infinite; }
+
+@keyframes coreFloat {
+  0%, 100% { margin-top: -1.5%; }
+  50% { margin-top: 1.5%; }
+}
+
+@keyframes nodeDrift {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: 2.5%; }
+}
+
+@media (max-width: 640px) {
+  .root {
+    min-height: 300px;
+    border-radius: 22px;
+  }
+
+  .cluster {
+    width: 20%;
+    height: 20%;
+  }
+
+  .orbitC {
+    width: 96%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fallback,
+  .host,
+  .core {
+    transition: none;
+  }
+
+  .core,
+  .clusterA,
+  .clusterB,
+  .clusterC,
+  .clusterD,
+  .clusterE,
+  .clusterF {
+    animation: none;
+  }
+}

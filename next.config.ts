@@ -32,6 +32,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The HTTPS Preview proxy forwards dev-resource requests through loopback.
+  // This is dev-only origin validation; production CSP and auth stay unchanged.
+  allowedDevOrigins: isPublicHttpsPreview
+    ? ["127.0.0.1", "**.manus.computer"]
+    : ["127.0.0.1"],
   async headers() {
     return [
       {

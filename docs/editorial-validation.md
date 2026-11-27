@@ -154,3 +154,15 @@ The Home-only fixed rail contains six chapter anchors: Home, About, Tracks, Even
 
 
 Final checks after the reduced-motion utility and native anchor offsets: `npx tsc --noEmit` passed; ESLint returned zero errors and the existing `app.config.ts` anonymous-export warning; the pure suite passed29/29; `npm run build` completed successfully on Next.js16.3.8; and `git diff --check` passed. The reduced-motion media preference was not toggled in the live browser.
+
+
+## Camera-lens rotary Home dial — 27 November 2026
+
+The previous linear row of segment bars is replaced by a metal-gray camera-focus ring: a knurled rotating wheel, fixed index pointer, central aperture/readout, and six radial section detents. Ordinary document scrolling rotates the wheel reversibly; dragging the outer rim changes the page scroll, marker clicks navigate to sections, and the focused slider supports Arrow keys, PageUp/PageDown, Home, and End. The existing About GSAP range, reduced-motion policy, section IDs, and responsive Home layout are preserved.
+
+- Desktop live Preview (`1280×1100`): the lens housing measured108×108px. A physical browser click on the About rim marker changed the fragment to `#about`, scrolled to `scrollY=776`, and changed the central readout to `02 / 06 · ABOUT`. The scroll-linked dial reached `69deg` midway through About; moving back Home restored `rotate(0deg)`. A controlled pointer-event drag sequence of48deg moved the page to `scrollY=887` and the ring to approximately48deg. Keyboard PageDown moved Home→About; Home returned to `scrollY=0` and zero rotation. Community and Find your place markers also navigated to their IDs. No horizontal overflow.
+- Mobile live Preview iframe (`390×844`): the dial measured82×82px at the right side; outline computed `rgb(146, 152, 160)`, opacity1, overflow0. A synthetic touch-pointer rotation of36deg moved to `scrollY=562` and rotated the ring `35.97deg`; Community marker navigation reached its section at104px below the viewport top, and Home reset scroll/rotation to0. The 36/48-degree pointer checks were synthetic events with pointer-capture methods stubbed, not claims of a device-hardware drag test.
+- No-JavaScript/SSR inspection of the served HTML found all six real `href` anchors, each with a distinct initial angle (0,-60,-120,-180,-240,-300 degrees), so detents no longer overlap before hydration. Once interactive, marker angles are recalculated from measured section starts and update with the ring rotation. Unexpected pointer-capture loss clears drag state.
+- The reduced-motion preference itself was not live-emulated. The slider/nav continues to expose accessible names, `aria-current`, value text, keyboard handling, and native anchor fallbacks.
+
+Final lens-dial checks: `npx tsc --noEmit` passed; ESLint returned zero errors with the unchanged `app.config.ts` anonymous-export warning; `npm run test:pure` passed29/29; the Next.js16.3.8 production build succeeded; and `git diff --check` passed. No data/API writes or deployment occurred during verification.

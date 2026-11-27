@@ -174,3 +174,14 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - Mobile Preview داخل iframe same-origin `390×844`: ظهر rail بعرض24px وارتفاع264px في منتصف اليمين، بلا overflow أفقي. computed border بقي `rgb(146, 152, 160)` و`opacity:1`. اختُبرت نقرة About وCommunity وFind your place والعودة إلى Home؛ الأهداف وصلت إلى `top=104px` أو `0px` لـHome، وتغيرت حالة active/fill مع التمرير.
 - Native hash navigation: Events وCommunity وFind your place وصلت إلى `top=88px` عبر `scroll-margin-top:88px`؛ Home بقي عند أعلى الصفحة. `prefers-reduced-motion` مضبوط بوسيلة Tailwind على الجذر للـnative/no-JS، وتنقل JavaScript يستخدم `instant` عند تفعيله. لم تُحاكَ media preference حيًا.
 - فحوص الإغلاق بعد تعديل reduced-motion والـnative offsets: TypeScript مرّ، ESLint بلا أخطاء (تحذير `app.config.ts` السابق فقط)، pure tests `29/29`، production build ناجح على Next.js16.3.8، و`git diff --check` ناجح. لم يُغيّر مصدر Admin/Interview/Student/Auth/APIs أو بياناتها؛ `auto_publish:false` ولم يُنفذ نشر.
+
+## تصحيح تصور الشريط — حلقة عدسة كاميرا، 27 نوفمبر 2026
+
+- [x] **المستخدم لا يريد نقاط الشريط السابق؛ يريد واجهة مثل حلقة عدسة الكاميرا التي تُلف.** يستبدل الشريط الخطي بحلقة lens/focus معدنية رمادية جانبية ذات تدريج ومؤشر ثابت وست علامات sections. تدور الحلقة مع السكرول والعكس، ويمكن سحب محيطها لتدويرها والتحكم في السكرول، والنقر على علامات الأقسام للتنقل إليها؛ اسم القسم والتقدم واضحان في الوسط. يظل border رماديًا والقسم الجاري كامل الوضوح، ويعمل desktop/mobile والكيبورد/reduced-motion وnative anchors دون JavaScript. لا تغيير حركة About الحالية أو ملفات العمليات/المصادقة/APIs/البيانات؛ يحفظ Preview checkpoint وتزامن فرع GitHub المحدد فقط بدون نشر إنتاجي.
+
+### دليل camera-lens dial — 27 نوفمبر 2026
+
+- Desktop `1280×1100`: عدسة108×108px بحد رمادي `rgb(146, 152, 160)` وعتامة1. النقرة المادية على علامة About غيّرت hash إلى `#about` ووصلت `scrollY=776` مع readout `02 / 06 · ABOUT`. دوران الصفحة وصل إلى69deg بمنتصف About ثم عاد إلى0 عند Home. محاكاة سلسلة pointer بزاوية48deg نقلت الصفحة إلى `scrollY=887` ولفت الحلقة قرابة48deg؛ PageDown تحرك Home→About ومفتاح Home رجّع الصفحة والصفر. Community وFind your place نقلا للهدف الصحيح.
+- Mobile `390×844`: عدسة82×82px، border `rgb(146, 152, 160)`, `opacity:1`، بلا overflow. سلسلة touch-pointer محاكاة بزاوية36deg حرّكت الصفحة إلى `scrollY=562` وأدارت الحلقة35.97deg؛ marker Community وصل للهدف عند104px وHome أعاد scroll/rotation إلى0. هذه سلسلة أحداث synthetic وليست ادعاء اختبار سحب على جهاز مادي.
+- HTML SSR يحتوي ستة hrefs قابلة للنقر بزوايا منفصلة `0,-60,-120,-180,-240,-300deg`؛ بعد hydration تقاس بدقة حسب مواضع الأقسام، وزر فقد pointer capture ينظف السحب.
+- Final QA بعد تعديل قرص العدسة: TypeScript مرّ، ESLint بلا أخطاء مع تحذير `app.config.ts` الموجود مسبقًا، pure tests `29/29`، production build على Next.js16.3.8 نجح، و`git diff --check` نجح. لا DB/API writes أو نشر خلال الاختبار.

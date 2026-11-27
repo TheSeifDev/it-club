@@ -229,3 +229,15 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - Desktop nav radius انخفض من12px إلى8px، وحركة الـwhite-rise الأصلية محفوظة. روابط الـFooter بقت pills داكنة صلبة بارتفاع33px، والـBack-to-top بقى33×33px بلون Teal؛ Hover فعلي على Home في الـFooter أعطى نصًا داكنًا `rgb(5,7,10)` فوق fill أبيض. روابط الـNavbar والـFooter عطّلت انتقال pseudo-fill عند reduced-motion.
 - تجربة Preview لقائمة الموبايل على DOM: full viewport `1280×1100`, background `rgb(5,7,10)`, `opacity:1`, `backdrop-filter:none`, radius0؛ ستة روابط، Escape أغلقها واستعاد document overflow. أداة Preview لم تسمح بتغيير viewport إلى875px أو هاتف، لذلك لا أدّعي فحصًا على شاشة هاتف فعلية.
 - `npx tsc --noEmit`, ESLint للمكونين، `npm run test:pure` نجح29/29، و`npm run build` اكتمل بنجاح؛ `git diff --check` نظيف. لا تغييرات بيانات أو APIs.
+
+## متابعة Navbar من المرجعين المرفقين — 27 نوفمبر 2026، الساعة20:02
+
+النص الأخير «ar color ?» و«قلل زود raduis nav links اكتر» غير حاسم؛ التفسير المعلن للمستخدم هو رفع radius روابط desktop من8px إلى12px نحو المرجع، وتوضيح اللون النشط من Logo Teal مع خط أبيض أسفله، والحفاظ على hover fill الأبيض الصاعد. مرجع الموبايل يعني صفوف English نصية بسيطة وفواصل بعد Community وبعد Partners، لا cards أو أيقونات/عناوين ثانوية، فوق الخلفية الداكنة الصلبة المعتمدة.
+
+- [x] روابط desktop برادياس12px، active Teal من tokens الموقع وخط أبيض أسفل الرابط النشط؛ hover/focus ملء أبيض صاعد ونص داكن واضح، مع reduced-motion.
+- [x] قائمة mobile full-screen صلبة بلا glass/blur؛ صفوف About/Community/Tracks/Events/Partners/Contact بسيطة مع فاصلين مطابقين للمرجع، وحفظ close/Escape/focus loop/scroll lock والروابط الحقيقية. محتوى الموقع bilingual خارج هذه القائمة وFooter الحالي دون تغيير.
+- [x] تعديل عام محدود على التنقل؛ لا Admin/Interview/Student/Auth/APIs أو بيانات، لا نشر إنتاجي. حفظ Manus checkpoint وتزامن tree نفسه فقط إلى GitHub `refactor/club-main-site-20261118` دون لمس GitHub `main`.
+
+### دليل متابعة المرجع — 27 نوفمبر 2026، الساعة20:13
+
+في Preview `1280×1100` الرابط النشط Partners بارتفاع47px/radius12px وحد Logo Teal `rgb(82,232,209)` وخط أبيض؛ hover أبيض مع نص `rgb(5,7,10)`. قائمة الموبايل المفتوحة فُحصت بأحداث synthetic في DOM: خلفية `rgb(5,7,10)` بلا backdrop/full viewport، ستة روابط نصية68px وفاصلان1px بلون ink38%، Focus على About وEscape/scroll lock يعملان. لقطة Webdev عند375×812 أكدت محاذاة الـlogo وزر menu وعدم قص أفقي ظاهر في الحالة المقفولة؛ أداة اللقطة لا تفتح القائمة وليست تجربة جهاز مادي. TypeScript وESLint المركّز وpure tests29/29 وبناء Next.js16.3.8 وdiff-check نجحت؛ HTTP200 لـPartners والـmanifest. لا تغييرات تطبيق بعد آخر build.

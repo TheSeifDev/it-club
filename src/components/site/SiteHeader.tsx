@@ -18,7 +18,7 @@ const wordmarkClass =
 const navClass =
   "flex items-center gap-[7px] bg-transparent p-0 max-[1039px]:hidden";
 const navLinkClass =
-  "relative isolate inline-flex h-[47px] items-center justify-center overflow-hidden rounded-[8px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] px-[15px] text-[.69rem] font-normal !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[color,border-color] duration-300 before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:border-white hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:border-white focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] aria-[current=page]:border-[var(--site-glass-highlight)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass-strong))] motion-reduce:transition-none motion-reduce:before:transition-none";
+  "relative isolate inline-flex h-[47px] items-center justify-center overflow-hidden rounded-[12px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] px-[15px] text-[.69rem] font-normal !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[color,border-color] duration-300 before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:border-white hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:border-white focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] aria-[current=page]:!border-[var(--site-sky-ink)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_24%,var(--site-glass-strong))] motion-reduce:transition-none motion-reduce:before:transition-none";
 const contactClass =
   "inline-flex h-[49px] shrink-0 items-center gap-[10px] rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] py-[5px] pr-[5px] pl-[17px] text-[.75rem] font-normal tracking-[-.045em] !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_12px_38px_rgb(0_0_0_/_24%)] transition-[background-color,border-color] duration-200 min-[1040px]:backdrop-blur-[6px] min-[1040px]:backdrop-saturate-[145%] hover:border-[var(--site-sky-ink)] hover:bg-[var(--site-sky)] hover:!text-[var(--site-paper)] max-[1130px]:text-[.7rem] max-[1039px]:hidden motion-reduce:transition-none";
 const contactArrowClass =
@@ -28,7 +28,14 @@ const toggleClass =
 const mobileClass =
   "fixed inset-0 z-[10] h-[100svh] max-h-[100svh] w-screen overscroll-contain overflow-y-auto bg-[var(--site-night)] px-[var(--site-gutter)] pt-[88px] pb-8 text-[var(--site-ink)]";
 const mobileLinkClass =
-  "group relative isolate flex items-center justify-between gap-5 overflow-hidden rounded-[8px] px-4 py-[13px] text-[var(--site-ink)] before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass))] motion-reduce:before:transition-none";
+  "group relative isolate flex min-h-[68px] items-center overflow-hidden rounded-[12px] px-[10px] py-[18px] text-[var(--site-ink)] before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] motion-reduce:before:transition-none";
+const mobileGroupClass =
+  "py-[3px]";
+const mobileNavigationGroups = [
+  SITE_NAV_LINKS.slice(0, 2),
+  SITE_NAV_LINKS.slice(2),
+  [{ href: "/contact", label: "Contact" }],
+] as const;
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -83,31 +90,43 @@ export default function SiteHeader() {
   return (
     <header className={headerClass}>
       <div className={innerClass}>
-        <Link
-          className={brandClass}
-          href="/"
-          aria-label="IT Club BATU — home"
-        >
-          <Image className="block h-[37px] w-[37px] object-contain" src="/logo.webp" alt="" width={36} height={36} priority />
+        <Link className={brandClass} href="/" aria-label="IT Club BATU — home">
+          <Image
+            className="block h-[37px] w-[37px] object-contain"
+            src="/logo.webp"
+            alt=""
+            width={36}
+            height={36}
+            priority
+          />
           <span className={wordmarkClass}>
             <span>IT</span>
             <b className="font-medium">CLUB</b>
-            <i className="ml-[5px] text-[.43rem] font-normal not-italic tracking-[.06em] text-[var(--site-mist)]">BATU</i>
+            <i className="ml-[5px] text-[.43rem] font-normal not-italic tracking-[.06em] text-[var(--site-mist)]">
+              BATU
+            </i>
           </span>
         </Link>
         <nav className={navClass} aria-label="Main navigation">
-          {SITE_NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              className={navLinkClass}
-              href={link.href}
-              aria-current={
-                isSitePageActive(pathname, link.href) ? "page" : undefined
-              }
-            >
-              <span className="relative z-10">{link.label}</span>
-            </Link>
-          ))}
+          {SITE_NAV_LINKS.map((link) => {
+            const active = isSitePageActive(pathname, link.href);
+            return (
+              <Link
+                key={link.href}
+                className={navLinkClass}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+              >
+                <span className="relative z-10">{link.label}</span>
+                {active ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-3 bottom-[3px] z-10 h-[2px] rounded-full bg-white"
+                  />
+                ) : null}
+              </Link>
+            );
+          })}
         </nav>
         <Link className={contactClass} href="/contact">
           <span>Let’s connect</span>
@@ -137,36 +156,38 @@ export default function SiteHeader() {
         className={mobileClass}
         hidden={!open}
       >
-        <nav className="grid gap-1" aria-label="Mobile navigation">
-          {SITE_NAV_LINKS.map((link, index) => (
-            <Link
-              key={link.href}
-              ref={index === 0 ? firstLinkRef : undefined}
-              className={mobileLinkClass}
-              href={link.href}
-              aria-current={
-                isSitePageActive(pathname, link.href) ? "page" : undefined
-              }
-              onClick={() => setOpen(false)}
-            >
-              <span className="relative z-10">
-                <strong className="block text-[1.15rem] font-medium tracking-[-.05em]">{link.label}</strong>
-                <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" lang="ar" dir="rtl">
-                  {link.arabic}
-                </small>
-              </span>
-              <ArrowUpRight className="relative z-10 text-[var(--site-sky-ink)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" size={18} aria-hidden="true" />
-            </Link>
+        <nav className="flex flex-col" aria-label="Mobile navigation">
+          {mobileNavigationGroups.map((group, groupIndex) => (
+            <div className={mobileGroupClass} key={`mobile-group-${groupIndex}`}>
+              {group.map((link, linkIndex) => {
+                const isFirstSiteLink = groupIndex === 0 && linkIndex === 0;
+                const isSiteLink = "arabic" in link;
+                const active = isSiteLink
+                  ? isSitePageActive(pathname, link.href)
+                  : false;
+                return (
+                  <Link
+                    key={link.href}
+                    ref={isFirstSiteLink ? firstLinkRef : undefined}
+                    className={mobileLinkClass}
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="relative z-10 text-[1.15rem] font-medium tracking-[-.05em]">
+                      {link.label}
+                    </span>
+                  </Link>
+                );
+              })}
+              {groupIndex < mobileNavigationGroups.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className="block h-px bg-[color-mix(in_srgb,var(--site-ink)_38%,transparent)]"
+                />
+              ) : null}
+            </div>
           ))}
-          <Link className={mobileLinkClass} href="/contact" onClick={() => setOpen(false)}>
-            <span className="relative z-10">
-              <strong className="block text-[1.15rem] font-medium tracking-[-.05em]">Contact</strong>
-                <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" lang="ar" dir="rtl">
-                تواصل معنا
-              </small>
-            </span>
-            <ArrowUpRight className="relative z-10 text-[var(--site-sky-ink)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" size={18} aria-hidden="true" />
-          </Link>
         </nav>
       </div>
     </header>

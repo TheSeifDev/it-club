@@ -33,11 +33,11 @@ const contactsClass =
 const bottomClass =
   "mt-[66px] flex items-end justify-between gap-8 max-[1000px]:items-start max-[750px]:mt-10 max-[750px]:flex-col-reverse max-[750px]:gap-[25px]";
 const navClass =
-  "flex flex-wrap items-center justify-end gap-[7px] max-[1000px]:gap-[6px] max-[750px]:justify-start";
+  "flex flex-wrap items-center justify-end gap-[6px] max-[1000px]:gap-[6px] max-[750px]:justify-start";
 const navLinkClass =
-  "inline-flex min-h-[39px] items-center justify-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass)] px-[13px] text-[.64rem] !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background-color,border-color] duration-200 min-[1040px]:backdrop-blur-[6px] min-[1040px]:backdrop-saturate-[135%] hover:border-[var(--site-glass-highlight)] hover:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass))] max-[520px]:min-h-9 max-[520px]:px-[11px] max-[520px]:text-[.61rem] motion-reduce:transition-none";
+  "relative isolate inline-flex min-h-[33px] items-center justify-center overflow-hidden rounded-full border border-[var(--site-glass-border)] bg-[var(--site-night-2)] px-[10px] text-[.58rem] !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[color,border-color] duration-300 before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:border-white hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:border-white focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] max-[520px]:min-h-[32px] max-[520px]:px-[9px] motion-reduce:transition-none motion-reduce:before:transition-none";
 const backtopClass =
-  "inline-flex h-[39px] w-[39px] min-h-[39px] items-center justify-center rounded-full border border-[var(--site-sky)] bg-[var(--site-sky)] p-0 !text-[var(--site-paper)] hover:border-[var(--site-sky-ink)] hover:bg-[var(--site-sky-ink)]";
+  "inline-flex h-[33px] w-[33px] min-h-[33px] items-center justify-center rounded-full border border-[var(--site-sky)] bg-[var(--site-sky)] p-0 !text-[var(--site-paper)] hover:border-[var(--site-sky-ink)] hover:bg-[var(--site-sky-ink)]";
 
 export default function SiteFooter() {
   return (
@@ -57,7 +57,7 @@ export default function SiteFooter() {
       </div>
       <div className={bottomClass}>
         <div className="shrink-0 text-[.6rem] text-[var(--site-mist)]"><span>© {new Date().getFullYear()} IT Club · BATU</span><nav className="mt-2 flex gap-[15px] text-[.54rem]" aria-label="Legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></div>
-        <nav className={navClass} aria-label="Footer navigation">{siteLinks.map((link) => <Link className={navLinkClass} key={link.href} href={link.href}>{link.label}</Link>)}<a href="#top" className={backtopClass} aria-label="Back to top"><ArrowUp size={19} strokeWidth={1.5} aria-hidden="true" /></a></nav>
+        <nav className={navClass} aria-label="Footer navigation">{siteLinks.map((link) => <Link className={navLinkClass} key={link.href} href={link.href}><span className="relative z-10">{link.label}</span></Link>)}<a href="#top" className={backtopClass} aria-label="Back to top"><ArrowUp size={19} strokeWidth={1.5} aria-hidden="true" /></a></nav>
       </div>
     </footer>
   );

@@ -216,3 +216,16 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - Hover Preview على سطح مكتب `1280×1100`: الرابط 47px ارتفاعًا؛ المؤشر فوق Tracks أظهر fill أبيض `rgb(255,255,255)` ونصًا داكنًا `rgb(5,7,10)`. حُفظت الروابط الدلالية وactive state وقفل mobile menu/focus trap، وأزيل تبدل لون header المرتبط بالسكرول. لم يُختبر هذا التغيير على جهاز موبايل فعلي.
 - تنقل فعلي Home→Tracks في Preview: `cover` بالبلاطات لمدة نحو600ms ثم `hold`، وعند تحديث المسار بدأ `reveal`؛ عاد الـoverlay إلى `idle/hidden` بعد نحو1.3s، مع154 سداسيًا ممتدة خارج حواف viewport. `history.back()` نفّذ reveal إلى Home ثم أعاد الطبقة `idle/hidden`؛ رابط About إلى `/#about` غيّر hash والتمرير مع بقاء transition مخفيًا.
 - `npm run test:pure`: 29/29؛ اختبارات transition الجديدة والمنفصلة: 5 حالات إضافية. `npx tsc --noEmit` وESLint للملفات المتغيرة و`git diff --check` مرّت؛ `npm run build` أنتج مسارات Next.js16.3.8 بنجاح. اختُبرت قواعد الحماية للمسارات المحمية والتعديلات والروابط الخارجية/download/reduced-motion في pure tests؛ لم تُفعّل تفضيلات reduced-motion مباشرة في browser. لا نشر أو تغييرات بيانات/APIs.
+
+
+## Navbar radius, footer chips, and mobile menu background — 27 November 2026, 19:45
+
+- [x] تقليل radius روابط الـdesktop والـmobile navbar عن القيمة الحالية، مع الحفاظ على fill أبيض صاعد والنص الداكن الواضح.
+- [x] تطبيق إحساس nav-pill والملء الأبيض الصاعد على روابط Footer، مع خلفية داكنة وحد رفيع وارتفاع/حجم مناسبين للصورة المرجعية، والإبقاء على زر Back to top بلون Teal.
+- [x] قائمة الموبايل تصبح طبقة full-screen بخلفية site-night صلبة كاملة؛ لا glass أو شفافية أو backdrop blur، مع بقاء الـlogo والـclose button فوق الخلفية وإمكانية تمرير القائمة وإغلاقها والتنقل بلوحة المفاتيح. فحص وإصلاح أي أخطاء ظاهرة في navbar/footer دون تغيير Admin/Interview/Student/Auth/APIs.
+
+### دليل التنفيذ والتحقق
+
+- Desktop nav radius انخفض من12px إلى8px، وحركة الـwhite-rise الأصلية محفوظة. روابط الـFooter بقت pills داكنة صلبة بارتفاع33px، والـBack-to-top بقى33×33px بلون Teal؛ Hover فعلي على Home في الـFooter أعطى نصًا داكنًا `rgb(5,7,10)` فوق fill أبيض. روابط الـNavbar والـFooter عطّلت انتقال pseudo-fill عند reduced-motion.
+- تجربة Preview لقائمة الموبايل على DOM: full viewport `1280×1100`, background `rgb(5,7,10)`, `opacity:1`, `backdrop-filter:none`, radius0؛ ستة روابط، Escape أغلقها واستعاد document overflow. أداة Preview لم تسمح بتغيير viewport إلى875px أو هاتف، لذلك لا أدّعي فحصًا على شاشة هاتف فعلية.
+- `npx tsc --noEmit`, ESLint للمكونين، `npm run test:pure` نجح29/29، و`npm run build` اكتمل بنجاح؛ `git diff --check` نظيف. لا تغييرات بيانات أو APIs.

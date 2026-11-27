@@ -1,3 +1,4 @@
+import { siteUi } from "@/src/components/site/public-ui";
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -23,11 +24,11 @@ export default async function CmsPage({ params }: PageParams) {
   const paragraphs = page.data.body?.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean) ?? [];
   return (
     <SiteFrame>
-      <article className="site-cms-page">
+      <article className={siteUi("site-cms-page")}>
         <PageIntro number="07" eyebrow={page.data.category || "IT Club / Published page"} title={page.data.title} description={page.data.summary || page.data.subtitle || "Published information from the IT Club community."} arabic={page.data.arabicTitle} />
-        <div className="site-container site-event-detail__body">
-          <div className="site-event-detail__copy">
-            {page.data.image ? <div className="site-content-icon" aria-hidden="true"><FileText /></div> : null}
+        <div className={siteUi("site-container site-event-detail__body")}>
+          <div className={siteUi("site-event-detail__copy")}>
+            {page.data.image ? <div className={siteUi("site-content-icon")} aria-hidden="true"><FileText /></div> : null}
             <SectionLabel number="01">Published information</SectionLabel>
             {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
           </div>

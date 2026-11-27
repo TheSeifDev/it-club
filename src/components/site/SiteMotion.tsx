@@ -28,5 +28,5 @@ export default function SiteMotion({ children }: { children: ReactNode }) {
     };
   }, [pathname]);
 
-  return <div className="site-motion-root" ref={root}>{children}</div>;
+  return <div className="site-motion-root min-h-screen min-w-0 bg-transparent" ref={root}>{children}</div>;
 }

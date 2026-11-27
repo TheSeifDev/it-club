@@ -156,3 +156,11 @@ Tracks تحتفظ باستعراضها ومشاهدها وقدراتها الم�
 الحركة السابقة أثبتت وجود GSAP، لكن قياس Preview وجد فقط y=28px reveal وy=45px card lift وتحول accent متواضعًا؛ لذلك توجّه الحركة الآن إلى amplitudes ومسافة scrub ملحوظتين، masked/word-by-word text fill، glass-card entrances/exits، icon-chip entrances، مع section parallax/overlap محسوب. Motion حقيقية مرتبطة بموضع التمرير وليست CSS autoplay أو لقطة تُجمَّلها أداة الصورة؛ keyboard, touch, cleanups, mobile flow و`prefers-reduced-motion` محفوظة، والنص كامل القراءة في HTML.
 
 في About الحالية، تمتد كلمات العبارة من muted-gray إلى white/teal، وتظهر ثلاث كبسولات inline (`</>`, `BATU`, الكتاب) بالتتابع. على الأجهزة المكتبية المؤهلة فقط تُثبّت فقرة About لفترة قصيرة تقارب 0.92 من ارتفاع viewport لتُقرأ حركة fill بوضوح؛ على compact/mobile تبقى في تدفق الصفحة الطبيعي بلا pin. جميع القيم نابعة من timeline scrubbed قابلة للعكس، بينما CSS baseline يبقي النص ممتلئًا والكبسولات ظاهرة عند no-JS أو reduced-motion.
+
+## Tailwind والسلاسة وضغط الأصول — طلب المستخدم 27 نوفمبر 2026، الساعة 16:02
+
+تنسيقات الواجهة العامة الفعلية تتحول من CSS Modules والطبقات العامة القديمة إلى Tailwind v4 utilities؛ يبقى ملف CSS مركزي صغير لتوكنات الثيم فقط وضرورات المتصفح/الحركة التي لا تمثل layout أو تصميمًا منفصلًا. يمكن تجميع utility strings الثابتة في ملفات TypeScript صغيرة لتجنب JSX ضخم، دون `@apply` wrappers أو تحميل CSS Modules. يستمر التصميم الداكن/الزجاجي والألوان والمحتوى والـanchors والوظائف، ولا يشمل هذا إعادة تصميم Admin/Interview/Student/Auth أو تعديل APIs.
+
+السلاسة تعني تقليل عمليات paint/re-rasterization والـblur/clip-path أثناء التمرير، تخصيص transforms/opacity للمؤثرات المتحركة وتقليل backdrop blur في اللوحات الكبيرة المتراكبة، مع الحفاظ على About word-fill القابلة للعكس. لا تُضاف smooth-scroll library أو scroll hijacking لمجرد الاسم؛ أي تحسين يُقاس ويُذكر دون ضمان FPS على كل الأجهزة.
+
+الأصول الحالية تُفحص وتُحسّن losslessly فقط: إزالة metadata/إعادة التغليف دون إعادة ترميز ضائع، وتحسين صور lossless إذا كان الملف الناتج أصغر مع تطابق البكسلات. لا جودة/أبعاد أقل تحت ادعاء عدم الفقد. الفيديو الحالي يبقى كما هو بصريًا. طلب فيديو16 ثانية أو64صور/frames مؤجل صراحة؛ لا توليد أو تحويل إلى sequence جديد الآن، ويُقدّم اختيار تقني مختصر للمستقبل.

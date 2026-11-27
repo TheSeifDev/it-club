@@ -43,7 +43,7 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
       const aboutSection = statement.closest<HTMLElement>("[data-editorial-about]");
       const pinStory = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine) and (min-height: 760px)").matches && Boolean(aboutSection);
       gsap.set(words, { "--word-fill": "0%" });
-      gsap.set(chips, { opacity: 0, scale: .35, y: 26, rotation: -24, filter: "blur(8px)" });
+      gsap.set(chips, { opacity: 0, scale: .35, y: 26, rotation: -24 });
       const reading = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -66,15 +66,15 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
         } else {
           reading.to(element, {
             opacity: 1, scale: 1, y: 0, rotation: element.textContent === "BATU" ? -8 : 0,
-            filter: "blur(0px)", duration: .48, ease: "back.out(1.4)",
+            duration: .48, ease: "back.out(1.4)",
           }, position);
         }
       });
     }
 
     home.querySelectorAll<HTMLElement>("[data-editorial-reveal]").forEach((element, index) => {
-      gsap.fromTo(element, { y: distance, opacity: .08, clipPath: "inset(12% 0 0 0)" }, {
-        y: 0, opacity: 1, clipPath: "inset(0% 0 0 0)", ease: "power2.out",
+      gsap.fromTo(element, { y: distance, opacity: .08 }, {
+        y: 0, opacity: 1, ease: "power2.out",
         scrollTrigger: {
           id: `editorial-reveal-${index}`, trigger: element,
           start: "top 96%", end: "top 66%", scrub: .6,

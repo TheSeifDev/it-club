@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
-import styles from "./HomeHero.module.css";
 
 /** Actual MP4 background; never starts automatically for reduced-motion visitors. */
 export function HeroVideo() {
@@ -65,7 +64,7 @@ export function HeroVideo() {
     <>
       <video
         ref={video}
-        className={styles.video}
+        className="h-full w-full object-cover object-center max-[900px]:object-[65%_center] max-[540px]:object-[68%_center]"
         data-editorial-video
         poster="/media/club-hero-poster.webp"
         loop
@@ -82,7 +81,7 @@ export function HeroVideo() {
       {!failed ? (
         <button
           type="button"
-          className={styles.videoControl}
+          className="absolute right-[var(--site-gutter)] bottom-[92px] z-[5] inline-flex min-h-9 cursor-pointer items-center gap-[7px] rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] px-[11px] text-[.61rem] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_12px_38px_rgb(0_0_0_/_24%)] backdrop-blur-[12px] backdrop-saturate-[140%] supports-[not_(backdrop-filter:blur(1px))]:bg-[var(--site-paper-dim)] motion-reduce:backdrop-blur-none max-[900px]:top-[102px] max-[900px]:bottom-auto max-[900px]:backdrop-blur-none"
           onClick={toggle}
           aria-label={playing ? "Pause background video" : "Play background video"}
         >

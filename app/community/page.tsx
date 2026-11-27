@@ -6,7 +6,7 @@ import CommunityDirectory from "@/src/components/site/CommunityDirectory";
 import CommunityPersonCard, {
   type CommunityPerson,
 } from "@/src/components/site/CommunityPersonCard";
-import communityStyles from "@/src/components/site/Community.module.css";
+import communityStyles from "@/src/components/site/CommunityStyles";
 import { getTrackTheme } from "@/lib/ui/track-theme";
 import {
   displayResponsibilities,
@@ -65,7 +65,7 @@ export default async function CommunityPage() {
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
               <span className={communityStyles.sectionNumber}>01</span>
-              <span>Community / The people</span>
+              <span className={communityStyles.sectionLabelText}>Community / The people</span>
             </div>
             <div className={communityStyles.introBody} data-reveal>
               <div>
@@ -87,7 +87,9 @@ export default async function CommunityPage() {
             <div className={communityStyles.container}>
               <div className={communityStyles.sectionLabel}>
                 <span className={communityStyles.sectionNumber}>02</span>
-                <span>Club leadership / قيادة النادي</span>
+                <span className={communityStyles.sectionLabelText}>
+                  Club leadership / قيادة النادي
+                </span>
               </div>
               <div className={communityStyles.leadershipHeading} data-reveal>
                 <h2 className={communityStyles.heading}>
@@ -115,11 +117,11 @@ export default async function CommunityPage() {
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
               <span className={communityStyles.sectionNumber}>03</span>
-              <span>The boards / اللجان</span>
+              <span className={communityStyles.sectionLabelText}>The boards / اللجان</span>
             </div>
             <div className={communityStyles.boardHeading} data-reveal>
               <h2 className={communityStyles.heading}>
-                Many disciplines. <span>One community.</span>
+                Many disciplines. <span className="text-[var(--site-sky-ink,#52e8d1)]">One community.</span>
               </h2>
               <p className={communityStyles.headingNote}>
                 Each published board has its own focus. Explore the teams, then
@@ -158,14 +160,22 @@ export default async function CommunityPage() {
                           </span>
                         ) : null}
                       </p>
-                      <h3>{board.data.title}</h3>
-                      {summary ? <p>{summary}</p> : null}
+                      <h3 className={communityStyles.boardTitle}>
+                        {board.data.title}
+                      </h3>
+                      {summary ? (
+                        <p className={communityStyles.boardSummary}>{summary}</p>
+                      ) : null}
                       <Link
                         className={communityStyles.boardLink}
                         href="/tracks"
                         aria-label={`See tracks related to ${board.data.title}`}
                       >
-                        <ArrowUpRight size={18} strokeWidth={1.7} aria-hidden="true" />
+                        <ArrowUpRight
+                          size={18}
+                          strokeWidth={1.7}
+                          aria-hidden="true"
+                        />
                       </Link>
                     </article>
                   );
@@ -191,7 +201,7 @@ export default async function CommunityPage() {
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
               <span className={communityStyles.sectionNumber}>04</span>
-              <span>Member directory / دليل الأعضاء</span>
+              <span className={communityStyles.sectionLabelText}>Member directory / دليل الأعضاء</span>
             </div>
             <div className={communityStyles.directoryHeading} data-reveal>
               <h2 className={communityStyles.heading}>Know who does what.</h2>
@@ -229,7 +239,9 @@ export default async function CommunityPage() {
             <div className={communityStyles.ctaPanel}>
               <div className={communityStyles.sectionLabel}>
                 <span className={communityStyles.sectionNumber}>05</span>
-                <span>Find your place</span>
+                <span className={communityStyles.sectionLabelText}>
+                  Find your place
+                </span>
               </div>
               <div className={communityStyles.ctaCopy}>
                 <h2>

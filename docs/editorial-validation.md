@@ -81,3 +81,27 @@ Track identifiers, category labels, profile links/icons, and Tracks scene labels
 ### Final commands
 
 After the explicit word endpoints and track-label contrast edits, `npx tsc --noEmit` passed; `npm run lint` had 0 errors and the same existing `app.config.ts` anonymous-export warning; `npm run test:pure` passed 29/29 (with existing Node module-type performance notices); `npm run build` succeeded with Next.js 16.3.8; and `git diff --check` passed. Preview HTTP returned 200 for `/`, `/register`, `/community`, `/tracks`, `/events`, `/sponsors`, `/alumni`, `/contact`, `/privacy`, `/terms`, and `/manus-routes.json`. No API POST, database operation, or form submission was performed. Reduced-motion behavior was source-checked, not toggled in the live browser.
+
+## Tailwind / performance / media — 27 November 2026
+
+Before the latest motion changes, a controlled 2.2-second rAF-driven scroll on Preview at `1280×1100` recorded 131 samples, mean interval16.93ms, p95 16.90ms, one interval above33.4ms and no observed main-thread Long Tasks. This development/cloud-browser sample did not reproduce severe lag and is not a GPU paint/compositor profile or an FPS guarantee. Source inspection found scroll-time chip blur, reveal clip-path and large overlapping backdrop-filter surfaces; these are targeted for removal/reduction without changing About's requested word-gradient fill or reverse timeline.
+
+For future16-second media, native MP4/WebM is the default for time-based autoplay/loop. Image sequences can be appropriate for exact scroll-linked frame selection, with decoded-image memory and request/loading costs. `64 / 16 = 4` frames per second only if64 images are played uniformly over16seconds; this is not the frame rate of a scroll-driven sequence. No future media is generated in this update.
+
+Sources read: [web.dev — Video performance](https://web.dev/learn/performance/video-performance), supporting native video efficiency for animated playback; [web.dev — High-performance CSS animations](https://web.dev/articles/animations-guide), supporting transform/opacity and limited will-change rather than paint/layout-heavy animation. Lossless optimization means unchanged decoded pixels/frames, not a visually acceptable lossy quality setting.
+
+### After motion-property reduction
+
+After removing chip `filter:blur()` and Home reveal `clip-path` tweens, the same 2.2-second Preview scroll probe recorded 129 samples, mean interval17.20ms, p95 16.90ms, three intervals above33.4ms, and no observed Long Tasks. Relative to the prior sample (131,16.93ms, p95 16.90ms, one interval above33.4ms, no Long Tasks), this repeat does **not** establish a measurable frame-time improvement; those frame-gap outliers are affected by cloud-browser scheduling and aren't a controlled GPU trace. The code change does remove the identified filter/clip animations and large moving glass blur, but device-level smoothness remains unverified. After the Home utility migration, a live mobile DOM check at390×844 found the three-line hero title ends at802px inside the844px hero, no horizontal overflow, and all lines at opacity1/identity transform after entrance.
+
+Post-change functional spot checks confirmed the Hero play/pause button pauses then resumes the video. The About DOM retained38 word spans and3 chips. The first word had begun reversing from100% after scrolling back but was still44% at a250ms sample during scrub catch-up; this is not recorded as a fully completed reverse test in the current round.
+
+### Third repeat after transform/opacity-only reveal edits
+
+The same2.2-second Preview `requestAnimationFrame` probe recorded131 samples, mean16.80ms, p95 16.90ms, zero gaps above33.4ms, zero above50ms, and no Long Tasks. Across the three latest comparisons, slow-gap counts varied between1,3,0 while p95 remained16.90ms; therefore this sample alone cannot prove a causal or device-general smoothness improvement. The persistent implementation changes avoid the identified `filter:blur()`/`clip-path` reveals and large moving glass blur, leaving the existing GSAP composition intact.
+
+### Lossless media and final command checks
+
+`docs/media-optimization.json` records82 PNG/WebP/MP4 candidates:22 smaller encodings were adopted only after pixel/frame equality checks, saving147,268 bytes total;60 candidates remained unchanged, and there were zero optimizer errors. The22 replaced originals are backed up outside the project under `/home/ubuntu/itclub-media-originals-20261127`. The current Hero MP4 was not re-encoded or modified. Two unreferenced legacy JPEGs (`spotlight-stage.jpg`, `images/auth-building-night.jpg`) and the small ICO favicon remained byte-for-byte unchanged because no pixel-safe JPEG optimizer is installed; no lossy fallback was used.
+
+After the public UI edits and CSS utility correction, `npx tsc --noEmit`, `npm run lint` (zero errors; existing advisory `app.config.ts` warning), `npm run test:pure` (29/29), `npm run build` (Next.js16.3.8), and `git diff --check` passed. The utility-map issue `overflow-wrap-anywhere` was corrected to `[overflow-wrap:anywhere]` before this build.

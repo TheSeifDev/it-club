@@ -1,5 +1,5 @@
-/* Public identity. Operational dashboards do not inherit these tokens. */
-.site-root[data-design="club"] {
+/* Public-only tokens; layout/typography/components use Tailwind utilities. */
+.site-root {
   --site-night: #05070a;
   --site-night-2: #0a1016;
   --site-night-3: #111a22;
@@ -24,12 +24,27 @@
   --site-gutter: clamp(20px, 3.5vw, 64px);
   --site-max: none;
   --site-panel-max: none;
+  --site-header-clearance: 112px;
   --site-radius: 12px;
   --site-panel-radius: 18px;
   --site-display-weight: 400;
   --site-hero-size: clamp(3.4rem, 5.7vw, 7.2rem);
   --site-hero-tracking: -0.07em;
   --site-hero-leading: 1.04;
-  background: var(--site-night);
-  color: var(--site-ink);
+  --site-glass: rgb(18 27 35 / 58%);
+  --site-glass-strong: rgb(8 13 19 / 90%);
+  --site-glass-soft: rgb(233 249 250 / 5%);
+  --site-glass-border: rgb(218 244 244 / 14%);
+  --site-glass-highlight: rgb(245 255 255 / 11%);
+  --site-glass-blur: 6px;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .site-root {
+    --site-glass: #111a22;
+    --site-glass-strong: #0a1016;
+    --site-glass-soft: #151f28;
+  }
+}
+@media (max-width: 800px) {
+  .site-root { --site-glass-blur: 0px; }
 }

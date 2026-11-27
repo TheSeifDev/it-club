@@ -1,0 +1,708 @@
+{
+  "policy": "unchanged decoded pixels/frames; only strictly smaller files adopted",
+  "applied": true,
+  "backup_directory": "/home/ubuntu/itclub-media-originals-20261127",
+  "saved_bytes": 147268,
+  "records": [
+    {
+      "path": "COMMITTEES/Abdulrahman Ashraf.webp",
+      "before": 277984,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 752128,
+      "after": 277984
+    },
+    {
+      "path": "COMMITTEES/Adham Ahmed.webp",
+      "before": 331024,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 828722,
+      "after": 331024
+    },
+    {
+      "path": "COMMITTEES/Ahmed Mohsen.webp",
+      "before": 322930,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 845624,
+      "after": 322930
+    },
+    {
+      "path": "COMMITTEES/Ahmed Samir.webp",
+      "before": 195450,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 558684,
+      "after": 195450
+    },
+    {
+      "path": "COMMITTEES/Fares.webp",
+      "before": 56990,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 311864,
+      "after": 56990
+    },
+    {
+      "path": "COMMITTEES/Farida Mohamed.webp",
+      "before": 293888,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 770818,
+      "after": 293888
+    },
+    {
+      "path": "COMMITTEES/Habiba Ahmed.webp",
+      "before": 181906,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 533962,
+      "after": 181906
+    },
+    {
+      "path": "COMMITTEES/Habiba Mounir.webp",
+      "before": 78972,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 429722,
+      "after": 78972
+    },
+    {
+      "path": "COMMITTEES/Islam El-Sayed.webp",
+      "before": 1098190,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1084098,
+      "verified": true,
+      "after": 1084098,
+      "saved": 14092
+    },
+    {
+      "path": "COMMITTEES/Mahmoud Sameh.webp",
+      "before": 292892,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 817990,
+      "after": 292892
+    },
+    {
+      "path": "COMMITTEES/Marwan Awad.webp",
+      "before": 286094,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 742968,
+      "after": 286094
+    },
+    {
+      "path": "COMMITTEES/Merna.webp",
+      "before": 237210,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 722680,
+      "after": 237210
+    },
+    {
+      "path": "COMMITTEES/Mohamed Al-Amir.webp",
+      "before": 218778,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 612148,
+      "after": 218778
+    },
+    {
+      "path": "COMMITTEES/Mohamed Nagi.webp",
+      "before": 203608,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 603666,
+      "after": 203608
+    },
+    {
+      "path": "COMMITTEES/Mohamed Sherif.webp",
+      "before": 272420,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 795906,
+      "after": 272420
+    },
+    {
+      "path": "COMMITTEES/Nour.webp",
+      "before": 68858,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 405592,
+      "after": 68858
+    },
+    {
+      "path": "COMMITTEES/Omar Mehawed.webp",
+      "before": 344440,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 814192,
+      "after": 344440
+    },
+    {
+      "path": "COMMITTEES/Saif Kambo.webp",
+      "before": 272446,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 766682,
+      "after": 272446
+    },
+    {
+      "path": "COMMITTEES/Shahd Ahssen.webp",
+      "before": 193356,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 592046,
+      "after": 193356
+    },
+    {
+      "path": "COMMITTEES/Sherif.webp",
+      "before": 231956,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 679588,
+      "after": 231956
+    },
+    {
+      "path": "COMMITTEES/Youssef soliman.webp",
+      "before": 353934,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 939052,
+      "after": 353934
+    },
+    {
+      "path": "COMMITTEES/Ziad Ayman.webp",
+      "before": 134228,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 372674,
+      "after": 134228
+    },
+    {
+      "path": "COMMITTEES/benjamin.webp",
+      "before": 1187554,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1182654,
+      "verified": true,
+      "after": 1182654,
+      "saved": 4900
+    },
+    {
+      "path": "COMMITTEES/cutouts/abdulrahman-ashraf.webp",
+      "before": 58362,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 356548,
+      "after": 58362
+    },
+    {
+      "path": "COMMITTEES/cutouts/adham-ahmed.webp",
+      "before": 78474,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 513326,
+      "after": 78474
+    },
+    {
+      "path": "COMMITTEES/cutouts/ahmed-mohsen.webp",
+      "before": 87796,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 628836,
+      "after": 87796
+    },
+    {
+      "path": "COMMITTEES/cutouts/ahmed-samir.webp",
+      "before": 63298,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 345320,
+      "after": 63298
+    },
+    {
+      "path": "COMMITTEES/cutouts/benjamin.webp",
+      "before": 1038976,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1007084,
+      "verified": true,
+      "after": 1007084,
+      "saved": 31892
+    },
+    {
+      "path": "COMMITTEES/cutouts/fares.webp",
+      "before": 332420,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 330794,
+      "verified": true,
+      "after": 330794,
+      "saved": 1626
+    },
+    {
+      "path": "COMMITTEES/cutouts/farida-mohamed.webp",
+      "before": 72584,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 437380,
+      "after": 72584
+    },
+    {
+      "path": "COMMITTEES/cutouts/habiba-ahmed.webp",
+      "before": 53162,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 330620,
+      "after": 53162
+    },
+    {
+      "path": "COMMITTEES/cutouts/habiba-mounir.webp",
+      "before": 465488,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 455702,
+      "verified": true,
+      "after": 455702,
+      "saved": 9786
+    },
+    {
+      "path": "COMMITTEES/cutouts/islam-el-sayed.webp",
+      "before": 852928,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 841088,
+      "verified": true,
+      "after": 841088,
+      "saved": 11840
+    },
+    {
+      "path": "COMMITTEES/cutouts/mahmoud-sameh.webp",
+      "before": 78226,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 586068,
+      "after": 78226
+    },
+    {
+      "path": "COMMITTEES/cutouts/marwan-awad.webp",
+      "before": 79294,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 502846,
+      "after": 79294
+    },
+    {
+      "path": "COMMITTEES/cutouts/menna.webp",
+      "before": 236610,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 234442,
+      "verified": true,
+      "after": 234442,
+      "saved": 2168
+    },
+    {
+      "path": "COMMITTEES/cutouts/merna.webp",
+      "before": 60898,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 416666,
+      "after": 60898
+    },
+    {
+      "path": "COMMITTEES/cutouts/mohamed-al-amir.webp",
+      "before": 61916,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 424682,
+      "after": 61916
+    },
+    {
+      "path": "COMMITTEES/cutouts/mohamed-ibrahim.webp",
+      "before": 97694,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 717820,
+      "after": 97694
+    },
+    {
+      "path": "COMMITTEES/cutouts/mohamed-nagi.webp",
+      "before": 65498,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 365242,
+      "after": 65498
+    },
+    {
+      "path": "COMMITTEES/cutouts/mohamed-sherif.webp",
+      "before": 80592,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 582082,
+      "after": 80592
+    },
+    {
+      "path": "COMMITTEES/cutouts/nour.webp",
+      "before": 436598,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 433348,
+      "verified": true,
+      "after": 433348,
+      "saved": 3250
+    },
+    {
+      "path": "COMMITTEES/cutouts/omar-mehawed.webp",
+      "before": 95000,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 610470,
+      "after": 95000
+    },
+    {
+      "path": "COMMITTEES/cutouts/saber.webp",
+      "before": 813798,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 781534,
+      "verified": true,
+      "after": 781534,
+      "saved": 32264
+    },
+    {
+      "path": "COMMITTEES/cutouts/saif-kambo.webp",
+      "before": 66540,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 403996,
+      "after": 66540
+    },
+    {
+      "path": "COMMITTEES/cutouts/seif-ayman.webp",
+      "before": 46654,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 258556,
+      "after": 46654
+    },
+    {
+      "path": "COMMITTEES/cutouts/shahd-ahssen.webp",
+      "before": 69052,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 425180,
+      "after": 69052
+    },
+    {
+      "path": "COMMITTEES/cutouts/sherif-hamdy.webp",
+      "before": 58426,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 339426,
+      "after": 58426
+    },
+    {
+      "path": "COMMITTEES/cutouts/youssef-soliman.webp",
+      "before": 87836,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 659064,
+      "after": 87836
+    },
+    {
+      "path": "COMMITTEES/cutouts/ziad-ayman.webp",
+      "before": 48780,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 263732,
+      "after": 48780
+    },
+    {
+      "path": "COMMITTEES/ken.webp",
+      "before": 212932,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 588606,
+      "after": 212932
+    },
+    {
+      "path": "COMMITTEES/marwan.webp",
+      "before": 42260,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 348936,
+      "after": 42260
+    },
+    {
+      "path": "COMMITTEES/menna.webp",
+      "before": 99712,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 711050,
+      "after": 99712
+    },
+    {
+      "path": "COMMITTEES/mohamed ibrahim.webp",
+      "before": 388302,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 938564,
+      "after": 388302
+    },
+    {
+      "path": "COMMITTEES/saber.webp",
+      "before": 1010006,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1004160,
+      "verified": true,
+      "after": 1004160,
+      "saved": 5846
+    },
+    {
+      "path": "apple-icon.png",
+      "before": 37206,
+      "status": "optimized",
+      "method": "PNG lossless optimize",
+      "candidate": 30975,
+      "verified": true,
+      "after": 30975,
+      "saved": 6231
+    },
+    {
+      "path": "apple-icon.webp",
+      "before": 24576,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 23646,
+      "verified": true,
+      "after": 23646,
+      "saved": 930
+    },
+    {
+      "path": "icon-192.webp",
+      "before": 27056,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 25882,
+      "verified": true,
+      "after": 25882,
+      "saved": 1174
+    },
+    {
+      "path": "icon-512.webp",
+      "before": 114998,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 113100,
+      "verified": true,
+      "after": 113100,
+      "saved": 1898
+    },
+    {
+      "path": "icon.webp",
+      "before": 1888,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1874,
+      "verified": true,
+      "after": 1874,
+      "saved": 14
+    },
+    {
+      "path": "images/auth-building-night.webp",
+      "before": 913462,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 906010,
+      "verified": true,
+      "after": 906010,
+      "saved": 7452
+    },
+    {
+      "path": "images/partners/creativa-logo.png",
+      "before": 11430,
+      "status": "kept-smaller-original",
+      "method": "PNG lossless optimize",
+      "candidate": 12269,
+      "after": 11430
+    },
+    {
+      "path": "images/partners/creativa-logo.webp",
+      "before": 10030,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 9894,
+      "verified": true,
+      "after": 9894,
+      "saved": 136
+    },
+    {
+      "path": "images/partners/venturex-logo.png",
+      "before": 4373,
+      "status": "optimized",
+      "method": "PNG lossless optimize",
+      "candidate": 4294,
+      "verified": true,
+      "after": 4294,
+      "saved": 79
+    },
+    {
+      "path": "images/partners/venturex-logo.webp",
+      "before": 1744,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 1744,
+      "after": 1744
+    },
+    {
+      "path": "images/partnerships/community_events.webp",
+      "before": 135658,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 714388,
+      "after": 135658
+    },
+    {
+      "path": "images/partnerships/education_learning.webp",
+      "before": 157048,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 860036,
+      "after": 157048
+    },
+    {
+      "path": "images/partnerships/featured_supporter.webp",
+      "before": 86056,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 591774,
+      "after": 86056
+    },
+    {
+      "path": "images/partnerships/hero_ecosystem.webp",
+      "before": 116218,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 716636,
+      "after": 116218
+    },
+    {
+      "path": "images/partnerships/media_visibility.webp",
+      "before": 107746,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 625462,
+      "after": 107746
+    },
+    {
+      "path": "images/partnerships/technical_support.webp",
+      "before": 142604,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 820612,
+      "after": 142604
+    },
+    {
+      "path": "images/partnerships/technology_partners.webp",
+      "before": 127568,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 719692,
+      "after": 127568
+    },
+    {
+      "path": "images/process-cta-lightpaths.webp",
+      "before": 56604,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 523588,
+      "after": 56604
+    },
+    {
+      "path": "images/process-hero-bg.webp",
+      "before": 15942,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 159432,
+      "after": 15942
+    },
+    {
+      "path": "images/process-hero-doorway.webp",
+      "before": 15942,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 159432,
+      "after": 15942
+    },
+    {
+      "path": "logo.png",
+      "before": 160410,
+      "status": "optimized",
+      "method": "PNG lossless optimize",
+      "candidate": 155836,
+      "verified": true,
+      "after": 155836,
+      "saved": 4574
+    },
+    {
+      "path": "logo.webp",
+      "before": 113138,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 110906,
+      "verified": true,
+      "after": 110906,
+      "saved": 2232
+    },
+    {
+      "path": "manus-storage/async-images/sRVj1Lb2UBtRXgo0s9Dro9/image-1.webp",
+      "before": 163134,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 892290,
+      "after": 163134
+    },
+    {
+      "path": "media/club-hero-poster.webp",
+      "before": 25302,
+      "status": "kept-smaller-original",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 235412,
+      "after": 25302
+    },
+    {
+      "path": "media/club-hero.mp4",
+      "before": 402977,
+      "status": "kept-smaller-original",
+      "method": "MP4 stream-copy remux + faststart",
+      "candidate": 402977,
+      "after": 402977
+    },
+    {
+      "path": "og-itclub.webp",
+      "before": 122168,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 119200,
+      "verified": true,
+      "after": 119200,
+      "saved": 2968
+    },
+    {
+      "path": "spotlight-stage.webp",
+      "before": 895800,
+      "status": "optimized",
+      "method": "WebP lossless exact RGBA, method6",
+      "candidate": 893884,
+      "verified": true,
+      "after": 893884,
+      "saved": 1916
+    }
+  ]
+}

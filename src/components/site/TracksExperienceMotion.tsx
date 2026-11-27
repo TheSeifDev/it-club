@@ -38,10 +38,10 @@ export default function TracksExperienceMotion({
         if (heroTitle?.length) {
           gsap.fromTo(
             heroTitle,
-            { yPercent: 112, clipPath: "inset(0 0 100% 0)" },
+            { yPercent: 112, autoAlpha: 0 },
             {
               yPercent: 0,
-              clipPath: "inset(0 0 0% 0)",
+              autoAlpha: 1,
               duration: 0.9,
               stagger: 0.1,
               ease: "power3.out",
@@ -157,9 +157,10 @@ export default function TracksExperienceMotion({
           if (visual) {
             gsap.fromTo(
               visual,
-              { clipPath: "inset(7% 0 7% 0)", scale: 0.98 },
+              { autoAlpha: 0.72, y: 14, scale: 0.98 },
               {
-                clipPath: "inset(0% 0 0% 0)",
+                autoAlpha: 1,
+                y: 0,
                 scale: 1,
                 ease: "power2.out",
                 scrollTrigger: {

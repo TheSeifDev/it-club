@@ -1,3 +1,4 @@
+import { siteUi } from "@/src/components/site/public-ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -21,7 +22,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
   if (!entry) notFound();
   return (
     <SiteFrame>
-      <section className="site-profile-page"><div className="site-container"><ProfileDetail entry={entry} /><div className="site-detail-back"><Link className="site-text-link" href={entry.data.alumni ? "/alumni" : "/community"}>← {entry.data.alumni ? "All alumni" : "All teams"}</Link></div></div></section>
+      <section className={siteUi("site-profile-page")}><div className={siteUi("site-container")}><ProfileDetail entry={entry} /><div className={siteUi("site-detail-back")}><Link className={siteUi("site-text-link")} href={entry.data.alumni ? "/alumni" : "/community"}>← {entry.data.alumni ? "All alumni" : "All teams"}</Link></div></div></section>
     </SiteFrame>
   );
 }

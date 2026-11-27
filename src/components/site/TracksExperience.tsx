@@ -14,7 +14,7 @@ import {
 import type { CSSProperties } from "react";
 import { EmptyState } from "@/src/components/site/SiteUI";
 import TracksExperienceMotion from "@/src/components/site/TracksExperienceMotion";
-import styles from "./TracksExperience.module.css";
+import styles from "./TracksExperienceClasses";
 
 export type ExhibitionMember = {
   slug: string;
@@ -60,10 +60,10 @@ function TrackVisual({ track }: { track: ExhibitionTrack }) {
   const Icon = ICONS[track.iconName] ?? Code2;
 
   return (
-    <div className={styles.visual}>
+    <div className={styles.visual} data-track-visual>
       <span className={styles.visualLabel}>{track.number} / track</span>
-      <div className={styles.visualGlyph} aria-hidden="true">
-        <Icon size={112} strokeWidth={1.15} />
+      <div className={styles.visualGlyph} data-visual-glyph aria-hidden="true">
+        <Icon className={styles.visualGlyphSvg} size={112} strokeWidth={1.15} />
       </div>
       <span className={styles.visualTitle}>{track.title}</span>
     </div>
@@ -98,18 +98,23 @@ function TrackScene({
       }
       aria-labelledby={`track-title-${track.slug}`}
     >
-      <div className={styles.sceneMedia} data-tracks-exhibition-visual>
+      <div
+        className={`${styles.sceneMedia}${index % 2 ? ` ${styles.sceneMediaReverse}` : ""}`}
+        data-tracks-exhibition-visual
+      >
         <TrackVisual track={track} />
       </div>
       <div
-        className={styles.sceneCopy}
+        className={`${styles.sceneCopy}${index % 2 ? ` ${styles.sceneCopyReverse}` : ""}`}
         data-stack-scroll
         role="region"
         aria-label={`${track.title} track details`}
       >
-        <div className={styles.sceneMeta}>
+        <div className={styles.sceneMeta} data-tracks-exhibition-meta>
           <span className={styles.sceneNumber}>{track.number}</span>
-          <span className={styles.sceneTag}>{track.tag}</span>
+          <span className={styles.sceneTag} data-track-scene-tag>
+            {track.tag}
+          </span>
           <span className={styles.sceneAccent} aria-hidden="true" />
         </div>
         <div className={styles.sceneHeading} data-tracks-exhibition-title>
@@ -118,18 +123,24 @@ function TrackScene({
               {track.arabicTitle}
             </p>
           ) : null}
-          <h2 id={`track-title-${track.slug}`}>{track.title}</h2>
+          <h2 className={styles.sceneTitle} id={`track-title-${track.slug}`}>
+            {track.title}
+          </h2>
         </div>
         <p className={styles.sceneSummary} data-tracks-exhibition-copy>
           {track.summary}
         </p>
         {detail ? <p className={styles.sceneDetail}>{detail}</p> : null}
-        <div className={styles.terrainBlock}>
+        <div className={styles.terrainBlock} data-track-terrain>
           <p className={styles.terrainLabel}>What this team works on</p>
-          <ul>
+          <ul className={styles.terrainList}>
             {terrain.map((item) => (
               <li key={item.title}>
-                <span className={styles.terrainMarker} aria-hidden="true" />
+                <span
+                  className={styles.terrainMarker}
+                  data-terrain-marker
+                  aria-hidden="true"
+                />
                 <span>
                   <strong>{item.title}</strong>
                   {item.desc ? <small>{item.desc}</small> : null}
@@ -190,8 +201,12 @@ export default function TracksExperience({
                 <span className={styles.labelText}>Tracks / where ideas get a team</span>
               </p>
               <h1 className={styles.heroTitle} data-tracks-exhibition-title>
-                <span>Different ways</span>
-                <span>to build.</span>
+                <span className={styles.heroTitleLine}>Different ways</span>
+                <span
+                  className={`${styles.heroTitleLine} ${styles.heroTitleAccent}`}
+                >
+                  to build.
+                </span>
               </h1>
               <p className={styles.heroLead} data-tracks-exhibition-copy>
                 {trackCountLabel}. One shared practice. Find the kind of
@@ -216,7 +231,11 @@ export default function TracksExperience({
             <div className={styles.heroAside} data-tracks-exhibition-visual>
               <span className={styles.heroAsideLabel}>IT Club / shared practice</span>
               <div className={styles.heroIcon} aria-hidden="true">
-                <FeaturedIcon size={108} strokeWidth={1.1} />
+                <FeaturedIcon
+                  className={styles.heroIconGlyph}
+                  size={108}
+                  strokeWidth={1.1}
+                />
               </div>
               <span className={styles.heroAsideNumber}>
                 {String(trackCount).padStart(2, "0")}
@@ -246,12 +265,14 @@ export default function TracksExperience({
           aria-labelledby="tracks-index-title"
         >
           <div className={styles.indexIntro}>
-            <p className={styles.sectionLabel}>
+            <p className={styles.sectionLabel} data-track-section-label>
               <span className={styles.labelNumber}>04</span>
               <span className={styles.labelText}>The track index</span>
             </p>
-            <h2 id="tracks-index-title">Choose a starting point.</h2>
-            <p>
+            <h2 className={styles.indexHeading} id="tracks-index-title">
+              Choose a starting point.
+            </h2>
+            <p className={styles.indexDescription}>
               Jump directly into a track. Every scene keeps its published remit,
               terrain, and available community links in view.
             </p>
@@ -262,18 +283,22 @@ export default function TracksExperience({
               className={styles.indexList}
               data-tracks-exhibition-index
             >
-              <ol>
+              <ol className={styles.indexItems}>
                 {tracks.map((track) => (
-                  <li key={track.id}>
-                    <a href={`#${track.slug}`}>
+                  <li className={styles.indexItem} key={track.id}>
+                    <a className={styles.indexLink} href={`#${track.slug}`}>
                       <span className={styles.jumpNumber}>{track.number}</span>
                       <span
                         className={styles.jumpSwatch}
                         style={{ background: track.color }}
                         aria-hidden="true"
                       />
-                      <span>{track.title}</span>
-                      <ArrowUpRight size={16} aria-hidden="true" />
+                      <span className={styles.indexItemTitle}>{track.title}</span>
+                      <ArrowUpRight
+                        className={styles.indexIcon}
+                        size={16}
+                        aria-hidden="true"
+                      />
                     </a>
                   </li>
                 ))}
@@ -296,13 +321,13 @@ export default function TracksExperience({
             aria-label="Published track scenes"
           >
             <div className={styles.stackPin} data-stack-pin>
-              <div className={styles.stackViewport}>
+              <div className={styles.stackViewport} data-stack-viewport>
                 {tracks.map((track, index) => (
                   <TrackScene track={track} index={index} key={track.id} />
                 ))}
               </div>
-              <div className={styles.stackProgress}>
-                <div className={styles.stackCount}>
+              <div className={styles.stackProgress} data-stack-progress-ui>
+                <div className={styles.stackCount} data-stack-count-ui>
                   <span data-stack-counter aria-live="polite" aria-atomic="true">
                     01
                   </span>
@@ -311,6 +336,7 @@ export default function TracksExperience({
                 </div>
                 <div
                   className={styles.stackProgressMeter}
+                  data-stack-meter
                   role="progressbar"
                   aria-label="Track exhibition progress"
                   aria-valuemin={0}
@@ -332,7 +358,7 @@ export default function TracksExperience({
           <div className={styles.closingMark} aria-hidden="true">
             <Users size={64} strokeWidth={1.1} />
           </div>
-          <div data-tracks-exhibition-closing-copy>
+          <div className={styles.closingContent} data-tracks-exhibition-closing-copy>
             <p
               className={styles.sectionLabel}
               data-tracks-exhibition-closing-label

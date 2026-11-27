@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import styles from "./RegisterEditorial.module.css";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -143,10 +142,12 @@ const steps = [
 ];
 
 const controlBase =
-  "w-full rounded-lg bg-[var(--site-paper-dim)] border border-[var(--site-glass-border)] px-4 py-3.5 text-sm text-[var(--site-ink)] placeholder:text-[var(--site-mist)] focus:border-[var(--site-sky-ink)] focus:bg-[var(--site-glass-strong)] focus:outline-none transition-all duration-200";
+  "w-full rounded-[10px] bg-[var(--site-paper-dim)] border border-[var(--site-glass-border)] px-4 py-3.5 text-sm text-[var(--site-ink)] placeholder:text-[var(--site-mist)] focus:border-[var(--site-sky-ink)] focus:bg-[var(--site-glass-strong)] focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-[var(--site-sky-ink)] transition-all duration-200";
 const inputClass = `${controlBase} h-12`;
 const selectClass = `${controlBase} h-12 appearance-none cursor-pointer pr-10`;
 const textareaClass = `${controlBase} min-h-32 resize-y leading-relaxed`;
+const flowClass =
+  "relative border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_80px_rgb(0_0_0_/_25%)] [&_button]:rounded-[10px] [&_button:focus-visible]:!outline-2 [&_button:focus-visible]:!outline-offset-2 [&_button:focus-visible]:!outline-[var(--site-sky-ink)]";
 
 function Field({
   id,
@@ -409,7 +410,7 @@ export default function RegisterFlow() {
   // ────────────────────────────────────────────────────────────
   if (applicationReference) {
     return (
-      <div className={`${styles.flow} relative overflow-hidden border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)]`}>
+      <div className={`${flowClass} overflow-hidden`}>
         {/* Subtle top accent gradient line */}
         <div className="h-1 w-full bg-gradient-to-r from-[var(--site-sky)] via-[var(--site-sky)] to-[var(--site-sky-ink)]" />
 
@@ -572,7 +573,7 @@ export default function RegisterFlow() {
   // Main Multi-Step Form Layout
   // ────────────────────────────────────────────────────────────
   return (
-    <div className={`${styles.flow} relative border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)]`}>
+    <div className={flowClass}>
       {/* Top Emerald Ambient Gradient Line */}
       <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[var(--site-sky)] to-transparent opacity-60" />
 

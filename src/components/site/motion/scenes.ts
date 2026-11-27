@@ -75,9 +75,9 @@ function setupGeneralReveals(root: HTMLElement, mm: MotionMedia) {
     all(root, "[data-line-heading]").forEach((heading, index) => {
       gsap.fromTo(
         heading,
-        { clipPath: "inset(0 0 100% 0)", y: 58 },
+        { opacity: 0.12, y: 58 },
         {
-          clipPath: "inset(0 0 0% 0)",
+          opacity: 1,
           y: 0,
           ease: "power3.out",
           scrollTrigger: {

@@ -32,6 +32,8 @@ export function setupTrackStack(
         "[data-stack-progress]",
       );
       const counter = stack.querySelector<HTMLElement>("[data-stack-counter]");
+      const progressbar = progress?.closest<HTMLElement>('[role="progressbar"]');
+      let lastProgressValue = -1;
       const originalTabIndex = pin.getAttribute("tabindex");
       const originalLabel = pin.getAttribute("aria-label");
       const scrollAreas = Array.from(
@@ -128,11 +130,11 @@ export function setupTrackStack(
       const renderState = () => {
         setActive(stackPanelIndex(sequence.time(), panels.length));
         const amount = sequence.progress();
-        if (progress) {
-          gsap.set(progress, { scaleX: amount });
-          progress
-            .closest<HTMLElement>('[role="progressbar"]')
-            ?.setAttribute("aria-valuenow", String(Math.round(amount * 100)));
+        if (progress) gsap.set(progress, { scaleX: amount });
+        const progressValue = Math.round(amount * 100);
+        if (progressValue !== lastProgressValue) {
+          progressbar?.setAttribute("aria-valuenow", String(progressValue));
+          lastProgressValue = progressValue;
         }
       };
       sequence.eventCallback("onUpdate", renderState);
@@ -258,9 +260,7 @@ export function setupTrackStack(
         if (counter) counter.textContent = "01";
         if (progress) {
           progress.removeAttribute("style");
-          progress
-            .closest<HTMLElement>('[role="progressbar"]')
-            ?.setAttribute("aria-valuenow", "0");
+          progressbar?.setAttribute("aria-valuenow", "0");
         }
       };
     });

@@ -51,9 +51,7 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
       const hasLayoutStates = layoutStates.length === chips.length + 1 && layoutStates.every((state) => state.length === words.length);
       const aboutSection = statement.closest<HTMLElement>("[data-editorial-about]");
       const pinStory = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine) and (min-height: 760px)").matches && Boolean(aboutSection);
-      const depthTile = aboutSection?.querySelector<HTMLElement>('[data-about-depth="tile"]');
       const depthSeal = aboutSection?.querySelector<HTMLElement>('[data-about-depth="seal"]');
-      if (depthTile) gsap.set(depthTile, { transformPerspective: 1000, transformStyle: "preserve-3d" });
       if (depthSeal) gsap.set(depthSeal, { transformPerspective: 850, transformStyle: "preserve-3d" });
       if (hasLayoutStates) {
         layoutStates[0].forEach(({ element, x, y }) => gsap.set(element, { x, y }));
@@ -87,13 +85,6 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
             }, openingPositions[stateIndex - 1]);
           });
         }
-      }
-      if (depthTile) {
-        reading.fromTo(depthTile,
-          { opacity: 0, x: -34, y: 62, z: -260, rotationX: -42, rotationY: 52, rotationZ: -43, scale: .58 },
-          { opacity: .88, x: 0, y: -7, z: 75, rotationX: 0, rotationY: 0, rotationZ: -24, scale: 1, duration: .82, ease: "power2.out" },
-          .18,
-        );
       }
       sequence.forEach((element, index) => {
         const position = index * .18;

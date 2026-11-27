@@ -72,7 +72,12 @@ function setupGeneralReveals(root: HTMLElement, mm: MotionMedia) {
       );
     });
 
-    all(root, "[data-line-heading]").forEach((heading, index) => {
+    // A parent [data-reveal] already animates nested headings; avoid a second,
+    // nearly identical scrubbed trigger on the same content.
+    const lineHeadings = all(root, "[data-line-heading]").filter(
+      (heading) => !heading.closest("[data-reveal]"),
+    );
+    lineHeadings.forEach((heading, index) => {
       gsap.fromTo(
         heading,
         { opacity: 0.12, y: 58 },

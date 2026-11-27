@@ -275,3 +275,11 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 
 ### خلاصة التنفيذ والتحقق
 الـPreview يعرض خمس لجان منشورة وصفر ملفات أعضاء منشورة؛ empty state صادقة. اختبارات الفلاتر والتفاعل أثبتت عدم عرض R&D مع بقاء مصدره دون تعديل، والـcursor وPause والتوقف خارج الشاشة يعملون. نجح TypeScript وESLint المركّز و`npm run test:pure` (39/39) وبناء Next.js16.3.8 و`git diff --check`. صور Preview للـdesktop/mobile ودليل التحقق الكامل في `docs/editorial-validation.md`. لا نشر أو قاعدة بيانات مكتوبة؛ لا مساس بـGitHub `main`.
+
+## تصغير shapes وانتقال من أعلى الصفحة — 27 نوفمبر 2026
+- [x] تصغير shapes انتقال الصفحات جدًا على desktop/mobile بألوان الموقع، مع بقاء wipe من فوق لتحت والحركة خفيفة بلا DOM tweens منفصلة لكل شكل صغير.
+- [x] عند فتح صفحة عامة جديدة يبدأ عرضها من أعلى الصفحة لا موضع scroll القديم أو أسفلها، قبل انكشاف المحتوى. الحفاظ على روابط الأقسام #hash ومفاتيح النقر المعدلة وروابط المناطق المحمية وreduced-motion والتنقل native للتاريخ.
+- [x] تحقق من الانتقال بين صفحتين بعد scrolling ومن anchors وحجم/اتجاه الشبكة، TypeScript وESLint والاختبارات والبناء وdiff-check. حفظ checkpoint ومزامنة فرع GitHub feature المحدد فقط، بلا نشر أو تعديل GitHub main.
+
+### خلاصة التنفيذ والتحقق
+في Preview عند `1280×1100` انتقل النقر الفعلي من Community عند `scrollY=4910` إلى Tracks عند `scrollY=0`؛ انتقل `/#about` من أسفل Tracks مع الحفاظ على hash واستهداف القسم قرب أعلى الشاشة (`top=106px`)، وحافظ Back على scroll التاريخ السابق (`3069px`). الشبكة 37 band و2,852 شكل SVG صغير على هذا المقاس، و8/8 اختبارات الانتقال و39/39 pure tests وTypeScript وESLint المركّز وproduction build و`git diff --check` نجحت. لا نشر إنتاجي أو تعديل GitHub main.

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "./motion/gsap";
-import { isPublicTransitionPath, publicTransitionTarget, transitionHoneycomb } from "@/lib/ui/page-transition";
+import {
+  isPublicTransitionPath,
+  publicTransitionTarget,
+  transitionHoneycomb,
+  transitionStartsAtTop,
+} from "@/lib/ui/page-transition";
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 const tileTones = [
@@ -16,7 +21,9 @@ const tileTones = [
   "color-mix(in srgb, var(--site-sky, #28cdb7) 58%, var(--site-night, #05070a))",
 ];
 
-type TransitionController = { routeChanged: (from: string, to: string) => void };
+type TransitionController = {
+  routeChanged: (from: string, to: string) => void;
+};
 
 /** Persistent at the root; only public showcase-to-showcase links are intercepted. */
 export default function PublicPageTransition() {
@@ -35,12 +42,13 @@ export default function PublicPageTransition() {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animation: gsap.core.Timeline | null = null;
     let watchdog: ReturnType<typeof setTimeout> | undefined;
-    let tiles: SVGPolygonElement[] = [];
+    let bands: SVGGElement[] = [];
     let delays: number[] = [];
     let viewport = "";
     let busy = false;
     let destination: string | null = null;
     let navigationSent = false;
+    let resetOnArrival = false;
 
     const clearWatchdog = () => {
       if (watchdog) clearTimeout(watchdog);
@@ -55,14 +63,21 @@ export default function PublicPageTransition() {
       busy = false;
       overlay.dataset.phase = "idle";
       gsap.set(overlay, { visibility: "hidden", pointerEvents: "none" });
-      gsap.set(tiles, { clearProps: "willChange" });
+      if (bands.length) gsap.set(bands, { clearProps: "willChange" });
     };
     const prepare = () => {
       // Tokens stay owned by the public theme, not the operational root layout.
-      const source = document.querySelector<HTMLElement>('[data-design="club"]');
+      const source = document.querySelector<HTMLElement>(
+        '[data-design="club"]',
+      );
       if (source) {
         const styles = getComputedStyle(source);
-        for (const token of ["--site-sky", "--site-sky-ink", "--site-night", "--site-night-3"]) {
+        for (const token of [
+          "--site-sky",
+          "--site-sky-ink",
+          "--site-night",
+          "--site-night-3",
+        ]) {
           overlay.style.setProperty(token, styles.getPropertyValue(token));
         }
       }
@@ -74,28 +89,41 @@ export default function PublicPageTransition() {
         svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
         const grid = transitionHoneycomb(width, height);
         const points = Array.from({ length: 6 }, (_, index) => {
-          const angle = index * Math.PI / 3;
+          const angle = (index * Math.PI) / 3;
           return `${Math.cos(angle) * grid.radius},${Math.sin(angle) * grid.radius}`;
         }).join(" ");
         const fragment = document.createDocumentFragment();
-        tiles = [];
+        const defs = document.createElementNS(svgNamespace, "defs");
+        const shape = document.createElementNS(svgNamespace, "polygon");
+        shape.setAttribute("id", "club-transition-hex");
+        shape.setAttribute("points", points);
+        defs.append(shape);
+        fragment.append(defs);
+        const strips = new Map<number, SVGGElement>();
+        bands = [];
         delays = [];
         for (const tile of grid.tiles) {
-          const group = document.createElementNS(svgNamespace, "g");
-          group.setAttribute("transform", `translate(${tile.x},${tile.y})`);
-          const polygon = document.createElementNS(svgNamespace, "polygon");
-          polygon.setAttribute("points", points);
-          polygon.setAttribute("data-transition-tile", "");
-          polygon.style.fill = tileTones[tile.tone];
-          group.append(polygon);
-          fragment.append(group);
-          tiles.push(polygon);
-          delays.push(tile.delay);
+          let strip = strips.get(tile.band);
+          if (!strip) {
+            strip = document.createElementNS(svgNamespace, "g");
+            strip.setAttribute("data-transition-band", String(tile.band));
+            strips.set(tile.band, strip);
+            fragment.append(strip);
+            bands.push(strip);
+            delays.push(tile.delay);
+          }
+          const hex = document.createElementNS(svgNamespace, "use");
+          hex.setAttribute("href", "#club-transition-hex");
+          hex.setAttribute("x", String(tile.x));
+          hex.setAttribute("y", String(tile.y));
+          hex.setAttribute("data-transition-tile", "");
+          hex.style.fill = tileTones[tile.tone];
+          strip.append(hex);
         }
         svg.replaceChildren(fragment);
       }
       gsap.set(overlay, { visibility: "visible", pointerEvents: "auto" });
-      gsap.set(tiles, { transformOrigin: "50% 50%", willChange: "transform,opacity" });
+      gsap.set(bands, { willChange: "transform,opacity" });
       busy = true;
     };
     const sendNavigation = () => {
@@ -103,23 +131,31 @@ export default function PublicPageTransition() {
       navigationSent = true;
       overlay.dataset.phase = "hold";
       try {
-        router.push(destination);
+        resetOnArrival = transitionStartsAtTop(destination);
+        router.push(destination, { scroll: true });
       } catch {
         // Keep the old page usable if the router rejects navigation synchronously.
+        resetOnArrival = false;
         settle();
       }
     };
     const reveal = (alreadyCovered: boolean) => {
-      if (media.matches) { settle(); return; }
+      if (media.matches) {
+        settle();
+        return;
+      }
       animation?.kill();
       clearWatchdog();
       prepare();
       destination = null;
-      if (!alreadyCovered) gsap.set(tiles, { scale: 1, opacity: 1 });
+      if (!alreadyCovered) gsap.set(bands, { y: 0, opacity: 1 });
       overlay.dataset.phase = "reveal";
       animation = gsap.timeline({ onComplete: settle });
-      animation.to(tiles, {
-        scale: 0, opacity: 0, duration: 0.36, ease: "power3.inOut",
+      animation.to(bands, {
+        y: 10,
+        opacity: 0,
+        duration: 0.26,
+        ease: "power3.inOut",
         stagger: (index: number) => delays[index],
       });
     };
@@ -128,12 +164,15 @@ export default function PublicPageTransition() {
       destination = href;
       navigationSent = false;
       overlay.dataset.phase = "cover";
-      gsap.set(tiles, { scale: 0, opacity: 0 });
+      gsap.set(bands, { y: -10, opacity: 0 });
       // A delayed/failed route must never trap the visitor under the overlay.
       watchdog = setTimeout(() => reveal(false), 8000);
       animation = gsap.timeline({ onComplete: sendNavigation });
-      animation.to(tiles, {
-        scale: 1, opacity: 1, duration: 0.32, ease: "power3.inOut",
+      animation.to(bands, {
+        y: 0,
+        opacity: 1,
+        duration: 0.28,
+        ease: "power3.inOut",
         stagger: (index: number) => delays[index],
       });
     };
@@ -146,10 +185,14 @@ export default function PublicPageTransition() {
         href: link.href,
         currentHref: window.location.href,
         sourcePublic: Boolean(link.closest('[data-design="club"]')),
-        button: event.button, defaultPrevented: event.defaultPrevented,
-        ctrlKey: event.ctrlKey, metaKey: event.metaKey,
-        shiftKey: event.shiftKey, altKey: event.altKey,
-        target: link.getAttribute("target"), download: link.hasAttribute("download"),
+        button: event.button,
+        defaultPrevented: event.defaultPrevented,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        target: link.getAttribute("target"),
+        download: link.hasAttribute("download"),
         reducedMotion: media.matches,
       });
       if (!href) return;
@@ -158,16 +201,32 @@ export default function PublicPageTransition() {
       if (!busy) start(href);
     };
     const onMotionChange = () => {
-      if (media.matches) { sendNavigation(); settle(); }
+      if (media.matches) {
+        sendNavigation();
+        settle();
+      }
     };
     const onResize = () => {
       // Do not stretch a mid-animation SVG after a viewport/orientation change.
-      if (busy) { sendNavigation(); settle(); }
+      if (busy) {
+        sendNavigation();
+        settle();
+      }
       viewport = "";
     };
     controllerRef.current = {
       routeChanged(from, to) {
-        if (!isPublicTransitionPath(from) || !isPublicTransitionPath(to) || media.matches) {
+        // Commit-time, instant positioning avoids smooth-scroll from the old
+        // page's bottom. Do not alter the source page's history scroll position.
+        if (resetOnArrival) {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+          resetOnArrival = false;
+        }
+        if (
+          !isPublicTransitionPath(from) ||
+          !isPublicTransitionPath(to) ||
+          media.matches
+        ) {
           settle();
           return;
         }
@@ -184,21 +243,32 @@ export default function PublicPageTransition() {
       media.removeEventListener("change", onMotionChange);
       window.removeEventListener("resize", onResize);
       controllerRef.current = null;
+      resetOnArrival = false;
       settle();
       svg.replaceChildren();
     };
   }, [router]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousPath.current === pathname) return;
     controllerRef.current?.routeChanged(previousPath.current, pathname);
     previousPath.current = pathname;
   }, [pathname]);
 
   return (
-    <div ref={overlayRef} data-page-transition data-phase="idle" aria-hidden="true"
-      className="pointer-events-none invisible fixed inset-0 z-[200] overflow-hidden motion-reduce:hidden">
-      <svg ref={svgRef} className="block h-full w-full" preserveAspectRatio="none" aria-hidden="true" />
+    <div
+      ref={overlayRef}
+      data-page-transition
+      data-phase="idle"
+      aria-hidden="true"
+      className="pointer-events-none invisible fixed inset-0 z-[200] overflow-hidden motion-reduce:hidden"
+    >
+      <svg
+        ref={svgRef}
+        className="block h-full w-full"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      />
     </div>
   );
 }

@@ -289,7 +289,7 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - [x] ID card عليها logo IT Club ومعها lanyard رغم عدم وصول صورتها النهائية. تقديم 3D تفاعلي مع cursor/drag ودخول/سكرول GSAP غني وmockup label صادقة، وfallback/pause/reduced-motion وتعليق خارج الشاشة وتنظيف الموارد. لا تُقدّم mockup كصورة المنتج النهائي أو credential معتمد.
 - [x] kit builder فعلي لحزمة Vest + ID + lanyard بسعر 250 EGP كما أكد المستخدم، وخيار ID + lanyard فقط للي دفع قبل كده أو Main Board. يتيح الكميات وsize preference والملخص؛ لا يخترع سعر ID-only أو توفر مقاسات/مخزون/دفع/استلام. يظهر طلب التواصل للاستفسار غير مؤكد بوضوح؛ لا ادعاء بإتمام طلب أو دفع ولا fake checkout.
 - [x] مراجعة مستقلة read-only للتكامل/الشروط، اختبارات catalog/order/helpers وTypeScript/ESLint/build/diff-check والتحقق من الصور والروابط وlayout/interaction ذات العيوب المعينة. توثيق الدليل؛ لا نشر أو كتابة بيانات أو تعديل GitHub main.
-- [ ] حفظ Manus checkpoint على `origin/main` بعد جلب أحدث نسخة وفحصها؛ إن حصلت مزامنة GitHub لاحقًا فتكون على `refactor/club-main-site-20261118` فقط، لا GitHub `main`.
+- [x] حفظ Manus checkpoint على `origin/main` بعد جلب أحدث نسخة وفحصها؛ إن حصلت مزامنة GitHub لاحقًا فتكون على `refactor/club-main-site-20261118` فقط، لا GitHub `main`.
 
 ### دليل Store
 

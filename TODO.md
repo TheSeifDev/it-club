@@ -280,7 +280,7 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - [x] استبدال الـshapes الصغيرة بموجة hex blocks كبيرة وواضحة تتوسع شعاعيًا من أعلى المنتصف، تغطي الصفحة ثم تكشف الجديدة بالترتيب؛ حركة مقصودة أبطأ من الـwipe السابق، مع الحفاظ على Logo Teal/Night وتجنب overlay ناعم فقط.
 - [x] عند فتح صفحة عامة جديدة يبدأ عرضها من أعلى الصفحة لا موضع scroll القديم أو أسفلها، قبل انكشاف المحتوى. الحفاظ على روابط الأقسام #hash ومفاتيح النقر المعدلة وروابط المناطق المحمية وreduced-motion والتنقل native للتاريخ.
 - [x] تحقق من النقر الحقيقي `Tracks → Community` وتسلسل `cover → hold → reveal → idle`، حجم الشبكة responsive، TypeScript وESLint و53 اختبارًا وproduction build و`git diff --check`. لا نشر أو تعديل GitHub main.
-- [ ] حفظ Manus checkpoint بعد دمج الاختبارات والتوثيق؛ مزامنة GitHub اختيارية وتقتصر على `refactor/club-main-site-20261118` فقط.
+- [x] حفظ Manus checkpoint بتحميل commit `28ff326e76485fa115a9bf14c5f7511317884997` إلى `origin/main`؛ مزامنة GitHub اختيارية وتقتصر على `refactor/club-main-site-20261118` فقط.
 
 ### خلاصة التنفيذ والتحقق
 اختبار Preview حي بعد التعديل وصل من `Tracks` إلى `Community`، ومرّت الحالة بـ`cover`, `hold`, `reveal`, ثم `idle` من دون تقليل الحركة؛ شوهدت 374 خلية hex في الموجة واكتمل الانتقال خلال `2.6s`. نصف قطر الأساس للخلايا يتغير مع المقاس (24–72px)، مع تداخل بصري قدره `0.75px` لمنع الفواصل؛ وتثبت اختبارات `transitionHoneycomb` التغطية والـstagger الشعاعي من أعلى المنتصف. نجح `npm run test:pure` ‏53/53 وTypeScript وESLint المركّز و`npm run build` و`git diff --check`. لا نشر إنتاجي أو تعديل GitHub main.

@@ -1,10 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+
+type HeroVideoProps = {
+  /** Classes for the <video>; defaults to a full-bleed cover crop. */
+  className?: string;
+  /** Show the text-only pause/play control. */
+  control?: boolean;
+  controlClassName?: string;
+};
 
 /** Actual MP4 background; never starts automatically for reduced-motion visitors. */
-export function HeroVideo() {
+export function HeroVideo({
+  className = "h-full w-full object-cover object-center",
+  control = true,
+  controlClassName = "absolute top-[104px] right-[var(--site-gutter)] z-[5]",
+}: HeroVideoProps) {
   const video = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -29,7 +40,7 @@ export function HeroVideo() {
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
       synchronize();
-    }, { threshold: 0.05 });
+    }, { threshold: 0.02 });
     const onMotionChange = (event: MediaQueryListEvent) => {
       if (event.matches) {
         manuallyStarted.current = false;
@@ -64,7 +75,7 @@ export function HeroVideo() {
     <>
       <video
         ref={video}
-        className="h-full w-full object-cover object-center max-[900px]:object-[65%_center] max-[540px]:object-[68%_center]"
+        className={className}
         data-editorial-video
         poster="/media/club-hero-poster.webp"
         loop
@@ -78,17 +89,49 @@ export function HeroVideo() {
       >
         <source src="/media/club-hero.mp4" type="video/mp4" />
       </video>
-      {!failed ? (
+      {control && !failed ? (
         <button
           type="button"
-          className="absolute right-[var(--site-gutter)] bottom-[92px] z-[5] inline-flex min-h-9 cursor-pointer items-center gap-[7px] rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] px-[11px] text-[.61rem] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_12px_38px_rgb(0_0_0_/_24%)] backdrop-blur-[12px] backdrop-saturate-[140%] supports-[not_(backdrop-filter:blur(1px))]:bg-[var(--site-paper-dim)] motion-reduce:backdrop-blur-none max-[900px]:top-[102px] max-[900px]:bottom-auto max-[900px]:backdrop-blur-none"
+          className={`${controlClassName} inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-full bg-[rgb(5_7_10_/_42%)] px-3 text-[.58rem] uppercase tracking-[.14em] text-[var(--site-ink)] backdrop-blur-[10px] transition-colors hover:bg-[rgb(5_7_10_/_62%)] motion-reduce:backdrop-blur-none max-[900px]:backdrop-blur-none`}
           onClick={toggle}
           aria-label={playing ? "Pause background video" : "Play background video"}
+          data-cursor={playing ? "Pause" : "Play"}
         >
-          {playing ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
+          <span aria-hidden="true" className={`block size-1.5 rounded-full ${playing ? "bg-[var(--site-sky-ink)] shadow-[0_0_10px_var(--site-sky-ink)]" : "bg-[var(--site-mist)]"}`} />
           <span>{playing ? "Pause film" : "Play film"}</span>
         </button>
       ) : null}
     </>
+  );
+}
+
+/** Small inline film used inside headings; plays only while visible and motion is allowed. */
+export function MiniFilm({ className = "" }: { className?: string }) {
+  const video = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const element = video.current;
+    if (!element) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !document.hidden) void element.play().catch(() => undefined);
+      else element.pause();
+    }, { threshold: 0.1 });
+    observer.observe(element);
+    return () => { observer.disconnect(); element.pause(); };
+  }, []);
+  return (
+    <video
+      ref={video}
+      className={className}
+      poster="/media/club-hero-poster.webp"
+      loop
+      muted
+      playsInline
+      preload="none"
+      aria-hidden="true"
+      tabIndex={-1}
+    >
+      <source src="/media/club-hero.mp4" type="video/mp4" />
+    </video>
   );
 }

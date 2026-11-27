@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUp, ArrowUpRight, Cpu, Users } from "lucide-react";
 import { ABOUT_HREF } from "@/lib/ui/site-navigation";
 
 const siteLinks = [
@@ -26,9 +25,9 @@ const titleClass =
 const artClass =
   "absolute top-16 right-[7%] h-[290px] w-[300px] max-[1000px]:top-[65px] max-[1000px]:right-[4%] max-[1000px]:w-[230px] max-[750px]:top-[42px] max-[750px]:right-[-1%] max-[750px]:h-[280px] max-[750px]:w-[180px] max-[750px]:opacity-60 max-[520px]:right-0 max-[520px]:opacity-[.35]";
 const watermarkClass =
-  "absolute top-[-18px] right-[-80px] rotate-[22deg] text-[var(--site-glass-highlight)] opacity-[.55] max-[1000px]:w-[240px] max-[750px]:top-10 max-[750px]:right-0 max-[750px]:w-[160px]";
+  "absolute top-[-40px] right-[-30px] select-none text-[clamp(10rem,20vw,19rem)] leading-none font-medium tracking-[-.09em] text-transparent [-webkit-text-stroke:1px_rgb(82_232_209_/_.22)] max-[750px]:top-0 max-[750px]:right-0";
 const tileClass =
-  "absolute bottom-[-15px] left-[15px] grid h-[176px] w-[176px] rotate-[-4deg] place-items-center rounded-[19px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_20px_60px_rgb(0_0_0_/_24%)] max-[1000px]:bottom-3 max-[1000px]:h-[140px] max-[1000px]:w-[140px] max-[750px]:bottom-[-32px] max-[750px]:left-[50px] max-[750px]:h-[115px] max-[750px]:w-[115px] max-[520px]:hidden";
+  "absolute bottom-[-15px] left-[15px] grid h-[176px] w-[176px] rotate-[-4deg] place-items-center rounded-[22px] bg-[radial-gradient(circle_at_50%_38%,rgb(40_205_183_/_.3),rgb(10_16_20_/_.95)_68%)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_20px_60px_rgb(0_0_0_/_24%)] max-[1000px]:bottom-3 max-[1000px]:h-[140px] max-[1000px]:w-[140px] max-[750px]:bottom-[-32px] max-[750px]:left-[50px] max-[750px]:h-[115px] max-[750px]:w-[115px] max-[520px]:hidden";
 const contactsClass =
   "mt-[54px] flex justify-between gap-7 border-t border-[var(--site-glass-border)] pt-[26px] text-[clamp(.75rem,1.45vw,1.3rem)] leading-[1.55] tracking-[-.04em] text-[var(--site-copy)] max-[750px]:mt-7 max-[750px]:flex-col max-[750px]:gap-[10px] max-[750px]:text-[.85rem]";
 const bottomClass =
@@ -49,16 +48,16 @@ export default function SiteFooter() {
           <h2 className={titleClass}>We’re here to make room<br />for curious minds<br />and ideas that matter.</h2>
           <p className="mt-[23px] mb-0 w-fit text-[.76rem] text-[var(--site-mist)]" lang="ar" dir="rtl">كل فكرة قوية تبدأ بفريق.</p>
         </div>
-        <div className={artClass} aria-hidden="true"><Cpu className={watermarkClass} size={295} strokeWidth={.65} /><div className={tileClass}><Users className="max-[750px]:w-[59px]" size={84} strokeWidth={1} /></div></div>
+        <div className={artClass} aria-hidden="true"><span className={watermarkClass}>IT</span><div className={tileClass}><Image className="h-[52%] w-auto drop-shadow-[0_0_24px_rgb(82_232_209_/_.5)]" src="/logo.webp" alt="" width={96} height={96} /></div></div>
       </div>
       <div className={contactsClass}>
         <span>Borg Al Arab Technological University</span>
         <span>Alexandria, Egypt</span>
-        <a className="inline-flex items-center gap-[9px] hover:text-[var(--site-ink)]" href="mailto:contact@itclub.one">contact@itclub.one <ArrowUpRight size={14} aria-hidden="true" /></a>
+        <a className="inline-flex items-center gap-[9px] hover:text-[var(--site-ink)]" href="mailto:contact@itclub.one">contact@itclub.one <span aria-hidden="true" className="text-[var(--site-sky-ink)]">↗</span></a>
       </div>
       <div className={bottomClass}>
         <div className="shrink-0 text-[.6rem] text-[var(--site-mist)]"><span>© {new Date().getFullYear()} IT Club · BATU</span><nav className="mt-2 flex gap-[15px] text-[.54rem]" aria-label="Legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></div>
-        <nav className={navClass} aria-label="Footer navigation">{siteLinks.map((link) => <Link className={navLinkClass} key={link.href} href={link.href}><span className="relative z-10">{link.label}</span></Link>)}<a href="#top" className={backtopClass} aria-label="Back to top"><ArrowUp size={19} strokeWidth={1.5} aria-hidden="true" /></a></nav>
+        <nav className={navClass} aria-label="Footer navigation">{siteLinks.map((link) => <Link className={navLinkClass} key={link.href} href={link.href}><span className="relative z-10">{link.label}</span></Link>)}<a href="#top" className={backtopClass} aria-label="Back to top"><span aria-hidden="true" className="text-[.9rem] leading-none">↑</span></a></nav>
       </div>
     </footer>
   );

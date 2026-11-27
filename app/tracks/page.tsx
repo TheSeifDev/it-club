@@ -114,7 +114,7 @@ export default async function TracksPage() {
           } satisfies ExhibitionBoard)
         : undefined,
       members: linkedMembers,
-      iconName: canonical?.iconName ?? "code2",
+      code: theme.short === "CLUB" ? "IT" : theme.short,
       number: canonical?.number ?? String(published.indexOf(entry) + 1).padStart(2, "0"),
     };
   });

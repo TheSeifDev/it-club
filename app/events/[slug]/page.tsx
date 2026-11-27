@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DateMark } from "@/src/components/site/DateMark";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
@@ -29,9 +30,8 @@ const styles = {
   categoryBadge: "inline-flex min-h-7 items-center rounded-full bg-[var(--site-glass-soft)] px-[10px] py-1.5 text-[0.59rem] font-semibold uppercase leading-[1.25] tracking-[0.065em] text-[var(--site-copy)]",
   detailTitle: "mt-[clamp(27px,4vw,47px)] mb-0 max-w-[14ch] [overflow-wrap:anywhere] text-[clamp(3.2rem,8.2vw,8rem)] font-normal leading-[0.98] tracking-[-0.062em] text-[var(--site-ink)] max-[680px]:mt-[27px] max-[680px]:text-[clamp(3rem,14vw,5rem)]",
   detailSummary: "mt-[22px] mb-0 max-w-[740px] whitespace-pre-line text-[clamp(0.96rem,1.3vw,1.08rem)] leading-[1.8] text-[var(--site-copy)]",
-  iconTile: "relative grid place-items-center overflow-hidden rounded-2xl bg-[var(--site-glass-soft)] text-[var(--site-mist)] [&_svg]:block [&_svg]:h-auto",
+  iconTile: "relative grid place-items-center overflow-hidden rounded-2xl bg-[var(--site-glass-soft)] text-[var(--site-mist)] ",
   detailIcon: "aspect-[1.05/1] min-h-[260px] bg-[var(--site-glass)] max-[680px]:aspect-[1.8/1] max-[680px]:max-h-[200px] max-[680px]:min-h-[155px]",
-  detailSvg: "w-[clamp(74px,10vw,120px)]",
   tileCaption: "absolute left-[18px] top-[17px] text-[0.58rem] font-semibold uppercase leading-[1.4] tracking-[0.12em] text-[var(--site-mist)]",
   detailBody: "grid grid-cols-[minmax(245px,0.55fr)_minmax(0,1.45fr)] items-start gap-[clamp(28px,6vw,86px)] px-[clamp(20px,3.5vw,64px)] max-[900px]:grid-cols-[minmax(220px,0.65fr)_minmax(0,1.35fr)] max-[680px]:grid-cols-1 max-[680px]:gap-[34px]",
   detailFacts: "min-w-0 rounded-2xl border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-[clamp(23px,3vw,36px)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] lg:backdrop-blur-md max-[680px]:order-2",
@@ -43,32 +43,6 @@ const styles = {
   detailCopy: "min-w-0 pt-2 max-[680px]:order-1 [&>p]:mt-[27px] [&>p]:mb-0 [&>p]:max-w-[760px] [&>p]:whitespace-pre-line [&>p]:text-[clamp(1rem,1.4vw,1.12rem)] [&>p]:leading-[1.9] [&>p]:text-[var(--site-copy)]",
   visuallyHidden: "sr-only",
 };
-
-type EventIconKind = "calendar" | "ticket";
-
-function EventIcon({ kind, className }: { kind: EventIconKind; className: string }) {
-  if (kind === "ticket") {
-    return (
-      <svg className={className} viewBox="0 0 96 96" fill="none" aria-hidden="true" focusable="false">
-        <path
-          d="M20 31.5a8.5 8.5 0 0 0 0 17v16h56v-16a8.5 8.5 0 0 1 0-17v-16H20v16Z"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        <path d="M48 20v8m0 8v8m0 8v8m0 8v3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 7" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg className={className} viewBox="0 0 96 96" fill="none" aria-hidden="true" focusable="false">
-      <rect x="17" y="23" width="62" height="56" rx="8" stroke="currentColor" strokeWidth="3" />
-      <path d="M18 40h60M34 17v13m28-13v13" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <path d="M33 54h8m14 0h8m-30 13h8m14 0h8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function SectionMarker({ number, children }: { number: string; children: string }) {
   return (
@@ -140,7 +114,7 @@ export default async function EventDetailPage({
             </div>
             <div className={`${styles.iconTile} ${styles.detailIcon}`}>
               <span className={styles.tileCaption}>Published event</span>
-              <EventIcon kind="ticket" className={styles.detailSvg} />
+              <DateMark date={event.data.date} fallback="IT" />
             </div>
           </div>
         </header>

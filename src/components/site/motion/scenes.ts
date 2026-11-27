@@ -2,6 +2,7 @@
 
 import { setupTrackStack } from "./track-stack";
 import { setupEditorialHome } from "./editorial-home";
+import { setupEditorialPages } from "./editorial-pages";
 
 import { gsap, motionQueries, type ScrollTrigger } from "./gsap";
 import { setupSpotlights } from "./spotlight";
@@ -533,6 +534,7 @@ export function setupSiteScenes(root: HTMLElement, mm: MotionMedia) {
     setupAbout(root, mm);
     setupIdentity(root, mm);
   }
+  setupEditorialPages(root, mm);
   setupTrackStack(root, mm);
   setupMagnetic(root, mm);
   setupSpotlights(root, mm);

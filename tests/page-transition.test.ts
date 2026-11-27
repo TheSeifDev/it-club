@@ -4,6 +4,7 @@ import {
   isPublicTransitionPath,
   publicTransitionTarget,
   transitionHoneycomb,
+  transitionLabel,
   transitionStartsAtTop,
 } from "../lib/ui/page-transition.ts";
 
@@ -175,5 +176,13 @@ describe("public visual page transitions", () => {
         tiles.every((tile) => Number.isFinite(tile.x + tile.y + tile.delay)),
       );
     }
+  });
+  it("names the destination page on the covered screen", () => {
+    assert.deepEqual(transitionLabel("/community"), { label: "Community", arabic: "المجتمع" });
+    assert.equal(transitionLabel("/sponsors?x=1").label, "Partners");
+    assert.equal(transitionLabel("/events/hackathon").label, "Events");
+    assert.equal(transitionLabel("/").label, "Home");
+    assert.equal(transitionLabel("/#about").label, "Home");
+    assert.equal(transitionLabel("/pages/legal").label, "IT Club");
   });
 });

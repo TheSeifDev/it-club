@@ -8,6 +8,8 @@ export type EditorialTrack = {
   capabilities: string[];
   color: string;
   ink: string;
+  /** Short typographic code, e.g. "HR". */
+  code?: string;
 };
 
 export type EditorialPerson = {

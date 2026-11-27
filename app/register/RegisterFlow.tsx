@@ -2,27 +2,6 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  CircleHelp,
-  ClipboardCheck,
-  Copy,
-  CheckCheck,
-  GraduationCap,
-  LoaderCircle,
-  LockKeyhole,
-  Shield,
-  UserRound,
-  Wrench,
-  AlertCircle,
-  Calendar,
-  ChevronDown,
-  Mail,
-  Clock,
-} from "lucide-react";
 
 import {
   validateUniversityEmail,
@@ -134,11 +113,11 @@ const tracks = [
 ];
 
 const steps = [
-  { number: "01", title: "Personal", ar: "البيانات الشخصية", icon: UserRound },
-  { number: "02", title: "Academic", ar: "المرحلة الدراسية", icon: GraduationCap },
-  { number: "03", title: "Experience", ar: "المستوى والمهارات", icon: Wrench },
-  { number: "04", title: "Interests", ar: "اللجان والاهتمامات", icon: CircleHelp },
-  { number: "05", title: "Review", ar: "المراجعة والتأكيد", icon: ClipboardCheck },
+  { number: "01", title: "Personal", ar: "البيانات الشخصية" },
+  { number: "02", title: "Academic", ar: "المرحلة الدراسية" },
+  { number: "03", title: "Experience", ar: "المستوى والمهارات" },
+  { number: "04", title: "Interests", ar: "اللجان والاهتمامات" },
+  { number: "05", title: "Review", ar: "المراجعة والتأكيد" },
 ];
 
 const controlBase =
@@ -194,7 +173,7 @@ function ErrorText({ children }: { children?: React.ReactNode }) {
   if (!children) return null;
   return (
     <span role="alert" className="mt-2 flex items-center gap-1.5 font-mono text-xs tracking-wide text-rose-300">
-      <AlertCircle size={13} className="shrink-0" />
+      <span aria-hidden="true" className="grid size-3.5 shrink-0 place-items-center rounded-full bg-rose-300/20 text-[9px] font-bold leading-none">!</span>
       {children}
     </span>
   );
@@ -418,7 +397,7 @@ export default function RegisterFlow() {
           {/* Header */}
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border-2 border-[var(--site-sky)] bg-[var(--site-sky)]/10 shadow-[0_0_30px_color-mix(in_srgb,var(--site-sky)_30%,transparent)] mb-6">
-              <CheckCircle2 size={36} className="text-[var(--site-sky-ink)]" />
+              <span aria-hidden="true" className="text-[2rem] leading-none text-[var(--site-sky-ink)]">✓</span>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
@@ -463,12 +442,11 @@ export default function RegisterFlow() {
               >
                 {copied ? (
                   <>
-                    <CheckCheck size={14} className="text-[var(--site-sky-ink)]" />
+                    <span aria-hidden="true" className="text-[var(--site-sky-ink)]">✓</span>
                     <span className="text-[var(--site-sky-ink)]">COPIED</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={14} />
                     <span>COPY</span>
                   </>
                 )}
@@ -485,7 +463,7 @@ export default function RegisterFlow() {
             {emailDelivery?.status === "sent" ? (
               <div className="border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/5 p-4 sm:p-5 flex items-start gap-3.5">
                 <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/10 text-[var(--site-sky-ink)]">
-                  <Mail size={16} />
+                  <span aria-hidden="true" className="text-sm leading-none">@</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -502,7 +480,7 @@ export default function RegisterFlow() {
             ) : (
               <div className="border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] p-4 sm:p-5 flex items-start gap-3.5">
                 <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-ink)]/70">
-                  <Clock size={16} />
+                  <span aria-hidden="true" className="font-mono text-xs leading-none">…</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -523,7 +501,7 @@ export default function RegisterFlow() {
           <div className="mt-8 mx-auto max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-[var(--site-glass)] border border-[var(--site-glass-border)] p-5 flex items-start gap-3.5">
               <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)]">
-                <LockKeyhole size={16} />
+                <span aria-hidden="true" className="font-mono text-[10px] leading-none">01</span>
               </div>
               <div>
                 <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-ink)]/60">STATUS</p>
@@ -536,7 +514,7 @@ export default function RegisterFlow() {
 
             <div className="bg-[var(--site-glass)] border border-[var(--site-glass-border)] p-5 flex items-start gap-3.5">
               <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)]">
-                <Calendar size={16} />
+                <span aria-hidden="true" className="font-mono text-[10px] leading-none">02</span>
               </div>
               <div>
                 <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-ink)]/60">NEXT STEPS</p>
@@ -554,7 +532,7 @@ export default function RegisterFlow() {
               href="/"
               className="w-full sm:flex-1 h-13 inline-flex items-center justify-center gap-2.5 bg-[var(--site-sky)] text-[var(--site-paper)] text-xs font-mono font-bold tracking-[0.18em] uppercase hover:bg-[var(--site-glass)] hover:text-[var(--site-ink)] transition-all duration-300"
             >
-              RETURN TO HOMEPAGE <ArrowRight size={15} />
+              RETURN TO HOMEPAGE <span aria-hidden="true">→</span>
             </Link>
 
             <Link
@@ -640,7 +618,7 @@ export default function RegisterFlow() {
                         : "border-[var(--site-glass-border)] text-[var(--site-ink)]/60"
                     }`}
                   >
-                    {done ? <Check size={13} strokeWidth={2.5} /> : item.number}
+                    {done ? <span aria-hidden="true">✓</span> : item.number}
                   </span>
 
                   <div className="min-w-0">
@@ -794,7 +772,7 @@ export default function RegisterFlow() {
 
             {/* Privacy Shield Info Card */}
             <div className="mt-8 border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-4 sm:p-5 flex items-start gap-3.5">
-              <Shield size={18} className="shrink-0 text-[var(--site-sky-ink)] mt-0.5" />
+              <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--site-sky-ink)]" />
               <div className="text-xs text-[var(--site-ink)]/70 leading-relaxed font-sans">
                 <strong className="text-[var(--site-ink)] font-medium block mb-0.5">
                   Privacy & Data Safeguards
@@ -842,10 +820,12 @@ export default function RegisterFlow() {
                       Other / Not listed — أخرى
                     </option>
                   </select>
-                  <ChevronDown
-                    size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--site-ink)]/60"
+                  >
+                    ↓
+                  </span>
                 </div>
                 <ErrorText>{errors.year}</ErrorText>
               </Field>
@@ -1097,7 +1077,7 @@ export default function RegisterFlow() {
                             backgroundColor: selected ? track.color : "transparent",
                           }}
                         >
-                          {selected && <Check size={12} className="text-[var(--site-ink)] stroke-[3]" />}
+                          {selected && <span aria-hidden="true" className="text-[10px] leading-none font-bold text-[var(--site-ink)]">✓</span>}
                         </div>
                       </div>
 
@@ -1141,10 +1121,12 @@ export default function RegisterFlow() {
                         </option>
                       ))}
                   </select>
-                  <ChevronDown
-                    size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--site-ink)]/60"
+                  >
+                    ↓
+                  </span>
                 </div>
                 <ErrorText>{errors.secondaryTrack}</ErrorText>
               </Field>
@@ -1219,10 +1201,12 @@ export default function RegisterFlow() {
                       Flexible / Adaptable (مرن ومتاح)
                     </option>
                   </select>
-                  <ChevronDown
-                    size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--site-ink)]/60"
+                  >
+                    ↓
+                  </span>
                 </div>
               </Field>
 
@@ -1366,7 +1350,7 @@ export default function RegisterFlow() {
 
               {/* Submission Notice Banner */}
               <div className="border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/[0.04] p-5 flex items-start gap-3.5">
-                <LockKeyhole size={18} className="text-[var(--site-sky-ink)] shrink-0 mt-0.5" />
+                <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--site-sky-ink)]" />
                 <p className="text-xs leading-relaxed text-[var(--site-ink)]/80">
                   Submitting this application registers your profile as{" "}
                   <strong className="text-[var(--site-ink)] font-bold">Pending Review</strong>.
@@ -1383,7 +1367,7 @@ export default function RegisterFlow() {
             role="alert"
             className="mt-8 border border-rose-700/25 bg-rose-500/10 p-4 text-xs font-mono text-rose-200 flex items-start gap-3"
           >
-            <AlertCircle size={16} className="shrink-0 text-rose-300 mt-0.5" />
+            <span aria-hidden="true" className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-rose-300/20 text-[10px] font-bold leading-none text-rose-300">!</span>
             <div>
               <p className="font-bold uppercase tracking-wider">Submission Error</p>
               <p className="mt-1 leading-relaxed">{submitError}</p>
@@ -1399,7 +1383,7 @@ export default function RegisterFlow() {
             disabled={step === 0 || submitting}
             className="inline-flex h-12 items-center justify-center gap-2.5 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] px-6 text-xs font-mono font-bold tracking-[0.16em] uppercase text-[var(--site-ink)]/80 hover:border-[var(--site-glass-border)] hover:bg-[var(--site-glass-soft)] hover:text-[var(--site-sky-ink)] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed select-none"
           >
-            <ArrowLeft size={15} />
+            <span aria-hidden="true">←</span>
             BACK
           </button>
 
@@ -1409,7 +1393,7 @@ export default function RegisterFlow() {
               onClick={nextStep}
               className="inline-flex h-12 items-center justify-center gap-2.5 bg-[var(--site-sky)] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[var(--site-paper)] hover:bg-[var(--site-glass)] hover:text-[var(--site-ink)] hover:shadow-[0_0_18px_color-mix(in_srgb,var(--site-sky-ink)_16%,transparent)] transition-all duration-300 select-none"
             >
-              CONTINUE <ArrowRight size={15} />
+              CONTINUE <span aria-hidden="true">→</span>
             </button>
           ) : (
             <button
@@ -1420,12 +1404,12 @@ export default function RegisterFlow() {
             >
               {submitting ? (
                 <>
-                  <LoaderCircle size={16} className="animate-spin" />
+                  <span aria-hidden="true" className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
                   <span>SUBMITTING APPLICATION...</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle2 size={16} />
+                  <span aria-hidden="true">✓</span>
                   <span>SUBMIT APPLICATION</span>
                 </>
               )}

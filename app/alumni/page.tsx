@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowUpRight, GraduationCap, UserRound } from "lucide-react";
+import Image from "next/image";
+import { initials } from "@/lib/ui/initials";
 import {
   publicAlumni,
   publicMetadata,
@@ -27,12 +28,12 @@ const styles = {
   iconTile: "relative grid min-w-0 aspect-[1.48/1] place-items-center overflow-hidden rounded-[11px] bg-transparent text-[var(--site-mist)] max-[560px]:aspect-[1.65/1]",
   tileIndex: "absolute left-[17px] top-4 text-[0.57rem] font-semibold uppercase leading-[1.4] tracking-[0.09em] text-[var(--site-mist)] tabular-nums",
   tileCaption: "absolute right-4 bottom-[14px] max-w-[65%] overflow-hidden text-ellipsis whitespace-nowrap text-right text-[0.57rem] font-semibold uppercase leading-[1.4] tracking-[0.09em] text-[var(--site-mist)]",
-  tileIcon: "h-[clamp(58px,7vw,88px)] w-[clamp(58px,7vw,88px)] text-[var(--site-mist)] max-[560px]:h-[70px] max-[560px]:w-[70px]",
+  tileIcon: "text-[clamp(3.4rem,6.5vw,5.6rem)] leading-none font-medium tracking-[-0.08em] text-[var(--site-ink)]",
   cardBody: "flex flex-1 flex-col items-start px-[clamp(7px,0.7vw,11px)] pt-[clamp(18px,2vw,26px)] pb-3 max-[700px]:px-[6px] max-[700px]:pt-4 max-[700px]:pb-[9px]",
   eyebrow: "mb-[10px] mt-0 text-[0.62rem] font-semibold uppercase leading-[1.5] tracking-[0.09em] text-[var(--site-sky-ink)]",
   name: "mb-2 mt-0 [overflow-wrap:anywhere] text-[clamp(1.45rem,2.3vw,2.15rem)] font-medium leading-[1.12] tracking-[-0.055em] max-[560px]:text-[clamp(1.55rem,7.5vw,2rem)]",
   nameLink: "group inline text-[var(--site-ink)]",
-  nameArrow: "ml-[7px] inline-block h-[0.58em] w-[0.58em] align-[0.1em] text-[var(--site-sky-ink)] transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-focus-visible:translate-x-0.5 group-focus-visible:-translate-y-0.5 motion-reduce:transition-none",
+  nameArrow: "ml-[7px] inline-block text-[0.6em] align-[0.1em] text-[var(--site-sky-ink)] transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-focus-visible:translate-x-0.5 group-focus-visible:-translate-y-0.5 motion-reduce:transition-none",
   role: "m-0 text-[0.78rem] font-[550] leading-[1.6] text-[var(--site-copy)]",
   contribution: "mt-[14px] mb-0 max-w-[52ch] text-[0.8rem] leading-[1.75] text-[var(--site-copy)]",
   cardLinks: "mt-auto flex flex-wrap items-center gap-x-[18px] gap-y-[10px] pt-[22px] [&_svg]:flex-none [&_svg]:transition-transform [&_svg]:duration-[180ms] [&_a:hover_svg]:translate-x-0.5 [&_a:hover_svg]:-translate-y-0.5 motion-reduce:[&_svg]:transition-none",
@@ -48,7 +49,7 @@ const styles = {
   ctaCopy: "mt-4 mb-0 text-[0.89rem] leading-[1.7] text-[var(--site-copy)]",
   ctaLink: "mt-[27px] inline-flex min-h-[52px] items-center gap-[17px] rounded-full bg-[var(--site-paper-dim)] py-[5px] pl-[21px] pr-[6px] text-[0.77rem] font-[550] text-white transition-[transform,background-color] duration-[180ms] hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
   ctaArrow: "grid h-[39px] w-[39px] place-items-center rounded-full bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)]",
-  ctaIconTile: "absolute right-[clamp(18px,3vw,34px)] bottom-[-27px] grid h-[76px] w-[76px] place-items-center rounded-xl bg-[var(--site-glass)] text-[var(--site-mist)] [&_svg]:h-[38px] [&_svg]:w-[38px] max-[560px]:right-[18px] max-[560px]:bottom-[-25px] max-[560px]:h-[62px] max-[560px]:w-[62px]",
+  ctaIconTile: "absolute right-[clamp(18px,3vw,34px)] bottom-[-27px] grid h-[76px] w-[76px] place-items-center rounded-xl bg-[var(--site-glass)] text-[var(--site-mist)] [&_img]:h-[46%] [&_img]:w-auto max-[560px]:right-[18px] max-[560px]:bottom-[-25px] max-[560px]:h-[62px] max-[560px]:w-[62px]",
 };
 
 export const metadata: Metadata = publicMetadata(
@@ -108,7 +109,6 @@ export default async function AlumniPage() {
           {alumni.length ? (
             <div className={styles.grid}>
               {alumni.map((member, index) => {
-                const MemberIcon = index % 2 === 0 ? GraduationCap : UserRound;
                 const contribution =
                   member.data.summary?.trim() ||
                   member.data.responsibilities
@@ -126,10 +126,9 @@ export default async function AlumniPage() {
                       <span className={styles.tileIndex}>
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <MemberIcon
-                        className={styles.tileIcon}
-                        strokeWidth={1.15}
-                      />
+                      <span className={styles.tileIcon}>
+                        {initials(member.data.title)}
+                      </span>
                       <span className={styles.tileCaption}>
                         {member.data.committee || "Alumni"}
                       </span>
@@ -144,11 +143,9 @@ export default async function AlumniPage() {
                           href={`/community/${member.slug}`}
                         >
                           {member.data.title}
-                          <ArrowUpRight
-                            className={styles.nameArrow}
-                            aria-hidden="true"
-                            strokeWidth={1.8}
-                          />
+                          <span className={styles.nameArrow} aria-hidden="true">
+                            ↗
+                          </span>
                         </Link>
                       </h3>
                       <p className={styles.role}>{member.data.role}</p>
@@ -161,7 +158,7 @@ export default async function AlumniPage() {
                           href={`/community/${member.slug}`}
                         >
                           View profile
-                          <ArrowUpRight aria-hidden="true" size={15} />
+                          <span aria-hidden="true">↗</span>
                         </Link>
                         {links.map((item) => (
                           <a
@@ -170,7 +167,7 @@ export default async function AlumniPage() {
                             key={`${item.label}-${item.href}`}
                           >
                             {item.label}
-                            <ArrowUpRight aria-hidden="true" size={14} />
+                            <span aria-hidden="true">↗</span>
                           </a>
                         ))}
                       </div>
@@ -204,7 +201,7 @@ export default async function AlumniPage() {
           </div>
           <div className={styles.messagePanel}>
             <p className={styles.messageKicker}>
-              <UsersMark />
+              <span aria-hidden="true">(—)</span>
               <span>Still building, together</span>
             </p>
             <h2 className={styles.ctaTitle} id="community-cta-title">
@@ -215,20 +212,16 @@ export default async function AlumniPage() {
             </p>
             <Link className={styles.ctaLink} href="/community">
               Explore the community
-              <span className={styles.ctaArrow}>
-                <ArrowUpRight aria-hidden="true" size={18} />
+              <span className={styles.ctaArrow} aria-hidden="true">
+                ↗
               </span>
             </Link>
             <div className={styles.ctaIconTile} aria-hidden="true">
-              <GraduationCap strokeWidth={1.2} />
+              <Image src="/logo.webp" alt="" width={40} height={40} />
             </div>
           </div>
         </section>
       </div>
     </SiteFrame>
   );
-}
-
-function UsersMark() {
-  return <UserRound aria-hidden="true" size={16} strokeWidth={1.8} />;
 }

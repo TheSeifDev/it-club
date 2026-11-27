@@ -1,71 +1,72 @@
 "use client";
 
+import Image from "next/image";
+import { initials } from "@/lib/ui/initials";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import {
-  ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Code2,
-  Cpu, FlaskConical, Handshake, Lightbulb, Megaphone, Plus, Share2, Users,
-} from "lucide-react";
 import { gsap } from "./motion/gsap";
 import type { EditorialEvent, EditorialPartner, EditorialPerson, EditorialTrack } from "./editorial-types";
+import type { SessionPhoto } from "@/lib/ui/session-gallery";
 import { HomeEvents } from "./HomeEvents";
+import { MiniFilm } from "./HeroVideo";
+import { Chapter } from "./HomeChapter";
 
 // Static Tailwind v4 utilities keep this public page themeable without a CSS module.
 const styles = {
   fillWord: "[--word-fill:100%] [--word-ink:var(--site-ink)] inline-block bg-[linear-gradient(90deg,var(--word-ink)_var(--word-fill),var(--site-word-muted)_var(--word-fill))] bg-clip-text text-transparent data-[word-accent]:[--word-ink:var(--site-sky-ink)] supports-[not_(background-clip:text)]:bg-none supports-[not_(background-clip:text)]:text-[var(--word-ink)] forced-colors:bg-none forced-colors:text-[CanvasText]",
-  pill: "group inline-flex min-h-[47px] items-center gap-[15px] rounded-full bg-[var(--site-glass-strong)] py-[5px] pr-[5px] pl-[17px] text-[.76rem] tracking-[-.04em] text-[var(--site-ink)]! transition-colors duration-200 [&>span]:grid [&>span]:size-[37px] [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-[var(--site-glass-soft)] [&>span]:text-[var(--site-ink)] [&>span]:transition-[background,transform] [&>span]:duration-300 hover:[&>span]:rotate-45 hover:[&>span]:bg-[rgb(40_205_183_/_20%)] motion-reduce:hover:[&>span]:rotate-0",
-  empty: "rounded-[18px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-[38px] text-[var(--site-copy)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] [&_h3]:mt-0 [&_h3]:text-[2rem] [&_h3]:font-normal [&_h3]:leading-[1.1] [&_h3]:tracking-[-.055em] [&_h3]:text-[var(--site-ink)] [&_p]:text-[.83rem] max-[520px]:p-[25px]",
-  about: "scroll-mt-[88px] bg-transparent px-[var(--site-gutter)] pt-[clamp(66px,7vw,112px)] pb-[68px] text-[var(--site-ink)] max-[520px]:pt-[50px] max-[520px]:pb-12",
+  textLink: "group/link inline-flex min-h-11 items-center gap-2 text-[.76rem] tracking-[-.03em] text-[var(--site-copy)]! transition-colors hover:text-[var(--site-ink)]! [&>span]:inline-block [&>span]:text-[var(--site-sky-ink)] [&>span]:transition-transform [&>span]:duration-300 hover:[&>span]:translate-x-0.5 hover:[&>span]:-translate-y-0.5 motion-reduce:[&>span]:transition-none",
+  pill: "group/pill relative isolate inline-flex min-h-[50px] items-center gap-4 overflow-hidden rounded-full bg-[var(--site-glass-strong)] py-[5px] pr-[5px] pl-5 text-[.78rem] tracking-[-.03em] text-[var(--site-ink)]! transition-colors duration-300 before:absolute before:inset-0 before:-z-[1] before:translate-y-full before:rounded-[inherit] before:bg-[var(--site-ink)] before:transition-transform before:duration-500 before:ease-[cubic-bezier(.2,.8,.2,1)] hover:text-[var(--site-night)]! hover:before:translate-y-0 motion-reduce:before:transition-none [&>span]:grid [&>span]:size-10 [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-[var(--site-sky)] [&>span]:text-[var(--site-night)] [&>span]:transition-transform [&>span]:duration-500 hover:[&>span]:rotate-45 motion-reduce:hover:[&>span]:rotate-0",
+  empty: "rounded-[18px] bg-[var(--site-glass)] p-[clamp(26px,3vw,44px)] text-[var(--site-copy)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] [&_h3]:mt-0 [&_h3]:text-[clamp(1.7rem,2.6vw,2.6rem)] [&_h3]:font-normal [&_h3]:leading-[1.1] [&_h3]:tracking-[-.055em] [&_h3]:text-[var(--site-ink)] [&_p]:text-[.83rem]",
+  section: "scroll-mt-[88px] px-[var(--site-gutter)] text-[var(--site-ink)]",
   sectionTop: "flex items-start justify-between gap-8 max-[520px]:items-center max-[520px]:gap-3",
-  quietLink: "inline-flex min-h-11 items-center gap-[13px] text-[.77rem] tracking-[-.035em] max-[520px]:gap-[6px] max-[520px]:text-[.62rem]",
-  aboutStatement: "relative [perspective:1400px] [transform-style:preserve-3d] px-[4.5vw] pt-[clamp(42px,4.5vw,64px)] max-[800px]:px-0 max-[800px]:pt-[43px] [&>h2]:mx-auto [&>h2]:my-0 [&>h2]:[transform-style:preserve-3d] [&>h2]:[backface-visibility:hidden] [&>h2]:text-center [&>h2]:text-[clamp(1.6rem,2.9vw,3.5rem)] [&>h2]:font-normal [&>h2]:leading-[1.44] [&>h2]:tracking-[-.063em] max-[800px]:[&>h2]:text-[clamp(1.6rem,3.9vw,2.6rem)] max-[520px]:[&>h2]:text-[1.54rem] max-[520px]:[&>h2]:leading-[1.53]",
-  inlineIcon: "mx-[3px] [transform-style:preserve-3d] [backface-visibility:hidden] inline-flex h-[42px] w-[65px] items-center justify-center overflow-hidden rounded-full border border-[rgb(81_234_213_/_28%)] bg-[linear-gradient(145deg,rgb(40_205_183_/_19%),rgb(12_19_23_/_96%))] align-middle text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_rgb(245_255_255_/_15%),inset_0_-1px_0_rgb(0_0_0_/_24%),0_5px_18px_rgb(0_0_0_/_26%),0_0_24px_rgb(40_205_183_/_9%)] max-[800px]:h-8 max-[800px]:w-[49px] max-[800px]:[&_svg]:w-6",
-  inlinePill: "inline-block [transform-style:preserve-3d] [backface-visibility:hidden] -rotate-2 rounded-full border border-[rgb(81_234_213_/_28%)] bg-[linear-gradient(145deg,rgb(40_205_183_/_17%),rgb(12_19_23_/_96%))] px-[15px] py-[2px] align-middle text-[.68em] font-medium leading-[1.55] tracking-[-.025em] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_rgb(245_255_255_/_15%),inset_0_-1px_0_rgb(0_0_0_/_24%),0_5px_18px_rgb(0_0_0_/_26%),0_0_24px_rgb(40_205_183_/_8%)]",
-  aboutArabic: "mt-[26px] mb-0 text-center text-[.87rem] text-[var(--site-copy)] max-[520px]:text-[.7rem]",
-  aboutSeal: "mt-[54px] flex items-center justify-center gap-[22px] [&>span]:h-px [&>span]:w-[100px] [&>span]:bg-[linear-gradient(90deg,transparent,rgb(40_205_183_/_0.45))] [&>span:last-child]:rotate-180 [&>div]:[transform-style:preserve-3d] [&>div]:[backface-visibility:hidden] [&>div]:grid [&>div]:size-[56px] [&>div]:h-[68px] [&>div]:place-items-center [&>div]:rounded-full [&>div]:border [&>div]:border-[var(--site-glass-border)] [&>div]:text-[var(--site-sky-ink)] [&>div]:shadow-[inset_0_1px_0_var(--site-glass-highlight)] max-[520px]:mt-[38px] max-[520px]:[&>span]:w-[58px]",
-  tracks: "scroll-mt-[88px] border-t-0 bg-transparent px-[var(--site-gutter)] pt-[58px] pb-[74px] text-[var(--site-ink)] max-[520px]:pt-[44px] max-[520px]:pb-[46px]",
-  splitTop: "flex items-start justify-between gap-8 [&>h2]:w-[49%] [&>h2]:m-0 [&>h2]:text-[clamp(2rem,3.8vw,4.5rem)] [&>h2]:font-normal [&>h2]:leading-[1.08] [&>h2]:tracking-[-.068em] max-[800px]:flex-col max-[800px]:gap-7 max-[800px]:[&>h2]:w-full max-[520px]:[&>h2]:text-[2.15rem]",
-  trackGrid: "mt-[62px] grid grid-cols-2 gap-[26px] max-[1100px]:gap-5 max-[800px]:mt-9 max-[800px]:grid-cols-1",
-  staticTrackCatalog: "mt-4 grid grid-cols-6 gap-[10px] data-[hydrated=true]:hidden [&>a]:grid [&>a]:min-h-[49px] [&>a]:min-w-0 [&>a]:grid-cols-[auto_1fr_auto] [&>a]:items-center [&>a]:gap-[10px] [&>a]:rounded-xl [&>a]:bg-[var(--site-glass-soft)] [&>a]:px-3 [&>a]:text-[.66rem] [&>a]:leading-[1.3] [&>a]:text-[var(--site-ink)] [&>a]:focus-visible:outline [&>a]:focus-visible:outline-2 [&>a]:focus-visible:outline-[var(--site-sky-ink)] [&>a]:focus-visible:outline-offset-[3px] [&>a>span:first-child]:text-[.59rem] [&>a>span:first-child]:[font-variant-numeric:tabular-nums] [&>a>span:nth-child(2)]:overflow-hidden [&>a>span:nth-child(2)]:text-ellipsis [&>a>span:nth-child(2)]:whitespace-nowrap [&>a>svg]:text-[var(--catalog-accent,var(--site-sky-ink))] max-[800px]:grid-cols-3 max-[520px]:grid-cols-2 max-[520px]:gap-2 max-[520px]:[&>a]:min-h-11 max-[520px]:[&>a]:px-[9px] max-[520px]:[&>a]:text-[.61rem] [&>a>span:first-child]:text-[var(--catalog-accent,var(--site-sky-ink))]",
-  featureCard: "group relative flex min-h-[clamp(355px,32vw,540px)] flex-col justify-between overflow-hidden rounded-[18px] border border-[color-mix(in_srgb,var(--card-accent)_25%,var(--site-glass-border))] bg-[radial-gradient(ellipse_at_75%_15%,color-mix(in_srgb,var(--card-accent)_15%,transparent),transparent_60%),var(--site-glass)] p-6 shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] transition-shadow duration-300 hover:shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_28%),0_0_40px_color-mix(in_srgb,var(--card-accent,var(--site-sky))_9%,transparent)] max-[800px]:min-h-[385px] max-[520px]:min-h-[355px] max-[520px]:p-5",
-  featureMeta: "relative z-[2] flex gap-[7px] text-[.66rem] max-[520px]:text-[.57rem] [&>span]:inline-flex [&>span]:min-h-[35px] [&>span]:items-center [&>span]:rounded-full [&>span]:border [&>span]:border-[var(--site-glass-border)] [&>span]:px-[13px] [&>span]:shadow-[inset_0_1px_0_var(--site-glass-highlight)]",
-  featureWatermark: "pointer-events-none absolute top-[-25px] right-[-85px] rotate-[16deg] text-[var(--card-accent,var(--site-sky))] opacity-[.12]",
-  featureIcon: "absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--card-accent,var(--site-sky-ink))] before:absolute before:inset-[-21px] before:rounded-[35%] before:bg-[color-mix(in_srgb,var(--card-accent)_12%,transparent)] before:content-[''] [&_svg]:relative",
-  featureBottom: "relative mt-auto flex items-end justify-between gap-[22px] [&_h3]:m-0 [&_h3]:max-w-[11ch] [&_h3]:text-[clamp(2.4rem,4.9vw,5.3rem)] [&_h3]:font-normal [&_h3]:leading-[.99] [&_h3]:tracking-[-.075em] [&_p]:mt-[13px] [&_p]:mb-0 [&_p]:w-fit [&_p]:text-[.81rem] [&_p]:text-[var(--site-copy)] max-[800px]:[&_h3]:text-[3.4rem] max-[520px]:[&_h3]:text-[3.2rem]",
-  roundArrow: "grid size-[60px] shrink-0 place-items-center rounded-full border border-[var(--site-glass-border)] bg-[rgb(40_205_183_/_14%)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[transform,background] duration-300 group-hover:rotate-45 group-hover:bg-[rgb(40_205_183_/_20%)] motion-reduce:group-hover:rotate-0 max-[520px]:size-12",
-  trackAside: "flex min-w-0 flex-col max-[800px]:grid max-[800px]:grid-cols-1",
-  smallCards: "grid grid-cols-2 gap-[22px] max-[1100px]:gap-[14px] max-[800px]:gap-[18px]",
-  smallCard: "group relative min-h-[clamp(190px,17vw,285px)] cursor-pointer overflow-hidden rounded-[18px] border border-[color-mix(in_srgb,var(--card-accent)_22%,var(--site-glass-border))] bg-[radial-gradient(ellipse_at_90%_0%,color-mix(in_srgb,var(--card-accent)_12%,transparent),transparent_70%),var(--site-glass)] p-[20px_17px] text-left text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] transition-shadow duration-300 hover:shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_28%),0_0_40px_color-mix(in_srgb,var(--card-accent,var(--site-sky))_9%,transparent)] [&_h3]:relative [&_h3]:mt-[121px] [&_h3]:mb-0 [&_h3]:text-[clamp(1.35rem,2.25vw,2.6rem)] [&_h3]:font-normal [&_h3]:leading-[1.04] [&_h3]:tracking-[-.063em] max-[1100px]:[&_h3]:text-[1.6rem] max-[800px]:min-h-[193px] max-[800px]:[&_h3]:mt-[116px] max-[800px]:[&_h3]:text-[1.8rem] max-[520px]:min-h-[195px] max-[520px]:p-4 max-[520px]:[&_h3]:text-[1.65rem]",
-  smallPlus: "absolute top-[17px] left-[17px] grid size-[35px] place-items-center rounded-full border border-[var(--site-glass-border)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] max-[1100px]:top-[17px] max-[1100px]:left-[13px] max-[1100px]:size-7 max-[520px]:top-[13px] max-[520px]:left-[13px]",
-  smallIcon: "absolute top-[22px] right-[17px] text-[var(--card-accent,var(--site-sky-ink))] before:absolute before:inset-[-10px] before:rounded-[15px] before:bg-[color-mix(in_srgb,var(--card-accent)_13%,transparent)] before:content-[''] [&_svg]:relative max-[1100px]:right-[13px] max-[1100px]:[&_svg]:w-[47px] max-[800px]:[&_svg]:w-[63px] max-[520px]:top-10 max-[520px]:right-[14px] max-[520px]:[&_svg]:w-12",
-  carouselControls: "mt-6 flex items-center justify-end gap-[10px]",
-  carouselStatus: "mr-auto text-[.66rem] tabular-nums text-[var(--site-copy)]",
-  previous: "grid size-[45px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background,transform] duration-200 hover:translate-x-[2px] hover:bg-[rgb(40_205_183_/_20%)] disabled:transform-none disabled:cursor-default disabled:opacity-[.35] motion-reduce:hover:translate-x-0 max-[520px]:size-10",
-  next: "grid size-[45px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[rgb(40_205_183_/_14%)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background,transform] duration-200 hover:translate-x-[2px] hover:bg-[rgb(40_205_183_/_20%)] disabled:transform-none disabled:cursor-default disabled:opacity-[.35] motion-reduce:hover:translate-x-0 max-[520px]:size-10",
-  trackDescription: "mt-auto ml-auto w-[51%] pt-[34px] [&_p]:m-0 [&_p]:text-[.78rem] [&_p]:leading-[1.65] [&_p]:tracking-[-.025em] [&_p]:text-[var(--site-copy)] [&_a]:mt-[13px] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-2 [&_a]:text-[.69rem] [&_a]:text-[var(--site-sky-ink)] max-[800px]:ml-0 max-[800px]:w-[68%] max-[800px]:pt-6 max-[520px]:w-full",
-  community: "scroll-mt-[88px] border-t-0 bg-transparent px-[var(--site-gutter)] pt-[68px] pb-[54px] text-[var(--site-ink)] max-[520px]:pt-[44px] max-[520px]:pb-[46px]",
-  peopleGrid: "mt-[37px] grid grid-cols-[.95fr_2fr] gap-7 max-[1100px]:grid-cols-[.85fr_2fr] max-[1100px]:gap-5 max-[800px]:grid-cols-1 max-[800px]:gap-[30px]",
-  peopleIntro: "flex min-w-0 flex-col justify-between gap-[68px] [&_h2]:m-0 [&_h2]:text-[clamp(2rem,3.5vw,4.2rem)] [&_h2]:font-normal [&_h2]:leading-[1.08] [&_h2]:tracking-[-.068em] max-[800px]:grid max-[800px]:grid-cols-[auto_1fr] max-[800px]:items-end max-[800px]:gap-[30px] max-[800px]:[&_h2]:text-[clamp(1.8rem,4.5vw,3rem)] max-[520px]:gap-[17px] max-[520px]:[&_h2]:text-[1.75rem]",
-  peopleSymbol: "grid size-[160px] place-items-center rounded-[18px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] max-[800px]:size-[110px] max-[800px]:h-[120px] max-[800px]:[&_svg]:w-[60px] max-[520px]:size-[82px] max-[520px]:h-[92px] max-[520px]:[&_svg]:w-11",
-  peopleArabic: "mt-[18px] mb-0 w-fit text-[.74rem] text-[var(--site-copy)]",
-  peopleControls: "mt-6 flex items-center gap-[10px] max-[520px]:mt-5 max-[520px]:gap-[7px]",
-  peopleCards: "grid grid-cols-2 gap-[22px] max-[1100px]:gap-4 max-[800px]:gap-[18px] max-[520px]:grid-cols-1 max-[520px]:gap-4",
-  personCard: "flex min-h-[470px] flex-col rounded-[18px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-[clamp(22px,2vw,34px)] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] transition-shadow duration-300 hover:shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_28%),0_0_40px_color-mix(in_srgb,var(--card-accent,var(--site-sky))_9%,transparent)] max-[1100px]:min-h-[470px] max-[1100px]:p-[22px] max-[800px]:min-h-[420px] max-[520px]:min-h-[360px] max-[520px]:p-[26px]",
-  personTop: "flex items-center justify-between gap-3 max-[1100px]:items-start max-[520px]:items-center [&>span:first-child]:inline-flex [&>span:first-child]:items-center [&>span:first-child]:gap-[7px] [&>span:first-child]:text-[.65rem] [&>span:first-child]:leading-[1.4]",
-  personSymbol: "grid size-[58px] shrink-0 place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-copy)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] max-[1100px]:size-11 max-[520px]:size-[52px]",
-  personScope: "mt-[43px] [&>span]:mb-[17px] [&>span]:block [&>span]:text-[var(--site-sky-ink)] [&>small]:text-[.57rem] [&>small]:text-[var(--site-copy)] [&>p]:mt-[9px] [&>p]:mb-0 [&>p]:text-[clamp(1.2rem,1.85vw,2.2rem)] [&>p]:font-normal [&>p]:leading-[1.3] [&>p]:tracking-[-.06em] max-[800px]:[&>p]:text-[clamp(1.1rem,2.8vw,1.6rem)] max-[520px]:mt-[26px] max-[520px]:[&>p]:text-[1.48rem]",
-  scopeIcon: "mb-[17px] block text-[var(--site-sky-ink)]",
-  personBottom: "mt-auto pt-[35px] [&_h3]:m-0 [&_h3]:text-[.88rem] [&_h3]:font-medium [&_h3]:leading-[1.3] [&_h3]:tracking-[-.035em] [&_p]:mt-[7px] [&_p]:mb-0 [&_p]:text-[.69rem] [&_p]:leading-[1.6] [&_p]:text-[var(--site-copy)] [&>span]:mt-[13px] [&>span]:inline-flex [&>span]:items-center [&>span]:gap-[6px] [&>span]:text-[.62rem] [&>span]:text-[var(--site-sky-ink)]",
-  profileCount: "ml-[2px] text-[.58rem] text-[var(--site-copy)]",
-  partners: "mt-[42px] flex flex-wrap items-center gap-[22px] text-[.7rem] text-[var(--site-copy)] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-[7px] [&_a]:text-[var(--site-copy)] [&_a:last-child]:ml-auto [&_a:last-child]:text-[var(--site-sky-ink)] max-[520px]:mt-7 max-[520px]:gap-4 max-[520px]:[&_a:last-child]:ml-0",
-  joinScene: "scroll-mt-[88px] isolate relative min-h-[640px] overflow-hidden bg-[radial-gradient(ellipse_at_50%_0%,rgb(40_205_183_/_12%),transparent_62%),linear-gradient(145deg,#0c141c,#05070a)] px-[var(--site-gutter)] pt-[43px] pb-[70px] max-[800px]:min-h-[570px] max-[800px]:pb-[75px] max-[520px]:min-h-[590px] max-[520px]:pt-[30px]",
-  joinChapter: "relative z-[2]",
-  joinBackdrop: "pointer-events-none absolute inset-[-12%_-6%] -z-[1] flex rotate-[-18deg] items-center justify-center text-[#3f706e] opacity-[.45] [&>svg]:h-auto [&>svg]:w-[70%] [&>span]:absolute [&>span]:top-[17%] [&>span]:right-[1%] [&>span]:rotate-[26deg] [&>span]:text-[#4f777d]",
-  joinPanel: "relative mx-auto mt-[60px] flex min-h-[413px] w-[min(62%,780px)] flex-col justify-between gap-14 rounded-[18px] border border-[var(--site-glass-border)] bg-[rgb(14_22_29_/_68%)] px-[clamp(26px,3vw,46px)] pt-[clamp(37px,4vw,62px)] pb-[38px] text-center text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] [&_h2]:m-0 [&_h2]:text-[clamp(2rem,3.5vw,4.25rem)] [&_h2]:font-normal [&_h2]:leading-[1.17] [&_h2]:tracking-[-.064em] max-[800px]:mt-[47px] max-[800px]:min-h-[380px] max-[800px]:w-[85%] max-[800px]:px-[25px] max-[800px]:[&_h2]:text-[clamp(1.9rem,4.5vw,2.8rem)] max-[520px]:mt-[47px] max-[520px]:min-h-[395px] max-[520px]:w-[calc(100%_-_18px)] max-[520px]:gap-12 max-[520px]:px-5 max-[520px]:pt-8 max-[520px]:pb-9 max-[520px]:[&_h2]:text-[1.82rem]",
-  joinCopy: "mx-auto w-4/5 [&>a]:inline-flex [&>a]:items-center [&>a]:gap-[6px] [&>a]:text-[.76rem] [&>a]:underline [&>a]:underline-offset-[3px] [&>a_svg]:text-[var(--site-sky-ink)] [&>p]:mt-2 [&>p]:mb-0 [&>p]:text-[.72rem] [&>p]:leading-[1.6] [&>p]:tracking-[-.025em] [&>p]:text-[var(--site-copy)] [&>span]:mt-3 [&>span]:block [&>span]:text-[.66rem] [&>span]:text-[var(--site-copy)] max-[520px]:w-[92%]",
-  joinTile: "absolute right-[-65px] bottom-[-37px] grid size-[140px] place-items-center rounded-[18px] border border-[var(--site-glass-border)] bg-[rgb(21_47_48_/_85%)] text-[var(--site-sky-ink)]! shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] max-[800px]:right-[-26px] max-[800px]:bottom-[-38px] max-[800px]:size-[105px] max-[800px]:[&>svg:first-child]:w-[53px] max-[520px]:right-[-8px] max-[520px]:bottom-[-51px] max-[520px]:size-[94px] [&>svg:last-child]:absolute [&>svg:last-child]:right-3 [&>svg:last-child]:bottom-3",
-  notice: "flex items-center gap-5 bg-[rgb(40_205_183_/_7%)] px-[var(--site-gutter)] py-[22px] text-[.78rem] [&>span]:whitespace-nowrap [&>span]:text-[var(--site-sky-ink)] [&>p]:m-0 [&>a]:ml-auto [&>a]:flex [&>a]:items-center [&>a]:gap-[7px] [&>a]:whitespace-nowrap [&>a]:text-[var(--site-sky-ink)] max-[800px]:flex-wrap max-[800px]:gap-[9px]",
+
+  about: "relative pt-[clamp(80px,9vw,150px)] pb-[clamp(60px,7vw,110px)]",
+  aboutStatement: "relative [perspective:1400px] [transform-style:preserve-3d] px-[4vw] pt-[clamp(42px,4.5vw,70px)] max-[800px]:px-0 [&>h2]:mx-auto [&>h2]:my-0 [&>h2]:max-w-[1380px] [&>h2]:[transform-style:preserve-3d] [&>h2]:[backface-visibility:hidden] [&>h2]:text-center [&>h2]:text-[clamp(1.6rem,3.15vw,3.9rem)] [&>h2]:font-normal [&>h2]:leading-[1.36] [&>h2]:tracking-[-.063em] max-[800px]:[&>h2]:text-[clamp(1.55rem,4vw,2.6rem)] max-[520px]:[&>h2]:text-[1.5rem] max-[520px]:[&>h2]:leading-[1.5]",
+  chipFilm: "relative mx-[.12em] inline-block h-[.92em] w-[1.6em] overflow-hidden rounded-full align-[-0.14em] [transform-style:preserve-3d] [backface-visibility:hidden] shadow-[0_0_0_1px_rgb(82_232_209_/_.22),0_10px_30px_rgb(0_0_0_/_.35)] [&>video]:h-full [&>video]:w-full [&>video]:object-cover [&>video]:object-[64%_50%] [&>video]:scale-[1.6]",
+  chipLogo: "relative mx-[.12em] inline-grid h-[.92em] w-[1.6em] place-items-center overflow-hidden rounded-full bg-[radial-gradient(circle_at_50%_40%,rgb(40_205_183_/_.32),rgb(12_19_23_/_.96)_70%)] align-[-0.14em] [transform-style:preserve-3d] [backface-visibility:hidden] shadow-[0_0_0_1px_rgb(82_232_209_/_.22),0_10px_30px_rgb(0_0_0_/_.35)] [&>img]:h-[72%] [&>img]:w-auto [&>img]:drop-shadow-[0_0_10px_rgb(82_232_209_/_.55)]",
+  chipText: "inline-block -rotate-2 rounded-full bg-[var(--site-sky)] px-[.45em] py-[.02em] align-middle text-[.66em] font-medium leading-[1.5] tracking-[-.03em] text-[var(--site-night)] [transform-style:preserve-3d] [backface-visibility:hidden] shadow-[0_10px_30px_rgb(40_205_183_/_.25)]",
+  aboutArabic: "mt-[26px] mb-0 text-center text-[.87rem] text-[var(--site-copy)] max-[520px]:text-[.72rem]",
+  seal: "relative mx-auto mt-[clamp(36px,4vw,60px)] grid size-[clamp(110px,9vw,140px)] place-items-center [&>svg]:absolute [&>svg]:inset-0 [&>svg]:size-full [&>svg]:fill-[var(--site-copy)] [&>svg]:motion-safe:animate-[spin_22s_linear_infinite] [&>img]:size-[38%] [&>img]:drop-shadow-[0_0_18px_rgb(82_232_209_/_.45)]",
+  stats: "grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-px overflow-hidden rounded-[18px] bg-[rgb(255_255_255_/_.06)]",
+  stat: "flex min-h-[190px] flex-col justify-between bg-[var(--site-night)] p-[clamp(20px,2vw,30px)] max-[520px]:min-h-[150px] [&_strong]:block [&_strong]:text-[clamp(3.2rem,6vw,6.6rem)] [&_strong]:font-normal [&_strong]:leading-[.9] [&_strong]:tracking-[-.08em] [&_strong]:tabular-nums",
+
+  tracks: "relative overflow-hidden",
+  tracksPin: "flex flex-col pt-[clamp(70px,8vw,120px)] pb-[clamp(50px,6vw,90px)] data-[pinned=true]:h-[100svh] data-[pinned=true]:justify-center data-[pinned=true]:pt-[96px] data-[pinned=true]:pb-[40px]",
+  tracksHead: "flex items-end justify-between gap-8 px-[var(--site-gutter)] max-[800px]:flex-col max-[800px]:items-start max-[800px]:gap-5 [&_h2]:m-0 [&_h2]:mt-6 [&_h2]:text-[clamp(2.2rem,4.6vw,5.4rem)] [&_h2]:font-normal [&_h2]:leading-[1] [&_h2]:tracking-[-.07em] [&_h2_em]:not-italic [&_h2_em]:text-[var(--site-sky-ink)]",
+  tracksMeta: "grid min-w-[220px] justify-items-end gap-3 text-[.7rem] text-[var(--site-copy)] max-[800px]:w-full max-[800px]:justify-items-start [&>span:first-child]:text-[clamp(1.4rem,2vw,2rem)] [&>span:first-child]:tabular-nums [&>span:first-child]:tracking-[-.05em] [&>span:first-child]:text-[var(--site-ink)]",
+  progress: "relative block h-[2px] w-[220px] overflow-hidden rounded-full bg-[rgb(255_255_255_/_.1)] max-[800px]:hidden [&>i]:absolute [&>i]:inset-0 [&>i]:origin-left [&>i]:scale-x-0 [&>i]:bg-[var(--site-sky-ink)]",
+  viewport: "mt-[clamp(30px,4vh,56px)] overflow-x-auto overscroll-x-contain [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden data-[pinned=true]:snap-none",
+  strip: "m-0 flex w-max list-none gap-[clamp(14px,1.4vw,22px)] p-0 px-[var(--site-gutter)] will-change-transform",
+  panel: "group/panel relative flex h-[clamp(400px,58vh,620px)] w-[clamp(300px,34vw,560px)] snap-start flex-col justify-between overflow-hidden rounded-[18px] bg-[radial-gradient(ellipse_at_85%_-10%,color-mix(in_srgb,var(--track)_30%,transparent),transparent_62%),linear-gradient(160deg,rgb(255_255_255_/_.05),rgb(255_255_255_/_.015))] p-[clamp(22px,2.2vw,34px)] text-[var(--site-ink)]! shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-shadow duration-500 hover:shadow-[inset_0_1px_0_var(--site-glass-highlight),0_0_70px_color-mix(in_srgb,var(--track)_18%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--site-sky-ink)] max-[520px]:w-[82vw]",
+  panelTop: "relative z-[1] flex items-start justify-between gap-4 text-[.68rem] text-[var(--site-copy)] [&>span:first-child]:tabular-nums [&>span:last-child]:rounded-full [&>span:last-child]:bg-[color-mix(in_srgb,var(--track)_16%,transparent)] [&>span:last-child]:px-3 [&>span:last-child]:py-1.5 [&>span:last-child]:text-[var(--track)]",
+  panelCode: "pointer-events-none absolute top-[14%] right-[-.06em] text-[clamp(8rem,15vw,15rem)] leading-[.8] font-medium tracking-[-.09em] text-transparent [-webkit-text-stroke:1px_color-mix(in_srgb,var(--track)_55%,transparent)] opacity-80 transition-[color] duration-700 group-hover/panel:text-[color-mix(in_srgb,var(--track)_14%,transparent)]",
+  panelBody: "relative z-[1] [&_h3]:m-0 [&_h3]:text-[clamp(2rem,3.2vw,3.6rem)] [&_h3]:font-normal [&_h3]:leading-[1] [&_h3]:tracking-[-.07em] [&_p]:mt-4 [&_p]:mb-0 [&_p]:max-w-[40ch] [&_p]:text-[.8rem] [&_p]:leading-[1.65] [&_p]:text-[var(--site-copy)]",
+  panelArabic: "mt-2 block text-[.8rem] text-[var(--track)]",
+  panelTags: "mt-5 flex flex-wrap gap-1.5 [&>span]:rounded-full [&>span]:bg-[rgb(255_255_255_/_.06)] [&>span]:px-2.5 [&>span]:py-1 [&>span]:text-[.62rem] [&>span]:text-[var(--site-copy)]",
+  panelCta: "mt-6 inline-flex items-center gap-2 text-[.72rem] text-[var(--track)] [&>span]:inline-block [&>span]:transition-transform [&>span]:duration-500 group-hover/panel:[&>span]:rotate-45",
+  panelEnd: "flex h-[clamp(400px,58vh,620px)] w-[clamp(260px,24vw,380px)] snap-start flex-col justify-end gap-6 rounded-[18px] p-[clamp(22px,2.2vw,34px)] [&>p]:m-0 [&>p]:text-[clamp(1.5rem,2.2vw,2.4rem)] [&>p]:leading-[1.1] [&>p]:tracking-[-.06em]",
+
+  community: "pt-[clamp(70px,8vw,120px)] pb-[clamp(50px,6vw,90px)]",
+  peopleHead: "mt-8 grid grid-cols-[1fr_auto] items-end gap-8 max-[800px]:grid-cols-1 [&_h2]:m-0 [&_h2]:text-[clamp(2.2rem,4.6vw,5.4rem)] [&_h2]:font-normal [&_h2]:leading-[1] [&_h2]:tracking-[-.07em] [&_h2_em]:not-italic [&_h2_em]:text-[var(--site-sky-ink)]",
+  peopleArabic: "mt-4 mb-0 w-fit text-[.78rem] text-[var(--site-copy)]",
+  peopleGrid: "mt-[clamp(36px,4vw,60px)] grid grid-cols-4 gap-[clamp(12px,1.2vw,20px)] max-[1100px]:grid-cols-3 max-[800px]:grid-cols-2 max-[520px]:grid-cols-1",
+  personCard: "group/person relative flex min-h-[330px] flex-col justify-between overflow-hidden rounded-[18px] bg-[var(--site-glass)] p-[clamp(20px,1.8vw,28px)] text-[var(--site-ink)]! shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background] duration-500 hover:bg-[var(--site-glass-strong)]",
+  monogram: "grid size-[clamp(64px,6vw,86px)] place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,rgb(82_232_209_/_.35),rgb(40_205_183_/_.08)_60%,transparent)] text-[clamp(1.3rem,1.8vw,1.8rem)] tracking-[-.06em] text-[var(--site-ink)] shadow-[inset_0_0_0_1px_rgb(82_232_209_/_.25)] transition-transform duration-700 group-hover/person:scale-[1.08] motion-reduce:transition-none",
+  personBody: "[&_small]:block [&_small]:text-[.62rem] [&_small]:uppercase [&_small]:tracking-[.12em] [&_small]:text-[var(--site-sky-ink)] [&_h3]:mt-3 [&_h3]:mb-0 [&_h3]:text-[clamp(1.25rem,1.6vw,1.7rem)] [&_h3]:font-normal [&_h3]:leading-[1.1] [&_h3]:tracking-[-.05em] [&_p]:mt-2 [&_p]:mb-0 [&_p]:text-[.72rem] [&_p]:leading-[1.6] [&_p]:text-[var(--site-copy)]",
+  partners: "mt-[clamp(40px,4vw,64px)] flex flex-wrap items-baseline gap-x-6 gap-y-3 text-[.74rem] text-[var(--site-copy)] [&_a]:text-[var(--site-ink)] [&_a]:transition-colors [&_a:hover]:text-[var(--site-sky-ink)]",
+
+  sessions: "pt-[clamp(70px,8vw,120px)] pb-[clamp(50px,6vw,90px)]",
+  sessionsGrid: "mt-[clamp(36px,4vw,60px)] columns-3 gap-[clamp(12px,1.2vw,20px)] max-[800px]:columns-2 max-[520px]:columns-1 [&>figure]:mb-[clamp(12px,1.2vw,20px)] [&>figure]:break-inside-avoid",
+
+  join: "relative isolate overflow-hidden pt-[clamp(80px,9vw,140px)] pb-[clamp(70px,8vw,120px)]",
+  marquee: "pointer-events-none select-none overflow-hidden whitespace-nowrap text-[clamp(4.6rem,14vw,15rem)] leading-[.9] tracking-[-.08em] [&>div]:flex [&>div]:w-max [&>div]:will-change-transform [&>div>span]:pr-[.35em] [&_em]:not-italic [&_em]:text-transparent [&_em]:[-webkit-text-stroke:1px_rgb(82_232_209_/_.7)]",
+  joinBody: "relative mt-[clamp(40px,5vw,80px)] grid grid-cols-[1fr_auto] items-end gap-10 px-[var(--site-gutter)] max-[800px]:grid-cols-1 [&_h2]:m-0 [&_h2]:max-w-[18ch] [&_h2]:text-[clamp(2rem,3.6vw,4.2rem)] [&_h2]:font-normal [&_h2]:leading-[1.06] [&_h2]:tracking-[-.065em]",
+  joinCopy: "mt-6 flex flex-wrap items-center gap-x-7 gap-y-4 [&>p]:m-0 [&>p]:max-w-[44ch] [&>p]:text-[.8rem] [&>p]:leading-[1.7] [&>p]:text-[var(--site-copy)]",
+  joinTile: "group/tile relative grid size-[clamp(150px,15vw,230px)] place-items-center overflow-hidden rounded-[22px] bg-[radial-gradient(circle_at_50%_38%,rgb(40_205_183_/_.3),rgb(10_16_20_/_.95)_68%)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_30px_90px_rgb(40_205_183_/_.12)] [&>img]:h-[52%] [&>img]:w-auto [&>img]:drop-shadow-[0_0_24px_rgb(82_232_209_/_.5)] [&>img]:transition-transform [&>img]:duration-700 hover:[&>img]:scale-110 hover:[&>img]:rotate-[-6deg] motion-reduce:[&>img]:transition-none [&>span]:absolute [&>span]:right-4 [&>span]:bottom-3 [&>span]:text-[.66rem] [&>span]:text-[var(--site-copy)]",
+  notice: "flex items-center gap-5 bg-[rgb(40_205_183_/_7%)] px-[var(--site-gutter)] py-[18px] text-[.78rem] [&>span]:whitespace-nowrap [&>span]:text-[.62rem] [&>span]:uppercase [&>span]:tracking-[.14em] [&>span]:text-[var(--site-sky-ink)] [&>p]:m-0 [&>a]:ml-auto [&>a]:whitespace-nowrap [&>a]:text-[var(--site-sky-ink)] max-[800px]:flex-wrap max-[800px]:gap-[9px]",
 } as const;
+
+export type HomeStat = { value: number; label: string; arabic?: string };
 
 type HomeProps = {
   tracks: EditorialTrack[];
@@ -73,11 +74,9 @@ type HomeProps = {
   events: EditorialEvent[];
   eventMode: "upcoming" | "archive" | "undated";
   partners: EditorialPartner[];
+  stats: HomeStat[];
+  sessions: SessionPhoto[];
   notice?: { title: string; summary?: string; href?: string };
-};
-
-const trackIcons: Record<string, typeof Users> = {
-  hr: Users, pr: Megaphone, sm: Share2, oc: CalendarDays, it: Code2, rnd: FlaskConical,
 };
 
 /** Each word keeps its semantic text in SSR; only its paint is scroll-driven. */
@@ -87,184 +86,208 @@ function FillWords({ text, accent = false }: { text: string; accent?: boolean })
   ));
 }
 
-function Chapter({ number, children }: { number: string; children: string }) {
-  return <p className="m-0 inline-flex items-center text-[.77rem] font-normal leading-none tracking-[-.04em] max-[520px]:text-[.71rem] [&>span:first-child]:grid [&>span:first-child]:size-[43px] [&>span:first-child]:place-items-center [&>span:first-child]:rounded-full [&>span:first-child]:bg-[var(--site-glass-soft)] [&>span:first-child]:text-[.7rem] [&>span:first-child]:[font-variant-numeric:tabular-nums] [&>span:first-child]:text-[var(--site-sky-ink)] [&>span:last-child]:inline-flex [&>span:last-child]:min-h-[43px] [&>span:last-child]:items-center [&>span:last-child]:rounded-full [&>span:last-child]:bg-[var(--site-glass-soft)] [&>span:last-child]:px-[19px] [&>span:last-child]:text-[var(--site-ink)] max-[520px]:[&>span:first-child]:size-[38px] max-[520px]:[&>span:last-child]:min-h-[38px] max-[520px]:[&>span:last-child]:px-[15px]"><span>{number}</span><span>{children}</span></p>;
-}
-
 function PillLink({ href, children }: { href: string; children: string }) {
-  return <Link href={href} className={styles.pill} data-magnetic>{children}<span><ArrowUpRight size={20} strokeWidth={1.5} aria-hidden="true" /></span></Link>;
+  return <Link href={href} className={styles.pill} data-magnetic>{children}<span aria-hidden="true">↗</span></Link>;
 }
 
-function TrackCarousel({ tracks }: { tracks: EditorialTrack[] }) {
-  const [index, setIndex] = useState(0);
-  const catalog = useRef<HTMLElement>(null);
-  const grid = useRef<HTMLDivElement>(null);
-  const mounted = useRef(false);
-  const [active, ...rest] = Array.from({ length: Math.min(3, tracks.length) }, (_, offset) => tracks[(index + offset) % tracks.length]);
+function TextLink({ href, children }: { href: string; children: string }) {
+  return <Link href={href} className={styles.textLink}>{children} <span aria-hidden="true">↗</span></Link>;
+}
 
-  useEffect(() => {
-    const element = catalog.current;
-    if (element) element.dataset.hydrated = "true";
-    return () => { if (element) delete element.dataset.hydrated; };
-  }, []);
 
-  useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return; }
-    const gridElement = grid.current;
-    if (!gridElement || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const context = gsap.context(() => {
-      gsap.fromTo("[data-carousel-detail]", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .045, ease: "power3.out" });
-      gsap.fromTo("[data-carousel-icon]", { scale: .88, rotation: -7 }, { scale: 1, rotation: 0, duration: .8, ease: "power3.out" });
-    }, gridElement);
-    return () => context.revert();
-  }, [index]);
-
-  if (!active) return <div className={styles.empty}><Cpu size={46} strokeWidth={1.2} aria-hidden="true" /><h3>The next chapter is taking shape.</h3><p>No tracks have been published yet.</p><PillLink href="/community">Meet the community</PillLink></div>;
-  const ActiveIcon = trackIcons[active.slug] || Code2;
-  const move = (amount: number) => setIndex((value) => (value + amount + tracks.length) % tracks.length);
-
+function SealText() {
   return (
-    <>
-      <div className={styles.trackGrid} ref={grid} role="region" aria-label="Explore published tracks" aria-roledescription="carousel"
-      onKeyDown={(event) => {
-        if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
-        if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); }
-      }}>
-      <Link href={`/tracks#${active.slug}`} className={styles.featureCard} data-editorial-lift style={{ "--card-accent": active.color, "--card-ink": active.ink } as CSSProperties} aria-label={`Explore ${active.title}`}>
-        <div className={styles.featureMeta} data-carousel-detail><span>{active.category || "Our tracks"}</span><span>{active.slug.toUpperCase()}</span></div>
-        <span className={styles.featureWatermark} aria-hidden="true"><ActiveIcon size={330} strokeWidth={.7} /></span>
-        <span className={styles.featureIcon} data-carousel-icon aria-hidden="true"><ActiveIcon size={115} strokeWidth={1.05} /></span>
-        <div className={styles.featureBottom} data-carousel-detail>
-          <div><h3>{active.title}</h3>{active.arabicTitle ? <p lang="ar" dir="rtl">{active.arabicTitle}</p> : null}</div>
-          <span className={styles.roundArrow}><ArrowUpRight size={27} strokeWidth={1.4} aria-hidden="true" /></span>
-        </div>
-      </Link>
-      <div className={styles.trackAside}>
-        <div className={styles.smallCards}>
-          {rest.map((track, offset) => {
-            const Icon = trackIcons[track.slug] || Code2;
-            return <button key={track.id} type="button" className={styles.smallCard} onClick={() => move(offset + 1)} aria-label={`Feature ${track.title}`} style={{ "--card-accent": track.color, "--card-ink": track.ink } as CSSProperties} data-editorial-lift>
-              <span className={styles.smallPlus}><Plus size={17} strokeWidth={1.4} aria-hidden="true" /></span>
-              <span className={styles.smallIcon} data-carousel-icon><Icon size={59} strokeWidth={1.05} aria-hidden="true" /></span>
-              <h3 data-carousel-detail>{track.title}</h3>
-            </button>;
-          })}
-        </div>
-        <div className={styles.carouselControls}>
-          <span className={styles.carouselStatus} aria-live="polite" aria-atomic="true">{String(index + 1).padStart(2, "0")} / {String(tracks.length).padStart(2, "0")}</span>
-          <button type="button" onClick={() => move(-1)} className={styles.previous} disabled={tracks.length < 2} aria-label="Previous track"><ArrowLeft size={18} aria-hidden="true" /></button>
-          <button type="button" onClick={() => move(1)} className={styles.next} disabled={tracks.length < 2} aria-label="Next track"><ArrowRight size={18} aria-hidden="true" /></button>
-        </div>
-        <div className={styles.trackDescription} data-carousel-detail><p>{active.summary || "Different ways to contribute. A shared commitment to learning by doing."}</p><Link href={`/tracks#${active.slug}`}>Explore this track <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
-      </div>
-      </div>
-      {tracks.length ? (
-        <nav
-          ref={catalog}
-          className={styles.staticTrackCatalog}
-          aria-label="Browse all published tracks"
-        >
-          {tracks.map((track, trackIndex) => (
-            <Link
-              key={track.id}
-              href={`/tracks#${track.slug}`}
-              style={{ "--catalog-accent": track.color, "--catalog-ink": track.ink } as CSSProperties}
-            >
-              <span>{String(trackIndex + 1).padStart(2, "0")}</span>
-              <span>{track.title}</span>
-              <ArrowUpRight size={15} aria-hidden="true" />
-            </Link>
-          ))}
-        </nav>
-      ) : null}
-    </>
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <defs><path id="home-seal-path" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" /></defs>
+      <text fontSize="13.2" letterSpacing="4.2"><textPath href="#home-seal-path">LEARN BY DOING · BUILD TOGETHER · SHARE FORWARD ·</textPath></text>
+    </svg>
   );
 }
 
-function PeopleCards({ people }: { people: EditorialPerson[] }) {
-  const [offset, setOffset] = useState(0);
-  const cards = useRef<HTMLDivElement>(null);
-  const mounted = useRef(false);
-  useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return; }
-    if (!cards.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const targets = cards.current.querySelectorAll("[data-person-content]");
-    if (!targets.length) return;
-    const context = gsap.context(() => gsap.fromTo(targets, { x: 36, opacity: 0 }, { x: 0, opacity: 1, stagger: .06, duration: .65, ease: "power3.out" }), cards);
-    return () => context.revert();
-  }, [offset]);
-  const selected = Array.from({ length: Math.min(2, people.length) }, (_, index) => people[(offset + index) % people.length]);
-  const move = (direction: number) => setOffset((value) => (value + direction * 2 + people.length) % people.length);
+function TracksRail({ tracks }: { tracks: EditorialTrack[] }) {
+  if (!tracks.length) {
+    return <div className="px-[var(--site-gutter)] pt-10"><div className={styles.empty}><h3>The next chapter is taking shape.</h3><p>No tracks have been published yet.</p><PillLink href="/community">Meet the community</PillLink></div></div>;
+  }
   return (
-    <div className={styles.peopleGrid}>
-      <div className={styles.peopleIntro}>
-        <div className={styles.peopleSymbol} data-editorial-symbol><Users size={76} strokeWidth={1.1} aria-hidden="true" /></div>
-        <div><h2 id="home-community-title">Different people.<br />Shared momentum.</h2>
-          <p className={styles.peopleArabic} lang="ar" dir="rtl">الفكرة بتكبر بناسها.</p>
-          <div className={styles.peopleControls}>
-            <button type="button" className={styles.previous} onClick={() => move(-1)} disabled={people.length < 3} aria-label="Previous community profiles"><ArrowLeft size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.next} onClick={() => move(1)} disabled={people.length < 3} aria-label="Next community profiles"><ArrowRight size={18} aria-hidden="true" /></button>
-            <span className={styles.profileCount} aria-live="polite">{people.length ? `${offset + 1}–${((offset + selected.length - 1) % people.length) + 1} / ${people.length}` : "No profiles yet"}</span>
-          </div>
-        </div>
-      </div>
-      <div className={styles.peopleCards} ref={cards}>
-        {selected.map((person) => <Link key={person.id} href={`/community/${person.slug}`} className={styles.personCard} data-editorial-reveal aria-label={`Meet ${person.name}`}>
-          <div className={styles.personTop} data-person-content><span><Users size={16} strokeWidth={1.4} aria-hidden="true" />{person.committee || "Community"}</span><span className={styles.personSymbol}><Lightbulb size={29} strokeWidth={1.1} aria-hidden="true" /></span></div>
-          <div className={styles.personScope} data-person-content><span className={styles.scopeIcon}><ArrowUpRight size={26} strokeWidth={1.6} aria-hidden="true" /></span><small>Published team scope</small><p>{person.scope}</p></div>
-          <div className={styles.personBottom} data-person-content><h3>{person.name}</h3><p>{person.role}</p><span>View profile <ArrowUpRight size={12} aria-hidden="true" /></span></div>
-        </Link>)}
-        {!selected.length ? <div className={styles.empty}><h3>The people make the difference.</h3><p>The published directory is being prepared.</p><PillLink href="/community">Explore the community</PillLink></div> : null}
-      </div>
+    <div className={styles.viewport} data-tracks-viewport>
+      <ol className={styles.strip} data-tracks-strip aria-label="Published tracks">
+        {tracks.map((track, index) => (
+          <li key={track.id} data-tracks-panel>
+            <Link href={`/tracks#${track.slug}`} className={styles.panel} style={{ "--track": track.color } as CSSProperties} data-cursor="Explore" aria-label={`Explore ${track.title}`}>
+              <div className={styles.panelTop}><span>{String(index + 1).padStart(2, "0")} / {String(tracks.length).padStart(2, "0")}</span><span>{track.category || "Track"}</span></div>
+              <span className={styles.panelCode} aria-hidden="true" data-tracks-code>{track.code || track.slug.toUpperCase()}</span>
+              <div className={styles.panelBody}>
+                <h3>{track.title}</h3>
+                {track.arabicTitle ? <span className={styles.panelArabic} lang="ar" dir="rtl">{track.arabicTitle}</span> : null}
+                {track.summary ? <p>{track.summary}</p> : null}
+                {track.capabilities.length ? <div className={styles.panelTags}>{track.capabilities.map((item) => <span key={item}>{item}</span>)}</div> : null}
+                <span className={styles.panelCta}>Explore this track <span aria-hidden="true">↗</span></span>
+              </div>
+            </Link>
+          </li>
+        ))}
+        <li className={styles.panelEnd}>
+          <p>Different ways to contribute.<br /><span className="text-[var(--site-copy)]">One shared practice.</span></p>
+          <PillLink href="/tracks">All tracks</PillLink>
+        </li>
+      </ol>
     </div>
   );
 }
 
-export function EditorialHome({ tracks, people, events, eventMode, partners, notice }: HomeProps) {
+function People({ people }: { people: EditorialPerson[] }) {
+  if (!people.length) {
+    return (
+      <div className={`${styles.empty} mt-[clamp(36px,4vw,60px)] grid grid-cols-[1fr_auto] items-end gap-8 max-[800px]:grid-cols-1`} data-editorial-reveal>
+        <div><h3>The people make the difference.</h3><p className="mb-0">Our published directory is being prepared. Meet the committees and how they work together.</p></div>
+        <PillLink href="/community">Explore the community</PillLink>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.peopleGrid}>
+      {people.slice(0, 8).map((person) => (
+        <Link key={person.id} href={`/community/${person.slug}`} className={styles.personCard} data-editorial-lift data-cursor="Profile" aria-label={`Meet ${person.name}`}>
+          <span className={styles.monogram} aria-hidden="true">{initials(person.name)}</span>
+          <div className={styles.personBody}>
+            <small>{person.committee || "Community"}</small>
+            <h3>{person.name}</h3>
+            {person.role ? <p>{person.role}</p> : null}
+            {person.scope ? <p className="line-clamp-2">{person.scope}</p> : null}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function Sessions({ photos }: { photos: SessionPhoto[] }) {
+  const [failed, setFailed] = useState<Record<string, true>>({});
+  const visible = photos.filter((photo) => !failed[photo.src]);
+  if (!visible.length) return null;
+  return (
+    <section className={`${styles.section} ${styles.sessions}`} id="home-sessions" aria-labelledby="home-sessions-title" data-editorial-sessions>
+      <Chapter number="V">Sessions</Chapter>
+      <div className={styles.peopleHead}><h2 id="home-sessions-title" data-editorial-reveal>Tile by tile.<br /><em>Session by session.</em></h2></div>
+      <div className={styles.sessionsGrid}>
+        {visible.map((photo) => (
+          <figure key={photo.src} className="m-0 overflow-hidden rounded-[14px] bg-[var(--site-glass)]" data-editorial-lift>
+            <Image src={photo.src} alt={photo.caption} width={photo.width} height={photo.height} sizes="(max-width: 520px) 92vw, (max-width: 800px) 46vw, 31vw" className="h-auto w-full" onError={() => setFailed((value) => ({ ...value, [photo.src]: true }))} />
+            <figcaption className="flex justify-between gap-3 px-4 py-3 text-[.66rem] text-[var(--site-copy)]"><span>{photo.caption}</span><span className="text-[var(--site-sky-ink)]">{photo.committee}</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatValue({ value }: { value: number }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const state = { value: 0 };
+    const pad = (number: number) => String(number).padStart(2, "0");
+    const context = gsap.context(() => {
+      gsap.to(state, {
+        value, duration: 1.6, ease: "power3.out",
+        scrollTrigger: { trigger: element, start: "top 88%", once: true },
+        onStart: () => { element.textContent = pad(0); },
+        onUpdate: () => { element.textContent = pad(Math.round(state.value)); },
+      });
+    }, element);
+    return () => { context.revert(); element.textContent = pad(value); };
+  }, [value]);
+  return <strong ref={ref}>{String(value).padStart(2, "0")}</strong>;
+}
+
+export function EditorialHome({ tracks, people, events, eventMode, partners, stats, sessions, notice }: HomeProps) {
+  const shownStats = stats.filter((stat) => stat.value > 0);
+  const hasSessions = sessions.length > 0;
   return (
     <>
-      {notice ? <aside className={styles.notice} aria-label="Current club notice"><span>Club notice</span><p><strong>{notice.title}</strong>{notice.summary ? ` — ${notice.summary}` : ""}</p>{notice.href ? <a href={notice.href}>Read more <ArrowUpRight size={15} aria-hidden="true" /></a> : null}</aside> : null}
-      <section className={styles.about} id="about" aria-labelledby="about-title" data-editorial-about>
-        <div className={styles.sectionTop}><Chapter number="01">About</Chapter><Link className={styles.quietLink} href="/community">Meet the people <ArrowUpRight size={16} strokeWidth={1.4} aria-hidden="true" /></Link></div>
+      {notice ? <aside className={styles.notice} aria-label="Current club notice"><span>Club notice</span><p><strong>{notice.title}</strong>{notice.summary ? ` — ${notice.summary}` : ""}</p>{notice.href ? <a href={notice.href}>Read more ↗</a> : null}</aside> : null}
+
+      <section className={`${styles.section} ${styles.about}`} id="about" aria-labelledby="about-title" data-editorial-about>
+        <div className={styles.sectionTop}><Chapter number="I">About</Chapter><TextLink href="/community">Meet the people</TextLink></div>
         <div className={styles.aboutStatement}>
           <h2 id="about-title" data-editorial-statement>
             <FillWords text="We are a student-led " />
-            <span className={styles.inlineIcon} data-editorial-chip aria-hidden="true"><Code2 size={30} strokeWidth={1.5} /></span>{" "}
+            <span className={styles.chipFilm} data-editorial-chip aria-hidden="true"><MiniFilm /></span>{" "}
             <FillWords text="technology community at " />
-            <span className={styles.inlinePill} data-editorial-chip>BATU</span>
+            <span className={styles.chipText} data-editorial-chip>BATU</span>
             <FillWords text=", making room for curious minds and different starting points. From sharing knowledge " />
-            <span className={styles.inlineIcon} data-editorial-chip aria-hidden="true"><BookOpen size={29} strokeWidth={1.4} /></span>{" "}
+            {/* eslint-disable-next-line @next/next/no-img-element -- 24px brand mark inside a heading chip */}
+            <span className={styles.chipLogo} data-editorial-chip aria-hidden="true"><img src="/logo.webp" alt="" width={48} height={48} /></span>{" "}
             <FillWords text="to building useful ideas, we create the space to " />
             <FillWords text="learn together, practice with purpose, and move ideas forward." accent />
           </h2>
           <p className={styles.aboutArabic} lang="ar" dir="rtl">نتعلّم معًا، ونبني ما بعد الفكرة.</p>
         </div>
-        <div className={styles.aboutSeal} aria-hidden="true"><span /><div data-editorial-symbol data-about-depth="seal"><Cpu size={28} strokeWidth={1.15} /></div><span /></div>
+        <div className={styles.seal} aria-hidden="true" data-about-depth="seal" data-editorial-symbol>
+          <SealText />
+          {/* eslint-disable-next-line @next/next/no-img-element -- decorative brand mark */}
+          <img src="/logo.webp" alt="" width={64} height={64} />
+        </div>
       </section>
 
-      <section className={styles.tracks} id="tracks" aria-labelledby="home-tracks-title" data-editorial-tracks>
-        <div className={styles.splitTop}><Chapter number="02">Our tracks</Chapter><h2 id="home-tracks-title" data-editorial-reveal>Different ways to learn.<br />One place to belong.</h2></div>
-        <TrackCarousel tracks={tracks} />
+        {shownStats.length ? (
+          <dl className={`${styles.stats} mx-[var(--site-gutter)] mb-[clamp(20px,3vw,40px)]`} aria-label="IT Club in numbers">
+            {shownStats.map((stat) => (
+              <div key={stat.label} className={styles.stat} data-editorial-reveal>
+                <dd className="m-0"><StatValue value={stat.value} /></dd>
+                <dt><span className="block text-[.78rem] text-[var(--site-ink)]">{stat.label}</span>{stat.arabic ? <small className="mt-1 block text-[.7rem] text-[var(--site-mist)]" lang="ar" dir="rtl">{stat.arabic}</small> : null}</dt>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+      <section className={`${styles.tracks} scroll-mt-[0px] text-[var(--site-ink)]`} id="tracks" aria-labelledby="home-tracks-title" data-editorial-tracks>
+        <div className={styles.tracksPin} data-tracks-pin>
+          <div className={styles.tracksHead}>
+            <div><Chapter number="II">Our tracks</Chapter><h2 id="home-tracks-title">Different ways to learn.<br /><em>One place to belong.</em></h2></div>
+            {tracks.length ? <div className={styles.tracksMeta}><span data-tracks-counter>01 / {String(tracks.length).padStart(2, "0")}</span><span className={styles.progress} aria-hidden="true"><i data-tracks-progress /></span><span>Scroll to explore</span></div> : null}
+          </div>
+          <TracksRail tracks={tracks} />
+        </div>
       </section>
 
       <HomeEvents events={events} eventMode={eventMode} />
 
-      <section className={styles.community} id="home-community" aria-labelledby="home-community-title" data-editorial-community>
-        <Chapter number="04">Community</Chapter>
-        <PeopleCards people={people} />
+      <section className={`${styles.section} ${styles.community}`} id="home-community" aria-labelledby="home-community-title" data-editorial-community>
+        <div className={styles.sectionTop}><Chapter number="IV">Community</Chapter><TextLink href="/community">All committees</TextLink></div>
+        <div className={styles.peopleHead}>
+          <div><h2 id="home-community-title" data-editorial-reveal>Different people.<br /><em>Shared momentum.</em></h2><p className={styles.peopleArabic} lang="ar" dir="rtl">الفكرة بتكبر بناسها.</p></div>
+        </div>
+        <People people={people} />
         <div className={styles.partners}>
-          {partners.length ? <><span>In good company</span>{partners.slice(0, 4).map((partner) => <a key={partner.id} href={partner.href || "/sponsors"}><Handshake size={16} strokeWidth={1.2} aria-hidden="true" />{partner.name}</a>)}</> : <span>Good ideas grow with good company.</span>}
-          <Link href="/sponsors">Our partners <ArrowUpRight size={15} aria-hidden="true" /></Link>
+          <span>In good company —</span>
+          {partners.length ? partners.slice(0, 5).map((partner, index) => <span key={partner.id}><a href={partner.href || "/sponsors"}>{partner.name}</a>{index < Math.min(5, partners.length) - 1 ? <span className="ml-6 text-[var(--site-mist)]" aria-hidden="true">/</span> : null}</span>) : <span>good ideas grow with good partners.</span>}
+          <span className="ml-auto max-[520px]:ml-0"><TextLink href="/sponsors">Our partners</TextLink></span>
         </div>
       </section>
 
-      <section className={styles.joinScene} id="join" aria-labelledby="home-join-title" data-editorial-join>
-        <div className={styles.joinChapter}><Chapter number="05">Find your place</Chapter></div>
-        <div className={styles.joinBackdrop} aria-hidden="true" data-editorial-join-art><Cpu size={640} strokeWidth={.55} /><span><Code2 size={320} strokeWidth={.7} /></span></div>
-        <div className={styles.joinPanel} data-editorial-join-panel>
-          <h2 id="home-join-title">Find your people and<br />give your <span className={styles.inlineIcon}><Lightbulb size={29} strokeWidth={1.3} aria-hidden="true" /></span> curiosity<br />somewhere to go.</h2>
-          <div className={styles.joinCopy}><Link href="/tracks">Explore our tracks <ArrowUpRight size={14} aria-hidden="true" /></Link><p>Discover the teams, meet the people, and see where your next idea could begin.</p><span lang="ar" dir="rtl">فكرتك الجاية مش لازم تبدأ لوحدك.</span></div>
-          <Link href="/community" className={styles.joinTile} aria-label="Meet the IT Club community" data-editorial-symbol><Users size={65} strokeWidth={1.05} aria-hidden="true" /><ArrowUpRight size={18} aria-hidden="true" /></Link>
+      {hasSessions ? <Sessions photos={sessions} /> : null}
+
+      <section className={`${styles.join} text-[var(--site-ink)] scroll-mt-[88px]`} id="join" aria-labelledby="home-join-title" data-editorial-join>
+        <div className="px-[var(--site-gutter)]"><Chapter number={hasSessions ? "VI" : "V"}>Find your place</Chapter></div>
+        <div className={`${styles.marquee} mt-[clamp(30px,4vw,60px)]`} aria-hidden="true" data-editorial-join-art>
+          <div data-marquee-row="1">{Array.from({ length: 4 }, (_, index) => <span key={index}>Find your people <em>—</em></span>)}</div>
+          <div data-marquee-row="2" className="-translate-x-1/4">{Array.from({ length: 4 }, (_, index) => <span key={index}><em>Build</em> something real ·</span>)}</div>
+        </div>
+        <div className={styles.joinBody} data-editorial-join-panel>
+          <div>
+            <h2 id="home-join-title">Give your curiosity somewhere to go.</h2>
+            <div className={styles.joinCopy}>
+              <PillLink href="/tracks">Explore our tracks</PillLink>
+              <p>Discover the teams, meet the people, and see where your next idea could begin.<span className="mt-2 block text-[var(--site-mist)]" lang="ar" dir="rtl">فكرتك الجاية مش لازم تبدأ لوحدك.</span></p>
+            </div>
+          </div>
+          <Link href="/community" className={styles.joinTile} aria-label="Meet the IT Club community" data-editorial-symbol data-cursor="Join">
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative brand mark */}
+            <img src="/logo.webp" alt="" width={120} height={120} />
+            <span aria-hidden="true">Community ↗</span>
+          </Link>
         </div>
       </section>
     </>

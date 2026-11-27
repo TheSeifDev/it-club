@@ -83,7 +83,7 @@ export type TransitionTile = {
   tone: number;
 };
 
-/** Larger hex blocks fan out from the top-centre in a deliberate radial wave. */
+/** Hex blocks fall from the top as a curtain, leading slightly at the centre. */
 export function transitionHoneycomb(width: number, height: number) {
   const safeWidth = Number.isFinite(width) ? Math.max(1, width) : 1;
   const safeHeight = Number.isFinite(height) ? Math.max(1, height) : 1;
@@ -106,13 +106,15 @@ export function transitionHoneycomb(width: number, height: number) {
       positions.push({
         x,
         y,
-        tone: (column * 3 + row * 5) % 7,
+        // Hashed, not diagonal, so the dark field reads as texture rather than a pattern.
+        tone: ((column * 73856093) ^ (row * 19349663)) >>> 0 & 3,
       });
     }
   }
 
-  const distances = positions.map((tile) =>
-    Math.hypot(tile.x - originX, tile.y),
+  // Mostly vertical sweep with a gentle centre-first curve.
+  const distances = positions.map(
+    (tile) => Math.max(0, tile.y) + Math.abs(tile.x - originX) * 0.32,
   );
   const maximumDistance = Math.max(1, ...distances);
   const tiles = positions.map((tile, index) => ({
@@ -121,4 +123,30 @@ export function transitionHoneycomb(width: number, height: number) {
   }));
 
   return { radius: radius + 0.75, tiles };
+}
+
+const EXTRA_LABELS: Record<string, { label: string; arabic: string }> = {
+  "/": { label: "Home", arabic: "الرئيسية" },
+  "/contact": { label: "Contact", arabic: "تواصل معنا" },
+  "/alumni": { label: "Alumni", arabic: "الخريجين" },
+  "/privacy": { label: "Privacy", arabic: "الخصوصية" },
+  "/terms": { label: "Terms", arabic: "الشروط" },
+  // Mirrors SITE_NAV_LINKS; kept local so the pure test runner needs no resolver.
+  "/community": { label: "Community", arabic: "المجتمع" },
+  "/tracks": { label: "Tracks", arabic: "المسارات" },
+  "/events": { label: "Events", arabic: "الفعاليات" },
+  "/store": { label: "Store", arabic: "المتجر" },
+  "/sponsors": { label: "Partners", arabic: "الشركاء" },
+};
+/** Destination name shown on the covered screen between pages. */
+export function transitionLabel(href: string): { label: string; arabic: string } {
+  let path = "/";
+  try {
+    path = new URL(href, "https://transition.invalid").pathname.replace(/\/$/, "") || "/";
+  } catch {
+    path = "/";
+  }
+  if (EXTRA_LABELS[path]) return EXTRA_LABELS[path];
+  const root = `/${path.split("/")[1] ?? ""}`;
+  return EXTRA_LABELS[root] ?? { label: "IT Club", arabic: "آي تي كلوب" };
 }

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SITE_NAV_LINKS, isSitePageActive } from "@/lib/ui/site-navigation";
 
@@ -122,7 +121,7 @@ export default function SiteHeader() {
         <Link className={contactClass} href="/contact">
           <span>Let’s connect</span>
           <span className={contactArrowClass} aria-hidden="true">
-            <ArrowUpRight size={16} />
+            <span className="text-[.9rem] leading-none">↗</span>
           </span>
         </Link>
         <button
@@ -134,11 +133,14 @@ export default function SiteHeader() {
           aria-controls="site-mobile-navigation"
           onClick={() => setOpen((value) => !value)}
         >
-          {open ? (
-            <X size={21} aria-hidden="true" />
-          ) : (
-            <Menu size={21} aria-hidden="true" />
-          )}
+          <span className="relative block size-[21px]" aria-hidden="true">
+            <span
+              className={`absolute left-1/2 top-1/2 h-[1.5px] w-[18px] -translate-x-1/2 rounded-full bg-current transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? "-translate-y-1/2 rotate-45" : "-translate-y-[4px]"}`}
+            />
+            <span
+              className={`absolute left-1/2 top-1/2 h-[1.5px] w-[18px] -translate-x-1/2 rounded-full bg-current transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? "-translate-y-1/2 -rotate-45" : "translate-y-[3px]"}`}
+            />
+          </span>
         </button>
       </div>
       <div

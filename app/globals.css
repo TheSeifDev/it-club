@@ -47,6 +47,12 @@
 
 * { border-color: var(--border); }
 html { scroll-behavior: smooth; background: var(--background); }
+html.lenis, html.lenis body { height: auto; }
+html.lenis { scroll-behavior: auto !important; }
+html.itc-preloading { overflow: hidden; }
+html.lenis.lenis-stopped { overflow: clip; }
+html.has-site-cursor .site-root, html.has-site-cursor .site-root a, html.has-site-cursor .site-root button { cursor: none; }
+html.has-site-cursor .site-root input, html.has-site-cursor .site-root textarea, html.has-site-cursor .site-root select { cursor: auto; }
 body {
   min-height: 100vh;
   background: var(--background);

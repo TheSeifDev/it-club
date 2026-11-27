@@ -13,6 +13,7 @@ const chapters = [
   { id: "tracks", selector: "[data-editorial-tracks]", label: "Tracks" },
   { id: "home-events", selector: "[data-editorial-events]", label: "Events" },
   { id: "home-community", selector: "[data-editorial-community]", label: "Community" },
+  { id: "home-sessions", selector: "[data-editorial-sessions]", label: "Sessions" },
   { id: "join", selector: "[data-editorial-join]", label: "Find your place" },
 ] as const;
 
@@ -24,15 +25,22 @@ export function HomeScrollRail() {
   const rail = useRef<HTMLElement>(null);
   const ranges = useRef<ChapterRange[]>([]);
   const maxScroll = useRef(0);
+  const rangeIndex = useRef<number[]>([]);
 
   useEffect(() => {
     const navigation = rail.current;
     const home = navigation?.closest<HTMLElement>("[data-editorial-home]");
     if (!navigation || !home) return;
 
-    const links = Array.from(navigation.querySelectorAll<HTMLAnchorElement>("[data-scroll-chapter]"));
-    const elements = chapters.map((chapter) => home.querySelector<HTMLElement>(chapter.selector));
-    if (elements.some((element) => !element) || links.length !== chapters.length) return;
+    const allLinks = Array.from(navigation.querySelectorAll<HTMLAnchorElement>("[data-scroll-chapter]"));
+    const allElements = chapters.map((chapter) => home.querySelector<HTMLElement>(chapter.selector));
+    if (allLinks.length !== chapters.length) return;
+    // Optional chapters (e.g. Sessions before photos exist) are removed from the rail.
+    allLinks.forEach((link, index) => { link.hidden = !allElements[index]; });
+    const present = chapters.map((_, index) => index).filter((index) => allElements[index]);
+    const links = present.map((index) => allLinks[index]);
+    const elements = present.map((index) => allElements[index]!);
+    rangeIndex.current = present;
 
     let frame = 0;
     let active = -1;
@@ -43,8 +51,10 @@ export function HomeScrollRail() {
       const pageEnd = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       maxScroll.current = pageEnd;
       const starts = elements.map((element, index) => {
-        if (index === 1 && about?.pin) return about.start;
-        return Math.max(0, element!.getBoundingClientRect().top + window.scrollY - 106);
+        if (present[index] === 1 && about?.pin) return about.start;
+        const tracks = ScrollTrigger.getById("editorial-tracks-rail");
+        if (present[index] === 2 && tracks?.pin) return tracks.start;
+        return Math.max(0, element.getBoundingClientRect().top + window.scrollY - 106);
       });
       ranges.current = elements.map((_, index) => ({
         start: starts[index],
@@ -100,13 +110,18 @@ export function HomeScrollRail() {
   }, []);
 
   const navigate = (event: ReactMouseEvent<HTMLAnchorElement>, index: number) => {
-    const target = ranges.current[index];
+    const target = ranges.current[rangeIndex.current.indexOf(index)];
     if (!target || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     window.history.replaceState(window.history.state, "", `#${chapters[index].id}`);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const top = target.start + (index === 0 ? 0 : 2);
+    if (window.__siteLenis && !reducedMotion) {
+      window.__siteLenis.scrollTo(top, { duration: 1.4 });
+      return;
+    }
     window.scrollTo({
-      top: target.start + (index === 0 ? 0 : 2),
+      top,
       behavior: reducedMotion ? "instant" : "smooth",
     });
   };
@@ -118,7 +133,7 @@ export function HomeScrollRail() {
       data-home-scroll-rail
       className="fixed top-1/2 right-[14px] z-40 -translate-y-1/2 max-[520px]:right-[8px]"
     >
-      <div className="flex h-[240px] w-9 flex-col items-end justify-between">
+      <div className="flex h-[260px] w-9 flex-col items-end justify-between">
         {chapters.map((chapter, index) => (
           <a
             key={chapter.id}

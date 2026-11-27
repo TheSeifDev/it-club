@@ -1,4 +1,3 @@
-import { ArrowUpRight, MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import ContactForm from "@/src/components/site/ContactForm";
 import { SiteFrame } from "@/src/components/site/SiteUI";
@@ -69,8 +68,8 @@ export default function ContactPage() {
                 <span className={sectionNumberClass}>01</span>
                 <span className={sectionNameClass}>Let’s talk</span>
               </div>
-              <div className="mt-[clamp(32px,4vw,52px)] grid h-[76px] w-[76px] place-items-center rounded-2xl bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)] max-[760px]:mt-7 max-[760px]:h-[68px] max-[760px]:w-[68px]" aria-hidden="true">
-                <MessageCircle size={34} strokeWidth={1.5} />
+              <div className="mt-[clamp(32px,4vw,52px)] grid h-[76px] w-[76px] place-items-center rounded-2xl bg-[var(--site-glass-soft)] text-[2.2rem] leading-none font-medium tracking-[-0.06em] text-[var(--site-sky-ink)] max-[760px]:mt-7 max-[760px]:h-[68px] max-[760px]:w-[68px]" aria-hidden="true">
+                @
               </div>
               <h2 className={detailsTitleClass} id="details-title">
                 Good ideas
@@ -84,7 +83,7 @@ export default function ContactPage() {
               </p>
               <a className={emailClass} href="mailto:contact@itclub.one">
                 <span>contact@itclub.one</span>
-                <ArrowUpRight size={17} aria-hidden="true" />
+                <span aria-hidden="true">↗</span>
               </a>
               <p className="mt-[22px] mb-0 max-w-[38ch] text-[.87rem] leading-[1.9] text-[var(--site-copy)]" lang="ar" dir="rtl">
                 نقرأ رسالتك ونتواصل معك عبر البريد الإلكتروني الذي تتركه لنا.

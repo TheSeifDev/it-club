@@ -1,6 +1,5 @@
 "use client";
 
-import { Pause, Play, RotateCcw, RotateCw } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -360,7 +359,7 @@ export default function StoreBadge({ className = "" }: StoreBadgeProps) {
           aria-label={paused ? "Resume badge rotation" : "Pause badge rotation"}
           className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-[#081116]/75 px-3.5 text-[11px] font-medium text-white/85 shadow-[0_6px_24px_rgb(0_0_0_/_18%)] backdrop-blur-md transition-colors hover:border-[var(--site-sky-ink,#52e8d1)]/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--site-sky-ink,#52e8d1)] motion-reduce:transition-none"
         >
-          {paused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
+          <span className={`size-1.5 rounded-full ${paused ? "bg-white/40" : "bg-[var(--site-sky-ink,#52e8d1)] motion-safe:animate-pulse"}`} aria-hidden="true" />
           {paused ? "Resume" : "Pause"}
         </button>
         <div className="flex items-center gap-1.5">
@@ -371,7 +370,7 @@ export default function StoreBadge({ className = "" }: StoreBadgeProps) {
             title="Rotate left"
             className="grid size-11 place-items-center rounded-full border border-white/12 bg-[#081116]/75 text-white/80 shadow-[0_6px_24px_rgb(0_0_0_/_18%)] backdrop-blur-md transition-colors hover:border-[var(--site-sky-ink,#52e8d1)]/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--site-sky-ink,#52e8d1)] motion-reduce:transition-none"
           >
-            <RotateCcw size={15} aria-hidden="true" />
+            <span className="text-[.95rem] leading-none" aria-hidden="true">←</span>
           </button>
           <button
             type="button"
@@ -380,7 +379,7 @@ export default function StoreBadge({ className = "" }: StoreBadgeProps) {
             title="Rotate right"
             className="grid size-11 place-items-center rounded-full border border-white/12 bg-[#081116]/75 text-white/80 shadow-[0_6px_24px_rgb(0_0_0_/_18%)] backdrop-blur-md transition-colors hover:border-[var(--site-sky-ink,#52e8d1)]/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--site-sky-ink,#52e8d1)] motion-reduce:transition-none"
           >
-            <RotateCw size={15} aria-hidden="true" />
+            <span className="text-[.95rem] leading-none" aria-hidden="true">→</span>
           </button>
           <button
             type="button"
@@ -389,7 +388,6 @@ export default function StoreBadge({ className = "" }: StoreBadgeProps) {
             title="Reset rotation"
             className="ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/12 bg-[#081116]/75 px-3 text-[10px] font-medium text-white/80 shadow-[0_6px_24px_rgb(0_0_0_/_18%)] backdrop-blur-md transition-colors hover:border-[var(--site-sky-ink,#52e8d1)]/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--site-sky-ink,#52e8d1)] motion-reduce:transition-none"
           >
-            <RotateCcw size={12} aria-hidden="true" />
             Reset
           </button>
         </div>

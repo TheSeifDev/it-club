@@ -299,3 +299,56 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - حمّل badge مشهد Three.js lazy عند وصوله للـviewport؛ renderer وصل `webgl` وcanvas إلى نحو `490×613`، وأظهرت المراجعة البصرية لوجو النادي بعد إضافة UVs إلى سطح texture المخصص. زر Pause والتدوير وإعادة الضبط عملوا. الـfallback موجود، والـ3D يوقف الرسم خارج الشاشة/عند تغيير التبويب، ويستجيب كود الصفحة لتغيّر تفضيل reduced-motion. عند الهاتف تتدفق صور الفعاليات رأسيًا بلا pin desktop.
 - تفاعليًا: الفست وحده احتسب `EGP 250`؛ وعند إضافة ID-only بلا أهلية صار زر الطلب بلا `href` ويعرض توجيهًا لاختيار Already paid أو Main Board. بعد الاختيار جهّز `mailto:` بمبلغ ID-only المؤجل للتأكيد؛ لم يُضغط الرابط أو يُرسل بريد. عادت الكميات لصفر بعد الاختبار.
 - نجحت `npm run test:pure` ‏53/53، و`npx tsc --noEmit` وESLint المركز و`npm run build` و`git diff --check`. أعاد `/store` و`/sitemap.xml` و`/manus-routes.json` حالة 200، ويتضمن الـmanifest 30 مسارًا مع `/store`. لا Checkout أو دفع أو مخزون/مقاسات أو استلام مؤكد؛ سعر ID-only ما زال غير معلوم. لا كتابة قاعدة بيانات أو نشر إنتاجي.
+## Awwwards pass — Home أولًا — 27 نوفمبر 2026
+- [x] مرجع Attio Offsite: عنوان "IT [film tile] Club" في sticky stage بارتفاع 250svh؛ الفيلم يُقص بـclip-path على البلاطة ويتوسع full-bleed مع السكرول، وكلمتا IT/Club تتباعدان، ثم يظهر "Curiosity deserves a community.". سطور دوّارة Learn by doing / Build together / Share forward، وmeta (Borg Al Arab) و(BATU — السنة). fallback بلا JS/reduced-motion: فيلم full-bleed ثابت مقروء.
+- [x] Lenis smooth scroll داخل SiteFrame فقط مربوط بـgsap.ticker وScrollTrigger.update، ومعطل مع reduced-motion؛ PublicPageTransition وHomeScrollRail يستخدمان Lenis عند وجوده.
+- [x] Preloader مرة لكل session على "/" فقط (عداد 000→100 وwordmark وستارة)، inline boot script قبل الرسم، مخفي افتراضيًا ومع reduced-motion، وتايمر أمان يزيله لو JS ما وصلش. دخول الـhero يستنى انتهاءه.
+- [x] SiteCursor (dot + ring بـmix-blend-difference وlabels عبر `data-cursor`) للـfine pointer فقط.
+- [x] إزالة الأيقونات الزخرفية: About chips بقت mini film وشعار وBATU، seal نصي دوّار حول اللوجو؛ فصول رومانية I–V؛ Tracks panels أفقية مثبتة على desktop وsnap native على الموبايل بأكواد typographic وألوان الـtracks؛ Events بـlabels نصية و↗ وfallback تيبوغرافي؛ Community بـmonogram initials؛ finale marquee "Find your people" وlogo tile؛ notice؛ الهيدر والفوتر (Menu/X الوظيفية فقط باقية).
+- [x] Stats بأرقام حقيقية منشورة فقط (count-up، الصفر مخفي). Sessions manifest فارغ في `lib/ui/session-gallery.ts`؛ القسم والـrail يظهرا فقط لما تتضاف صور حقيقية.
+- [x] فحص Playwright للـPreview على 1440×900 و390×844 وreduced-motion بلا pageerror؛ `npm run test:pure` ‏53/53، tsc، ESLint، `npm run build`، `git diff --check`. لا نشر إنتاجي ولا تعديل GitHub main.
+- [x] تعميم الأسلوب على باقي الصفحات (انظر القسم التالي).
+- [ ] لاحقًا: إضافة صور جلسات اللجان عند وصولها.
+
+## Awwwards pass — باقي الصفحات بلا أيقونات — 28 نوفمبر 2026
+- [x] إزالة lucide من كل الصفحات العامة (Tracks، Community، Alumni، Sponsors، Events، Store/ID badge، Contact، Register، CMS pages، Header). البديل تيبوغرافي: أسهم ↗ ↓ ← → نصية، أكواد الـtracks بخط مفرّغ بلون كل track، initials مشتركة من `lib/ui/initials.ts` للـPortrait وProfileDetail وكروت الأعضاء والـalumni، أسماء الشركاء كـwordmark، شعار النادي في tiles الختام، و`DateMark` (يوم مفرّغ + شهر/سنة أو "Soon.") بدل أيقونات التقويم/التذكرة.
+- [x] أزرار التحكم (Pause/Play، تدوير الـbadge، الكمية، select، spinner) بقت نصية/نقطة نابضة/CSS spinner مع نفس aria labels؛ زر القائمة على الموبايل خطّان يتحولان X.
+- [x] مشاهد Tracks المكدسة بقت بخلفية معتمة تحت الـglass عشان المشهد الداخل يغطي اللي تحته بالكامل بدل تداخل النصوص.
+- [x] حذف مكونات ميتة غير مستخدمة (ClubPractice وSkillsMarquee وTrackShowcase وملفات CSS modules بتاعتها).
+- [x] tsc، ESLint، `npm run test:pure` ‏53/53، `npm run build`، Playwright لـ/tracks و/community و/sponsors و/store و/events و/alumni و/contact و/register على desktop وmobile بلا pageerror. لا نشر إنتاجي.
+
+## إعادة تصميم حقيقية للصفحات الداخلية (Attio Offsite direction) — 28 نوفمبر 2026
+
+- [x] محرك حركة مشترك `src/components/site/motion/editorial-pages.ts` (kinetic titles، velocity marquees، clip reveals، sticky stacks، fill text، printed photos قابلة للسحب بـDraggable + Inertia) وبيشتغل بس جوه `[data-editorial-page]` ومع `prefers-reduced-motion: no-preference`.
+- [x] Kit مشترك `src/components/site/editorial/` (kit، HoverIndex، CodeCycle، Prints).
+- [x] Community: "A club is its people." + index للـboards بمعاينة بتتبع الـcursor + كروت boards مكدسة بصورة لكل board (`lib/ui/board-photos.ts`) + directory.
+- [x] Tracks: "Six ways to build." + index + مشاهد full-bleed فوق بعض بلون كل track.
+- [x] Events: "Events together." + تذكرة "To be announced." + قسم Memories بصور مطبوعة (`lib/ui/memories.ts`).
+- [x] Store: lookbook "Wear the work." (Drop 01) بـcutouts للـvest (`public/store/vest-*.webp`)، lookbook، Front/Back anatomy من تفاصيل الصورة فقط، ID 3D، وbuilder بنفس منطق `lib/store/catalog`.
+- [x] Partners: "In good company." + lockups "IT Club × partner" بـhover fill + marquee + CTA للإيميل.
+- [x] حذف Storefront وCommunityCommittees وTracksExperienceClasses/Motion.
+- [ ] صور الـboards الحقيقية والذكريات من المستخدم (manifests جاهزة).
+
+### دليل التحقق
+tsc ✓ · eslint --quiet ✓ · test:pure 53/53 ✓ · build ✓ · diff --check ✓ · لقطات desktop 1440×900 وmobile 390×844 لكل الصفحات، من غير overflow أفقي.
+
+### صور الـboards من الـroster القديم
+- [x] استخراج cutouts من `faec84c:public/COMMITTEES/cutouts` → `public/media/people/<id>.webp` (26 شخص، 5.2MB → 1.4MB، شفافية محفوظة)
+- [x] `lib/ui/board-roster.ts` (club / it / hr / sm / oc) — Head PR مستبعد، PR فاضي لحد صورة جديدة
+- [x] صورة جماعية لكل board في كروت Community + chips بالأسماء والأدوار + قسم «Club leadership»
+- [ ] صور جماعية حقيقية لكل لجنة (`lib/ui/board-photos.ts`) لما توصل — هتتقدم تلقائيًا على الـlineup
+- [ ] تأكيد مكان Benjamin (اتحط في SM حسب دوره القديم «Supervisor of sm»)
+
+### انتقال الصفحات (إعادة تصميم)
+- [x] بلوكات hex dark بدرجات Night بدل الموزاييك الـteal، ستارة من فوق لتحت ومنحنية من النص
+- [x] موجة teal رفيعة على حافة الستارة بس
+- [x] اسم الصفحة اللي رايح لها (English + عربي) مع شريط تقدم teal في النص
+- [x] الحد الأدنى للعرض 0.32s عشان الاسم يتقري، والستارة بتترفع بنفس الترتيب
+
+### Store: حجز بدل سلة
+- [x] اختيار كيت واحد (A: Vest + ID + lanyard بـ250 / B: ID + lanyard للي دفع قبل كده أو Main board) بدل الـ+/−
+- [x] الاسم، الرقم الأكاديمي (بيقبل أرقام عربي)، البوزيشن، اللجنة، مقاس الـvest (لـA بس)
+- [x] `POST /api/store/reserve` → كود `ITC-XXXXX` + صف في Google Sheet عبر Apps Script (`docs/store-reservations-sheet.md`)
+- [x] تحويل لواتساب برسالة جاهزة فيها الكود والبيانات + الصورة الشخصية وسكرين الدفع
+- [ ] ضبط `STORE_SHEET_WEBHOOK_URL` و`STORE_SHEET_SECRET` و`STORE_WHATSAPP_NUMBER` (مستني رقم الواتساب ونشر الـApps Script)
+- [ ] تأكيد إن Edition B مش عليها دفع جديد

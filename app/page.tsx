@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { HomeHero } from "@/src/components/site/HomeHero";
 import { HomeScrollRail } from "@/src/components/site/HomeScrollRail";
+import { HomePreloader } from "@/src/components/site/HomePreloader";
+import { sessionPhotos } from "@/lib/ui/session-gallery";
 import { EditorialHome } from "@/src/components/site/EditorialHome";
 import { editorialEvents } from "@/src/components/site/editorial-events";
 import { SiteFrame, SiteUnavailable } from "@/src/components/site/SiteUI";
@@ -50,6 +52,7 @@ export default async function HomePage() {
       capabilities: track.data.responsibilities?.slice(0, 3) || [],
       color: theme.color,
       ink: theme.ink,
+      code: theme.short,
     };
   });
   const { events, eventMode } = editorialEvents(content.events);
@@ -59,18 +62,28 @@ export default async function HomePage() {
     href: safeHref(partner.data.href),
   }));
   const notice = activeAnnouncements(content.announcements)[0];
+  // Only real, published counts; zero values are hidden by the component.
+  const stats = [
+    { value: tracks.length, label: "Tracks to grow in", arabic: "مسارات" },
+    { value: publishedPeople.length, label: "Published profiles", arabic: "أعضاء" },
+    { value: events.length, label: eventMode === "upcoming" ? "Upcoming events" : "Published events", arabic: "فعاليات" },
+    { value: partners.length, label: "Partners", arabic: "شركاء" },
+  ];
 
   return (
     <SiteFrame>
+      <HomePreloader />
       <div data-editorial-home>
         <HomeScrollRail />
-        <HomeHero people={people.slice(0, 3)} />
+        <HomeHero />
         <EditorialHome
           tracks={tracks}
           people={people}
           events={events}
           eventMode={eventMode}
           partners={partners}
+          stats={stats}
+          sessions={sessionPhotos()}
           notice={notice ? { title: notice.data.title, summary: notice.data.summary, href: safeHref(notice.data.href) } : undefined}
         />
       </div>

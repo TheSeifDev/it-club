@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 type FormState = "idle" | "sending" | "sent" | "error";
@@ -99,7 +98,7 @@ export default function ContactForm() {
         >
           <span>{status === "sending" ? "Sending…" : "Send message"}</span>
           <span className={submitArrowClass} aria-hidden="true">
-            <ArrowUpRight size={16} />
+            ↗
           </span>
         </button>
       </div>

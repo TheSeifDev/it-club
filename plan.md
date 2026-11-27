@@ -176,3 +176,11 @@ Tracks تحتفظ باستعراضها ومشاهدها وقدراتها الم�
 ### ملاحظات التنفيذ بعد معاينة Store
 
 تُعرض الملفات المرفوعة عبر stable `/manus-storage/...` مباشرة (`unoptimized` في `next/image`) لتفادي local optimizer غير القادر على حل مسار المشروع. Desktop المؤهل فقط (viewport بعرض 851px فأعلى، hover/fine pointer) يستخدم pinned crossfade قصيرًا لصورتَي الفعاليات؛ mobile/الأجهزة اللمسية وreduced-motion/no-preference fallback يحتفظون بتدفق الصور في الـDOM. GSAP contexts وpointer listeners تُنظف وتُعاد تهيئتها عندما يتغير `prefers-reduced-motion` أو breakpoint. بطاقة Three.js procedural تستخدم UV coordinates لشعار النادي على الوجه، دون صورة أو بيانات اعتماد مختلقة. يطلب الـbuilder اختيارًا صريحًا لـAlready paid أو Main Board قبل تجهيز أي mailto يحتوي ID-only؛ يظل السعر منفصلًا عن subtotal إلى أن يؤكده الفريق.
+
+## Awwwards pass — Home أولًا (27 نوفمبر 2026)
+
+**المرجع المختار:** من [Awwwards Animation](https://www.awwwards.com/websites/animation/) اخترنا [Attio Offsite](https://offsite.attio.com/) كأقرب مرجع لفكرة نادي/مجتمع يعرض جلساته: عنوان ضخم بين كلماته نافذة media تتوسع للشاشة كاملة مع السكرول، فصول مرقمة بالأرقام الرومانية (I — Arrival)، وجدار صور لا نهائي. أضفنا من أساليب Awwwards العامة preloader بعداد، smooth scroll، cursor مخصص، شريط tracks أفقي مثبت، أرقام تعد، وmarquee ختامي ضخم.
+
+**القرارات:** لا أيقونات زخرفية في Home أو الـheader/footer؛ أماكنها تصبح typography أو مقاطع حقيقية من فيديو الـHero أو شعار النادي. الأسهم تصبح glyph نصي (↗ →). الأيقونات الوظيفية فقط (فتح/قفل القائمة) تبقى. الأرقام المعروضة محسوبة من المحتوى المنشور فقط (عدد tracks/events/partners) وتختفي لو صفر. صور جلسات اللجان: manifest جاهز `lib/ui/session-gallery.ts`، وقسم Sessions يظهر تلقائيًا لما تتضاف الصور ولا يعرض placeholders.
+
+**الحركة:** Lenis على الصفحات العامة فقط مع ScrollTrigger وgsap.ticker وتعطيل كامل مع reduced-motion. Hero داخل sticky stage: نافذة الفيديو تبدأ بين "IT" و"Club" وتتوسع بـclip-path inset إلى full-bleed، الكلمتان تبتعدان، ثم يظهر سطر "Curiosity deserves a community.". Preloader مرة واحدة لكل جلسة على Home فقط، بفولباك CSS يختفي ذاتيًا ولا يحجب المحتوى بدون JS. Tracks: pin أفقي على desktop fine-pointer؛ swipe/snap native على الموبايل. Cursor: dot + ring بـmix-blend مع label (View/Drag) للـfine pointer فقط.

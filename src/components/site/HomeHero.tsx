@@ -1,24 +1,32 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight, Code2, Lightbulb, Users } from "lucide-react";
 import { HeroVideo } from "./HeroVideo";
 
+/*
+ * Baseline (no JS / reduced motion): a full-bleed film with the title, tagline
+ * and actions readable on top. With motion, editorial-home.ts switches
+ * data-hero-stage to "scroll": the film is clipped to the inline tile between
+ * "IT" and "Club" and opens to full-bleed while the sticky stage is scrolled.
+ */
 const styles = {
-  root: "relative isolate h-[min(880px,100svh)] min-h-[680px] w-full overflow-hidden bg-[var(--site-paper)] text-[var(--site-ink)] max-[900px]:h-[90svh] max-[900px]:max-h-[940px] max-[900px]:min-h-[690px] max-[540px]:h-[100svh] max-[540px]:max-h-[850px] max-[540px]:min-h-[680px]",
-  film: "absolute inset-0 -z-[3] overflow-hidden",
-  overlay: "pointer-events-none absolute inset-0 -z-[1] bg-[linear-gradient(90deg,rgb(5_13_11_/_0.65)_0%,rgb(5_13_11_/_0.15)_62%),linear-gradient(0deg,rgb(5_13_11_/_0.38),transparent_68%)]",
-  support: "absolute top-[34%] left-[var(--site-gutter)] w-[360px] max-w-[calc(100%_-_2_*_var(--site-gutter))] max-[900px]:top-[29%] max-[540px]:top-[28%] [&>p]:mt-[23px] [&>p]:mb-0 [&>p]:text-[clamp(.73rem,1vw,.91rem)] [&>p]:leading-[1.6] [&>p]:tracking-[-.025em] [&>p]:text-[var(--site-ink)] max-[540px]:[&>p]:text-[.74rem]",
-  miniPeople: "flex w-fit rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass)] py-[5px] pr-2 pl-[5px] shadow-[inset_0_1px_0_var(--site-glass-highlight)] backdrop-blur-[12px] backdrop-saturate-[140%] supports-[not_(backdrop-filter:blur(1px))]:bg-[var(--site-paper-dim)] max-[900px]:backdrop-blur-none motion-reduce:backdrop-blur-none",
-  miniPersonLink: "relative z-0 -mr-[5px] grid size-[41px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] text-[var(--site-ink)] transition-[transform,background] duration-[250ms] hover:z-[1] hover:-translate-y-1 hover:bg-[var(--site-sky)] hover:text-[var(--site-paper)] motion-reduce:transform-none motion-reduce:transition-none",
-  miniPersonEmpty: "-mr-[5px] grid size-[41px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] text-[var(--site-ink)]",
-  supportArabic: "mt-3 block w-fit text-[.75rem] text-[var(--site-mist)]",
-  bottom: "absolute right-[var(--site-gutter)] bottom-[clamp(36px,4vw,64px)] left-[var(--site-gutter)] flex items-end justify-between gap-6 max-[540px]:bottom-[42px]",
-  headline: "min-w-0",
-  title: "m-0 text-[clamp(3.4rem,5.7vw,7.2rem)] font-normal leading-[1.04] tracking-[-.07em] min-[1600px]:text-[6.2vw] max-[900px]:text-[clamp(3.1rem,7.3vw,5.4rem)] max-[540px]:text-[clamp(2.65rem,10.5vw,4rem)] max-[540px]:tracking-[-.065em]",
-  mask: "my-[-.05em] block overflow-hidden pt-[.05em] pr-[.06em] pb-[.06em] [&>span]:block",
-  lastLine: "flex flex-wrap items-center gap-[clamp(18px,2.2vw,38px)] max-[540px]:gap-[13px]",
-  join: "group inline-flex min-h-[47px] items-center justify-between gap-4 whitespace-nowrap rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] py-[5px] pr-[5px] pl-[17px] text-[.82rem] leading-none tracking-[-.03em] text-[var(--site-ink)]! shadow-[inset_0_1px_0_var(--site-glass-highlight)] backdrop-blur-[12px] backdrop-saturate-[140%] supports-[not_(backdrop-filter:blur(1px))]:bg-[var(--site-paper-dim)] transition-colors duration-300 hover:[&>span]:rotate-45 hover:[&>span]:bg-[var(--site-sky-ink)] motion-reduce:backdrop-blur-none motion-reduce:hover:[&>span]:rotate-0 [&>span]:grid [&>span]:size-[38px] [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-[var(--site-sky)] [&>span]:text-[var(--site-paper)] [&>span]:transition-[transform,background] [&>span]:duration-300 max-[900px]:backdrop-blur-none max-[540px]:min-h-[43px] max-[540px]:gap-2 max-[540px]:pl-[13px] max-[540px]:text-[.7rem] max-[540px]:[&>span]:size-8",
-  scroll: "inline-flex items-center gap-3 whitespace-nowrap text-[.75rem] tracking-[-.04em] text-[var(--site-ink)]! max-[900px]:hidden",
-  filmNote: "absolute top-[110px] right-[var(--site-gutter)] grid gap-1 text-right text-[.54rem] tracking-[.13em] text-[var(--site-mist)] [&>span]:text-[.62rem] [&>span]:tracking-[-.02em] max-[900px]:hidden",
+  root: "group/hero relative isolate h-[100svh] min-h-[620px] w-full bg-[var(--site-night)] text-[var(--site-ink)] data-[hero-stage=scroll]:h-[250svh]",
+  sticky: "sticky top-0 isolate h-[100svh] min-h-[620px] w-full overflow-hidden",
+  film: "absolute inset-0 -z-[2] overflow-hidden bg-[var(--site-night)]",
+  media: "absolute inset-0 origin-[0_0] will-change-transform",
+  shade: "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,transparent_0%,rgb(5_7_10_/_.35)_55%,rgb(5_7_10_/_.88)_100%),linear-gradient(0deg,rgb(5_7_10_/_.78),transparent_55%)]",
+  meta: "pointer-events-none absolute top-[clamp(108px,17vh,170px)] right-[var(--site-gutter)] left-[var(--site-gutter)] flex items-start justify-between text-[clamp(.62rem,.8vw,.78rem)] tracking-[-.01em] text-[var(--site-copy)] max-[520px]:top-[102px]",
+  metaCenter: "max-[800px]:hidden",
+  title: "absolute top-1/2 right-0 left-0 m-0 flex -translate-y-[58%] items-center justify-center gap-[.07em] px-[var(--site-gutter)] text-[clamp(4.1rem,18.5vw,17rem)] font-normal leading-[.82] tracking-[-.085em] whitespace-nowrap max-[520px]:-translate-y-[70%] max-[520px]:text-[clamp(3.6rem,21vw,6rem)]",
+  word: "block overflow-hidden pt-[.04em] pr-[.05em] pb-[.1em] [&>span]:block",
+  tile: "relative inline-block h-[.74em] w-[1.04em] shrink-0 translate-y-[.02em] overflow-hidden rounded-[.07em] bg-[var(--site-night-2,#0b1014)] shadow-[0_0_0_1px_rgb(82_232_209_/_.16),0_30px_90px_rgb(40_205_183_/_.16)]",
+  tileImage: "absolute inset-0 h-full w-full object-cover object-[64%_50%]",
+  bottom: "absolute right-[var(--site-gutter)] bottom-[clamp(28px,5vh,56px)] left-[var(--site-gutter)] grid grid-cols-[1fr_auto] items-end gap-8 max-[800px]:grid-cols-1 max-[800px]:gap-6",
+  intro: "max-w-[390px] [&>p]:m-0 [&>p]:text-[clamp(.78rem,.95vw,.92rem)] [&>p]:leading-[1.6] [&>p]:tracking-[-.02em] [&>p]:text-[var(--site-copy)]",
+  rotator: "relative mb-4 block h-[1.2em] overflow-hidden text-[clamp(1.1rem,1.7vw,1.6rem)] leading-[1.2] tracking-[-.05em] text-[var(--site-ink)] [&>span]:absolute [&>span]:inset-x-0 [&>span]:top-0 [&>span]:block [&>span:not(:first-child)]:translate-y-full",
+  arabic: "mt-3 block w-fit text-[.75rem] text-[var(--site-mist)]",
+  actions: "flex items-center gap-6 max-[800px]:justify-between",
+  join: "group/join relative isolate inline-flex min-h-[52px] items-center gap-4 overflow-hidden rounded-full bg-[var(--site-ink)] py-[6px] pr-[6px] pl-6 text-[.82rem] tracking-[-.03em] text-[var(--site-night)]! transition-colors duration-300 before:absolute before:inset-0 before:-z-[1] before:translate-y-full before:rounded-[inherit] before:bg-[var(--site-sky-ink)] before:transition-transform before:duration-500 before:ease-[cubic-bezier(.2,.8,.2,1)] hover:before:translate-y-0 motion-reduce:before:transition-none [&>span]:grid [&>span]:size-10 [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-[var(--site-night)] [&>span]:text-[1rem] [&>span]:text-[var(--site-ink)] [&>span]:transition-transform [&>span]:duration-500 hover:[&>span]:rotate-45 motion-reduce:hover:[&>span]:rotate-0",
+  scroll: "inline-flex items-center gap-3 text-[.68rem] uppercase tracking-[.16em] text-[var(--site-copy)]! [&>i]:block [&>i]:h-px [&>i]:w-10 [&>i]:origin-left [&>i]:bg-[var(--site-sky-ink)] [&>i]:not-italic",
+  statement: "pointer-events-none absolute right-[var(--site-gutter)] bottom-[clamp(120px,22vh,230px)] left-[var(--site-gutter)] m-0 hidden text-[clamp(2.4rem,6.4vw,7.4rem)] font-normal leading-[.98] tracking-[-.075em] group-data-[hero-stage=scroll]/hero:block max-[800px]:bottom-[clamp(190px,30vh,260px)] [&>span]:block [&>span]:overflow-hidden [&>span]:pb-[.06em] [&>span>span]:block [&_em]:not-italic [&_em]:text-[var(--site-sky-ink)]",
 } as const;
 
 export type HeroPerson = {
@@ -28,45 +36,56 @@ export type HeroPerson = {
   role?: string;
 };
 
-export function HomeHero({ people }: { people: HeroPerson[] }) {
-  const icons = [Users, Code2, Lightbulb];
+const LINES = ["Learn by doing.", "Build together.", "Share forward."];
+
+export function HomeHero() {
+  const year = new Date().getFullYear();
   return (
-    <section className={styles.root} id="home" data-editorial-hero aria-labelledby="home-hero-title">
-      <div className={styles.film} data-editorial-film>
-        <HeroVideo />
-      </div>
-      <div className={styles.overlay} aria-hidden="true" />
-      <div className={styles.support} data-editorial-hero-support>
-        <div className={styles.miniPeople} aria-label="Meet our published community">
-          {people.slice(0, 3).map((person, index) => {
-            const Icon = icons[index];
-            return (
-                <Link key={person.id} href={`/community/${person.slug}`} className={styles.miniPersonLink} aria-label={`Meet ${person.name}${person.role ? `, ${person.role}` : ""}`}>
-                <Icon size={23} strokeWidth={1.3} aria-hidden="true" />
-              </Link>
-            );
-          })}
-          {!people.length ? <span className={styles.miniPersonEmpty}><Users size={23} aria-hidden="true" /></span> : null}
+    <section className={styles.root} id="home" data-editorial-hero data-hero-stage="static" aria-labelledby="home-hero-title">
+      <div className={styles.sticky} data-hero-sticky>
+        <div className={styles.film} data-editorial-film>
+          <div className={styles.media} data-hero-media>
+            <HeroVideo className="h-full w-full origin-[64%_50%] object-cover object-[64%_50%]" controlClassName="absolute top-[104px] right-[var(--site-gutter)] z-[5] max-[520px]:top-[96px]" />
+          </div>
+          <div className={styles.shade} data-hero-shade aria-hidden="true" />
         </div>
-        <p>A student-led community for curious minds.<br />We learn, share ideas, and build together<br />at Borg Al Arab Technological University.</p>
-        <span className={styles.supportArabic} lang="ar" dir="rtl">الفضول بداية. والفريق يكمل.</span>
-      </div>
-      <div className={styles.bottom}>
-        <div className={styles.headline}>
-          <h1 id="home-hero-title" className={styles.title}>
-            <span className={styles.mask}><span data-editorial-hero-line>Curiosity deserves</span></span>
-            <span className={styles.mask}><span data-editorial-hero-line>a community.</span></span>
-            <span className={styles.lastLine}>
-              <span className={styles.mask}><span data-editorial-hero-line>Find yours.</span></span>
-              <Link href="/community" className={styles.join} data-magnetic data-editorial-hero-action>
-                Meet us <span><ArrowUpRight size={22} strokeWidth={1.6} aria-hidden="true" /></span>
-              </Link>
+
+        <div className={styles.meta} data-editorial-hero-support aria-hidden="true">
+          <span>(Borg Al Arab)</span>
+          <span className={styles.metaCenter}>Student-led technology community</span>
+          <span>(BATU — {year})</span>
+        </div>
+
+        <h1 id="home-hero-title" className={styles.title} aria-label="IT Club">
+          <span className={styles.word} data-hero-word="left"><span data-editorial-hero-line>IT</span></span>
+          <span className={styles.tile} data-hero-tile aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element -- tiny, already-compressed poster crop */}
+            <img className={styles.tileImage} src="/media/club-hero-poster.webp" alt="" width={1344} height={768} decoding="async" fetchPriority="high" />
+          </span>
+          <span className={styles.word} data-hero-word="right"><span data-editorial-hero-line>Club</span></span>
+        </h1>
+
+        <p className={styles.statement} data-hero-statement aria-hidden="true">
+          <span><span data-hero-statement-line>Curiosity deserves</span></span>
+          <span><span data-hero-statement-line>a <em>community.</em></span></span>
+        </p>
+
+        <div className={styles.bottom}>
+          <div className={styles.intro} data-editorial-hero-support data-hero-intro>
+            <span className={styles.rotator} data-hero-rotator aria-hidden="true">
+              {LINES.map((line) => <span key={line} data-hero-rotator-line>{line}</span>)}
             </span>
-          </h1>
+            <p>Curiosity deserves a community. A student-led club where we learn, share ideas and build together at Borg Al Arab Technological University.</p>
+            <span className={styles.arabic} lang="ar" dir="rtl">الفضول بداية. والفريق يكمل.</span>
+          </div>
+          <div className={styles.actions} data-editorial-hero-action>
+            <a className={styles.scroll} href="#about" data-hero-scroll><i aria-hidden="true" />Scroll</a>
+            <Link href="/community" className={styles.join} data-magnetic data-cursor="Meet">
+              Meet the club <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
         </div>
-        <a className={styles.scroll} href="#about">Scroll down <ArrowDown size={15} aria-hidden="true" /></a>
       </div>
-      <span className={styles.filmNote}>IT CLUB / BATU <span>Ideas in motion.</span></span>
     </section>
   );
 }

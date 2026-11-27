@@ -1,10 +1,12 @@
 import { siteUi } from "@/src/components/site/public-ui";
-import { Users } from "lucide-react";
+import { initials } from "@/lib/ui/initials";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import SiteFooter from "@/src/components/site/SiteFooter";
 import SiteHeader from "@/src/components/site/SiteHeader";
 import SiteMotion from "@/src/components/site/SiteMotion";
+import { SmoothScroll } from "@/src/components/site/SmoothScroll";
+import { SiteCursor } from "@/src/components/site/SiteCursor";
 import type { ContentEntry } from "@/lib/site-content/types";
 import {
   displayResponsibilities,
@@ -17,6 +19,8 @@ export function SiteFrame({ children }: { children: ReactNode }) {
       <a className={siteUi("site-skip-link")} href="#main-content">
         Skip to content
       </a>
+      <SmoothScroll />
+      <SiteCursor />
       <SiteMotion>
         <SiteHeader />
         <main className="min-w-0 bg-transparent" id="main-content" tabIndex={-1}>
@@ -223,7 +227,7 @@ export function Portrait({
 }) {
   return (
     <span className={siteUi("site-icon-portrait")} role="img" aria-label={`${entry.data.title} — community profile`}>
-      <Users aria-hidden="true" />
+      <span aria-hidden="true">{initials(entry.data.title)}</span>
     </span>
   );
 }
@@ -278,7 +282,7 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
           ) : null}
         </div>
         <figure className={siteUi("site-detail-portrait")} data-spotlight data-public-surface="glass">
-          <div className={siteUi("site-profile-symbol")} aria-hidden="true"><Users /></div>
+          <div className={siteUi("site-profile-symbol")} aria-hidden="true">{initials(entry.data.title)}</div>
           <figcaption>{entry.data.role ?? "IT Club community"}</figcaption>
         </figure>
     </article>

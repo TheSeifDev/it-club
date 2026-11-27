@@ -143,7 +143,7 @@ const steps = [
 ];
 
 const controlBase =
-  "w-full rounded-lg bg-[#f1f2f0] border border-[#dfe2df] px-4 py-3.5 text-sm text-[#171c1b] placeholder:text-[#69716d] focus:border-[#087969] focus:bg-[#fcfcfa] focus:outline-none transition-all duration-200";
+  "w-full rounded-lg bg-[var(--site-paper-dim)] border border-[var(--site-glass-border)] px-4 py-3.5 text-sm text-[var(--site-ink)] placeholder:text-[var(--site-mist)] focus:border-[var(--site-sky-ink)] focus:bg-[var(--site-glass-strong)] focus:outline-none transition-all duration-200";
 const inputClass = `${controlBase} h-12`;
 const selectClass = `${controlBase} h-12 appearance-none cursor-pointer pr-10`;
 const textareaClass = `${controlBase} min-h-32 resize-y leading-relaxed`;
@@ -167,24 +167,24 @@ function Field({
     <div className="block min-w-0">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <label htmlFor={id} className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#171c1b]/80">
+          <label htmlFor={id} className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--site-ink)]/80">
             {label}
-            {required ? <span className="ml-1 text-[#087969] font-mono font-bold">*</span> : null}
+            {required ? <span className="ml-1 text-[var(--site-sky-ink)] font-mono font-bold">*</span> : null}
           </label>
           {arabicLabel ? (
-            <span className="arabic text-xs sm:text-[13px] text-[#171c1b]/70 font-medium tracking-normal">
+            <span className="arabic text-xs sm:text-[13px] text-[var(--site-ink)]/70 font-medium tracking-normal">
               ({arabicLabel})
             </span>
           ) : null}
         </div>
         {!required && (
-          <span className="font-mono text-[9px] tracking-wider uppercase text-[#171c1b]/55">
+          <span className="font-mono text-[9px] tracking-wider uppercase text-[var(--site-ink)]/55">
             Optional
           </span>
         )}
       </div>
       {children}
-      {hint ? <span className="mt-2 block text-xs leading-relaxed text-[#171c1b]/60">{hint}</span> : null}
+      {hint ? <span className="mt-2 block text-xs leading-relaxed text-[var(--site-ink)]/60">{hint}</span> : null}
     </div>
   );
 }
@@ -192,7 +192,7 @@ function Field({
 function ErrorText({ children }: { children?: React.ReactNode }) {
   if (!children) return null;
   return (
-    <span role="alert" className="mt-2 flex items-center gap-1.5 font-mono text-xs tracking-wide text-rose-700">
+    <span role="alert" className="mt-2 flex items-center gap-1.5 font-mono text-xs tracking-wide text-rose-300">
       <AlertCircle size={13} className="shrink-0" />
       {children}
     </span>
@@ -211,17 +211,17 @@ function StepHeading({
   stepNumber: string;
 }) {
   return (
-    <div className="relative mb-8 pb-6 border-b border-[#171c1b]/[0.08]">
-      <div className="pointer-events-none absolute right-0 top-0 select-none font-black text-6xl sm:text-7xl leading-none text-[#171c1b]/[0.04]">
+    <div className="relative mb-8 pb-6 border-b border-[var(--site-glass-border)]">
+      <div className="pointer-events-none absolute right-0 top-0 select-none font-black text-6xl sm:text-7xl leading-none text-[var(--site-ink)]/[0.04]">
         {stepNumber}
       </div>
-      <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase text-[#087969] mb-1.5">
+      <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--site-sky-ink)] mb-1.5">
         STEP {stepNumber} · {subtitle}
       </p>
-      <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.03em] text-[#171c1b]">
+      <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.03em] text-[var(--site-ink)]">
         {title}
       </h2>
-      <p className="arabic mt-2.5 text-sm sm:text-base text-[#171c1b]/75 leading-[1.85] font-medium tracking-normal" dir="rtl">
+      <p className="arabic mt-2.5 text-sm sm:text-base text-[var(--site-ink)]/75 leading-[1.85] font-medium tracking-normal" dir="rtl">
         {ar}
       </p>
     </div>
@@ -409,61 +409,61 @@ export default function RegisterFlow() {
   // ────────────────────────────────────────────────────────────
   if (applicationReference) {
     return (
-      <div className={`${styles.flow} relative overflow-hidden border border-[#171c1b]/[0.08] bg-[#fcfcfa]`}>
+      <div className={`${styles.flow} relative overflow-hidden border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)]`}>
         {/* Subtle top accent gradient line */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#28cdb7] via-[#28cdb7] to-[#087969]" />
+        <div className="h-1 w-full bg-gradient-to-r from-[var(--site-sky)] via-[var(--site-sky)] to-[var(--site-sky-ink)]" />
 
         <div className="p-8 sm:p-12 md:p-16">
           {/* Header */}
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border-2 border-[#28cdb7] bg-[#28cdb7]/10 shadow-[0_0_30px_rgba(40,205,183,0.3)] mb-6">
-              <CheckCircle2 size={36} className="text-[#087969]" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border-2 border-[var(--site-sky)] bg-[var(--site-sky)]/10 shadow-[0_0_30px_color-mix(in_srgb,var(--site-sky)_30%,transparent)] mb-6">
+              <CheckCircle2 size={36} className="text-[var(--site-sky-ink)]" />
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-              <span className="font-mono text-xs font-bold tracking-[0.24em] uppercase text-[#087969]">
+              <span className="font-mono text-xs font-bold tracking-[0.24em] uppercase text-[var(--site-sky-ink)]">
                 APPLICATION RECEIVED
               </span>
-              <span className="text-[#087969]/40">·</span>
-              <span className="arabic text-sm font-semibold text-[#087969] tracking-normal">
+              <span className="text-[var(--site-sky-ink)]/40">·</span>
+              <span className="arabic text-sm font-semibold text-[var(--site-sky-ink)] tracking-normal">
                 تم استلام الطلب
               </span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[-0.03em] text-[#171c1b]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[-0.03em] text-[var(--site-ink)]">
               You&apos;re officially in the queue.
             </h2>
 
-            <p className="arabic mt-4 text-base sm:text-lg leading-[1.9] text-[#171c1b]/80 max-w-xl font-medium tracking-normal" dir="rtl">
+            <p className="arabic mt-4 text-base sm:text-lg leading-[1.9] text-[var(--site-ink)]/80 max-w-xl font-medium tracking-normal" dir="rtl">
               تم تسجيل طلبك بنجاح. كل الطلبات بتبدأ في حالة انتظار المراجعة، ومش معنى الإرسال إن القبول تم. سيتم مراجعة الطلب من قِبل رؤساء اللجان.
             </p>
           </div>
 
           {/* Reference Number Box */}
-          <div className="mt-10 mx-auto max-w-xl bg-[#eceeed] border border-[#171c1b]/[0.08] p-6 sm:p-8">
+          <div className="mt-10 mx-auto max-w-xl bg-[var(--site-glass)] border border-[var(--site-glass-border)] p-6 sm:p-8">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#171c1b]/60">
+              <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--site-ink)]/60">
                 APPLICATION REFERENCE CODE
               </span>
-              <span className="font-mono text-[10px] tracking-widest text-[#087969]">
+              <span className="font-mono text-[10px] tracking-widest text-[var(--site-sky-ink)]">
                 CONFIDENTIAL
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-4 bg-[#171c1b]/[0.02] border border-[#171c1b]/[0.06] p-4">
-              <span className="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-[#087969] tabular-nums break-all select-all">
+            <div className="flex items-center justify-between gap-4 bg-[var(--site-glass-soft)] border border-[var(--site-glass-border)] p-4">
+              <span className="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-[var(--site-sky-ink)] tabular-nums break-all select-all">
                 {applicationReference}
               </span>
 
               <button
                 type="button"
                 onClick={handleCopy}
-                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 border border-[#171c1b]/15 bg-[#171c1b]/[0.035] hover:bg-[#171c1b]/[0.05] text-xs font-mono tracking-wider uppercase text-[#171c1b] transition-colors"
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] hover:bg-[var(--site-glass-soft)] text-xs font-mono tracking-wider uppercase text-[var(--site-ink)] transition-colors"
               >
                 {copied ? (
                   <>
-                    <CheckCheck size={14} className="text-[#087969]" />
-                    <span className="text-[#087969]">COPIED</span>
+                    <CheckCheck size={14} className="text-[var(--site-sky-ink)]" />
+                    <span className="text-[var(--site-sky-ink)]">COPIED</span>
                   </>
                 ) : (
                   <>
@@ -474,7 +474,7 @@ export default function RegisterFlow() {
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-[#171c1b]/60 leading-relaxed font-mono">
+            <p className="mt-3 text-xs text-[var(--site-ink)]/60 leading-relaxed font-mono">
               Save this reference code. You may need it to verify your status or during on-campus interview check-in.
             </p>
           </div>
@@ -482,35 +482,35 @@ export default function RegisterFlow() {
           {/* Email Confirmation Status Card */}
           <div className="mt-6 mx-auto max-w-xl">
             {emailDelivery?.status === "sent" ? (
-              <div className="border border-[#28cdb7]/30 bg-[#28cdb7]/5 p-4 sm:p-5 flex items-start gap-3.5">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[#28cdb7]/30 bg-[#28cdb7]/10 text-[#087969]">
+              <div className="border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/5 p-4 sm:p-5 flex items-start gap-3.5">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/10 text-[var(--site-sky-ink)]">
                   <Mail size={16} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[#087969] font-bold">
+                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-sky-ink)] font-bold">
                       CONFIRMATION RECEIPT DISPATCHED
                     </p>
-                    <span className="text-[10px] text-[#087969]/50 font-mono">· Sent</span>
+                    <span className="text-[10px] text-[var(--site-sky-ink)]/50 font-mono">· Sent</span>
                   </div>
-                  <p className="text-xs text-[#171c1b]/90 mt-1 leading-relaxed">
+                  <p className="text-xs text-[var(--site-ink)]/90 mt-1 leading-relaxed">
                     An official registration receipt containing your reference code and submission details has been sent to your university email.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="border border-[#171c1b]/[0.08] bg-[#171c1b]/[0.02] p-4 sm:p-5 flex items-start gap-3.5">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[#171c1b]/15 bg-[#171c1b]/[0.03] text-[#171c1b]/70">
+              <div className="border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] p-4 sm:p-5 flex items-start gap-3.5">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-ink)]/70">
                   <Clock size={16} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[#171c1b]/75 font-bold">
+                    <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-ink)]/75 font-bold">
                       CONFIRMATION RECEIPT QUEUED
                     </p>
-                    <span className="text-[10px] text-[#171c1b]/55 font-mono">· Secured</span>
+                    <span className="text-[10px] text-[var(--site-ink)]/55 font-mono">· Secured</span>
                   </div>
-                  <p className="text-xs text-[#171c1b]/70 mt-1 leading-relaxed">
+                  <p className="text-xs text-[var(--site-ink)]/70 mt-1 leading-relaxed">
                     Your application is securely stored and registered. Email receipt delivery is queued or delayed—please save your reference code above.
                   </p>
                 </div>
@@ -520,27 +520,27 @@ export default function RegisterFlow() {
 
           {/* Status & Next Steps Timeline Card */}
           <div className="mt-8 mx-auto max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-[#eceeed] border border-[#171c1b]/[0.08] p-5 flex items-start gap-3.5">
-              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[#171c1b]/15 bg-[#171c1b]/[0.02] text-[#087969]">
+            <div className="bg-[var(--site-glass)] border border-[var(--site-glass-border)] p-5 flex items-start gap-3.5">
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)]">
                 <LockKeyhole size={16} />
               </div>
               <div>
-                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[#171c1b]/60">STATUS</p>
-                <p className="text-sm font-bold text-[#171c1b] mt-0.5">Pending Review</p>
-                <p className="text-xs text-[#171c1b]/65 mt-1 leading-relaxed">
+                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-ink)]/60">STATUS</p>
+                <p className="text-sm font-bold text-[var(--site-ink)] mt-0.5">Pending Review</p>
+                <p className="text-xs text-[var(--site-ink)]/65 mt-1 leading-relaxed">
                   The Owner and committee heads evaluate every application thoroughly.
                 </p>
               </div>
             </div>
 
-            <div className="bg-[#eceeed] border border-[#171c1b]/[0.08] p-5 flex items-start gap-3.5">
-              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[#171c1b]/15 bg-[#171c1b]/[0.02] text-[#087969]">
+            <div className="bg-[var(--site-glass)] border border-[var(--site-glass-border)] p-5 flex items-start gap-3.5">
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-sky-ink)]">
                 <Calendar size={16} />
               </div>
               <div>
-                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[#171c1b]/60">NEXT STEPS</p>
-                <p className="text-sm font-bold text-[#171c1b] mt-0.5">Interview details will be communicated to shortlisted applicants.</p>
-                <p className="text-xs text-[#171c1b]/65 mt-1 leading-relaxed">
+                <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-[var(--site-ink)]/60">NEXT STEPS</p>
+                <p className="text-sm font-bold text-[var(--site-ink)] mt-0.5">Interview details will be communicated to shortlisted applicants.</p>
+                <p className="text-xs text-[var(--site-ink)]/65 mt-1 leading-relaxed">
                   Your reference confirms receipt; it is not an admission decision.
                 </p>
               </div>
@@ -551,14 +551,14 @@ export default function RegisterFlow() {
           <div className="mt-10 mx-auto max-w-xl flex flex-col sm:flex-row items-center gap-4">
             <Link
               href="/"
-              className="w-full sm:flex-1 h-13 inline-flex items-center justify-center gap-2.5 bg-[#28cdb7] text-[#171c1b] text-xs font-mono font-bold tracking-[0.18em] uppercase hover:bg-[#eceeed] transition-all duration-300"
+              className="w-full sm:flex-1 h-13 inline-flex items-center justify-center gap-2.5 bg-[var(--site-sky)] text-[var(--site-paper)] text-xs font-mono font-bold tracking-[0.18em] uppercase hover:bg-[var(--site-glass)] hover:text-[var(--site-ink)] transition-all duration-300"
             >
               RETURN TO HOMEPAGE <ArrowRight size={15} />
             </Link>
 
             <Link
               href="/tracks"
-              className="w-full sm:w-auto h-13 px-6 inline-flex items-center justify-center gap-2 border border-[#171c1b]/15 bg-transparent text-xs font-mono font-bold tracking-[0.18em] uppercase text-[#171c1b]/90 hover:border-[#171c1b]/25 hover:bg-[#171c1b]/[0.04] hover:text-[#087969] transition-colors"
+              className="w-full sm:w-auto h-13 px-6 inline-flex items-center justify-center gap-2 border border-[var(--site-glass-border)] bg-transparent text-xs font-mono font-bold tracking-[0.18em] uppercase text-[var(--site-ink)]/90 hover:border-[var(--site-glass-border)] hover:bg-[var(--site-glass-soft)] hover:text-[var(--site-sky-ink)] transition-colors"
             >
               EXPLORE TRACKS
             </Link>
@@ -572,40 +572,40 @@ export default function RegisterFlow() {
   // Main Multi-Step Form Layout
   // ────────────────────────────────────────────────────────────
   return (
-    <div className={`${styles.flow} relative border border-[#171c1b]/[0.08] bg-[#fcfcfa]`}>
+    <div className={`${styles.flow} relative border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)]`}>
       {/* Top Emerald Ambient Gradient Line */}
-      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#28cdb7] to-transparent opacity-60" />
+      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[var(--site-sky)] to-transparent opacity-60" />
 
       {/* ── Progress & Stepper Bar ── */}
-      <div className="border-b border-[#171c1b]/[0.08] bg-[#eceeed]">
+      <div className="border-b border-[var(--site-glass-border)] bg-[var(--site-glass)]">
         {/* Mobile Header Bar */}
-        <div className="md:hidden px-5 py-4 flex items-center justify-between border-b border-[#171c1b]/[0.06]">
+        <div className="md:hidden px-5 py-4 flex items-center justify-between border-b border-[var(--site-glass-border)]">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-[#087969]">
+            <span className="font-mono text-xs font-bold text-[var(--site-sky-ink)]">
               {steps[step].number}
             </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#171c1b]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--site-ink)]">
               {steps[step].title}
             </span>
-            <span className="arabic text-xs text-[#171c1b]/65 font-medium tracking-normal">
+            <span className="arabic text-xs text-[var(--site-ink)]/65 font-medium tracking-normal">
               ({steps[step].ar})
             </span>
           </div>
-          <span className="font-mono text-[11px] text-[#171c1b]/60 tracking-widest">
+          <span className="font-mono text-[11px] text-[var(--site-ink)]/60 tracking-widest">
             STEP {step + 1} / {steps.length}
           </span>
         </div>
 
         {/* Mobile Progress Line */}
-        <div className="md:hidden h-1 w-full bg-[#171c1b]/[0.04] overflow-hidden">
+        <div className="md:hidden h-1 w-full bg-[var(--site-glass-soft)] overflow-hidden">
           <div
-            className="h-full bg-[#28cdb7] transition-all duration-300"
+            className="h-full bg-[var(--site-sky)] transition-all duration-300"
             style={{ width: `${((step + 1) / steps.length) * 100}%` }}
           />
         </div>
 
         {/* Desktop 5-Milestone Stepper Tabs */}
-        <div className="hidden md:grid grid-cols-5 divide-x divide-[#171c1b]/[0.08]">
+        <div className="hidden md:grid grid-cols-5 divide-x divide-[var(--site-glass-border)]">
           {steps.map((item, index) => {
             const active = index === step;
             const done = index < step;
@@ -617,26 +617,26 @@ export default function RegisterFlow() {
                 disabled={index >= step}
                 className={`relative px-4 py-4 text-left transition-colors duration-200 select-none ${
                   active
-                    ? "bg-[#f1f2f0]"
+                    ? "bg-[var(--site-paper-dim)]"
                     : done
-                    ? "cursor-pointer hover:bg-[#171c1b]/[0.02]"
+                    ? "cursor-pointer hover:bg-[var(--site-glass-soft)]"
                     : "opacity-40 cursor-not-allowed"
                 }`}
                 aria-current={active ? "step" : undefined}
               >
                 {/* Active Top Highlight Line */}
                 {active && (
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#28cdb7] shadow-[0_0_12px_#28cdb7]" />
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--site-sky)] shadow-[0_0_12px_var(--site-sky)]" />
                 )}
 
                 <div className="flex items-center gap-3">
                   <span
                     className={`w-7 h-7 flex items-center justify-center shrink-0 border text-xs font-mono font-bold transition-colors ${
                       active
-                        ? "border-[#28cdb7] text-[#087969] bg-[#28cdb7]/10"
+                        ? "border-[var(--site-sky)] text-[var(--site-sky-ink)] bg-[var(--site-sky)]/10"
                         : done
-                        ? "border-[#28cdb7]/60 text-[#087969] bg-[#28cdb7]/5"
-                        : "border-[#171c1b]/15 text-[#171c1b]/60"
+                        ? "border-[var(--site-sky)]/60 text-[var(--site-sky-ink)] bg-[var(--site-sky)]/5"
+                        : "border-[var(--site-glass-border)] text-[var(--site-ink)]/60"
                     }`}
                   >
                     {done ? <Check size={13} strokeWidth={2.5} /> : item.number}
@@ -645,12 +645,12 @@ export default function RegisterFlow() {
                   <div className="min-w-0">
                     <p
                       className={`text-xs font-bold tracking-wide uppercase truncate ${
-                        active ? "text-[#171c1b]" : done ? "text-[#171c1b]/90" : "text-[#171c1b]/60"
+                        active ? "text-[var(--site-ink)]" : done ? "text-[var(--site-ink)]/90" : "text-[var(--site-ink)]/60"
                       }`}
                     >
                       {item.title}
                     </p>
-                    <p className="arabic text-xs sm:text-[13px] text-[#171c1b]/70 truncate leading-tight mt-0.5 font-medium tracking-normal">
+                    <p className="arabic text-xs sm:text-[13px] text-[var(--site-ink)]/70 truncate leading-tight mt-0.5 font-medium tracking-normal">
                       {item.ar}
                     </p>
                   </div>
@@ -745,10 +745,10 @@ export default function RegisterFlow() {
                   onChange={(e) => setValue("whatsapp", e.target.value)}
                   placeholder="+20 1..."
                 />
-                <label className="mt-2.5 flex items-center gap-2.5 text-xs text-[#171c1b]/75 cursor-pointer select-none">
+                <label className="mt-2.5 flex items-center gap-2.5 text-xs text-[var(--site-ink)]/75 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    className="accent-[#087969] h-3.5 w-3.5 rounded-none"
+                    className="accent-[var(--site-sky-ink)] h-3.5 w-3.5 rounded-none"
                     checked={values.whatsappSame}
                     onChange={(e) => setValue("whatsappSame", e.target.checked)}
                   />
@@ -792,10 +792,10 @@ export default function RegisterFlow() {
             </div>
 
             {/* Privacy Shield Info Card */}
-            <div className="mt-8 border border-[#171c1b]/[0.08] bg-[#eceeed] p-4 sm:p-5 flex items-start gap-3.5">
-              <Shield size={18} className="shrink-0 text-[#087969] mt-0.5" />
-              <div className="text-xs text-[#171c1b]/70 leading-relaxed font-sans">
-                <strong className="text-[#171c1b] font-medium block mb-0.5">
+            <div className="mt-8 border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-4 sm:p-5 flex items-start gap-3.5">
+              <Shield size={18} className="shrink-0 text-[var(--site-sky-ink)] mt-0.5" />
+              <div className="text-xs text-[var(--site-ink)]/70 leading-relaxed font-sans">
+                <strong className="text-[var(--site-ink)] font-medium block mb-0.5">
                   Privacy & Data Safeguards
                 </strong>
                 All entered data is protected and kept private. It is used strictly for recruitment coordination and is accessible only by authorized IT Club management.
@@ -822,28 +822,28 @@ export default function RegisterFlow() {
                     value={values.year}
                     onChange={(e) => setValue("year", e.target.value)}
                   >
-                    <option value="" className="bg-[#eceeed]">
+                    <option value="" className="bg-[var(--site-glass)]">
                       Select your academic year
                     </option>
-                    <option value="first" className="bg-[#eceeed]">
+                    <option value="first" className="bg-[var(--site-glass)]">
                       First Year — الفرقة الأولى
                     </option>
-                    <option value="second" className="bg-[#eceeed]">
+                    <option value="second" className="bg-[var(--site-glass)]">
                       Second Year — الفرقة الثانية
                     </option>
-                    <option value="third" className="bg-[#eceeed]">
+                    <option value="third" className="bg-[var(--site-glass)]">
                       Third Year — الفرقة الثالثة
                     </option>
-                    <option value="fourth" className="bg-[#eceeed]">
+                    <option value="fourth" className="bg-[var(--site-glass)]">
                       Fourth Year — الفرقة الرابعة
                     </option>
-                    <option value="other" className="bg-[#eceeed]">
+                    <option value="other" className="bg-[var(--site-glass)]">
                       Other / Not listed — أخرى
                     </option>
                   </select>
                   <ChevronDown
                     size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#171c1b]/60"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
                   />
                 </div>
                 <ErrorText>{errors.year}</ErrorText>
@@ -865,19 +865,19 @@ export default function RegisterFlow() {
               </Field>
 
               {/* Recruitment Stage Explainer Card */}
-              <div className="sm:col-span-2 border border-[#171c1b]/[0.08] bg-[#eceeed] p-5 sm:p-6">
+              <div className="sm:col-span-2 border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-5 sm:p-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 bg-[#28cdb7]" />
-                  <p className="font-mono text-xs font-bold tracking-widest uppercase text-[#087969]">
+                  <span className="w-2 h-2 bg-[var(--site-sky)]" />
+                  <p className="font-mono text-xs font-bold tracking-widest uppercase text-[var(--site-sky-ink)]">
                     SELECTION PROCESS CLARIFICATION
                   </p>
                 </div>
-                <p className="text-xs sm:text-sm text-[#171c1b]/80 leading-relaxed">
+                <p className="text-xs sm:text-sm text-[var(--site-ink)]/80 leading-relaxed">
                   Upon completing this form, your application status becomes{" "}
-                  <span className="text-[#087969] font-mono font-bold">PENDING REVIEW</span>.
+                  <span className="text-[var(--site-sky-ink)] font-mono font-bold">PENDING REVIEW</span>.
                   Our committee leads will review all candidate profiles. Interview details will be communicated to shortlisted applicants.
                 </p>
-                <p className="arabic text-xs sm:text-sm text-[#171c1b]/70 mt-2 leading-[1.8] font-medium tracking-normal" dir="rtl">
+                <p className="arabic text-xs sm:text-sm text-[var(--site-ink)]/70 mt-2 leading-[1.8] font-medium tracking-normal" dir="rtl">
                   بعد إرسال الطلب، بيكون طلبك في مرحلة المراجعة. سيتم إبلاغ المتقدمين الذين يتم اختيارهم بتفاصيل المقابلة.
                 </p>
               </div>
@@ -898,11 +898,11 @@ export default function RegisterFlow() {
             <div>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#171c1b]/80">
+                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--site-ink)]/80">
                     WHICH OPTION BEST DESCRIBES YOUR CURRENT LEVEL?
-                    <span className="ml-1 text-[#087969] font-mono font-bold">*</span>
+                    <span className="ml-1 text-[var(--site-sky-ink)] font-mono font-bold">*</span>
                   </span>
-                  <span className="arabic text-xs sm:text-[13px] text-[#171c1b]/65 font-medium tracking-normal">
+                  <span className="arabic text-xs sm:text-[13px] text-[var(--site-ink)]/65 font-medium tracking-normal">
                     (مستواك الحالي)
                   </span>
                 </div>
@@ -947,14 +947,14 @@ export default function RegisterFlow() {
                       onClick={() => setValue("experienceLevel", option.value)}
                       className={`relative p-5 text-left border transition-all duration-200 select-none ${
                         selected
-                          ? "border-[#28cdb7] bg-[#28cdb7]/[0.06] shadow-[0_0_20px_rgba(40,205,183,0.1)]"
-                          : "border-[#171c1b]/[0.08] bg-[#eceeed] hover:border-[#171c1b]/20 hover:bg-[#171c1b]/[0.02]"
+                          ? "border-[var(--site-sky)] bg-[var(--site-sky)]/[0.06] shadow-[0_0_20px_color-mix(in_srgb,var(--site-sky)_10%,transparent)]"
+                          : "border-[var(--site-glass-border)] bg-[var(--site-glass)] hover:border-[var(--site-glass-border)] hover:bg-[var(--site-glass-soft)]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <span
                           className={`font-mono text-[10px] tracking-widest font-bold uppercase ${
-                            selected ? "text-[#087969]" : "text-[#171c1b]/60"
+                            selected ? "text-[var(--site-sky-ink)]" : "text-[var(--site-ink)]/60"
                           }`}
                         >
                           {option.tag}
@@ -963,19 +963,19 @@ export default function RegisterFlow() {
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
                             selected
-                              ? "border-[#28cdb7] bg-[#28cdb7]"
-                              : "border-[#171c1b]/25"
+                              ? "border-[var(--site-sky)] bg-[var(--site-sky)]"
+                              : "border-[var(--site-glass-border)]"
                           }`}
                         >
-                          {selected && <div className="w-1.5 h-1.5 rounded-full bg-[#eceeed]" />}
+                          {selected && <div className="w-1.5 h-1.5 rounded-full bg-[var(--site-glass)]" />}
                         </div>
                       </div>
 
-                      <p className="text-sm font-bold text-[#171c1b]">{option.title}</p>
-                      <p className="arabic text-xs sm:text-sm text-[#171c1b]/80 mt-1 font-medium tracking-normal leading-normal" dir="rtl">
+                      <p className="text-sm font-bold text-[var(--site-ink)]">{option.title}</p>
+                      <p className="arabic text-xs sm:text-sm text-[var(--site-ink)]/80 mt-1 font-medium tracking-normal leading-normal" dir="rtl">
                         {option.ar}
                       </p>
-                      <p className="text-xs text-[#171c1b]/60 mt-2 leading-relaxed">{option.desc}</p>
+                      <p className="text-xs text-[var(--site-ink)]/60 mt-2 leading-relaxed">{option.desc}</p>
                     </button>
                   );
                 })}
@@ -985,7 +985,7 @@ export default function RegisterFlow() {
 
             {/* Conditional Skills Inputs */}
             {values.experienceLevel && values.experienceLevel !== "new" && (
-              <div className="mt-8 space-y-6 pt-6 border-t border-[#171c1b]/[0.08]">
+              <div className="mt-8 space-y-6 pt-6 border-t border-[var(--site-glass-border)]">
                 <Field
                   label="Skills and tools you currently use"
                   arabicLabel="المهارات والأدوات الحالية"
@@ -1017,7 +1017,7 @@ export default function RegisterFlow() {
             )}
 
             {/* Volunteering Input (always visible) */}
-            <div className="mt-8 pt-6 border-t border-[#171c1b]/[0.08]">
+            <div className="mt-8 pt-6 border-t border-[var(--site-glass-border)]">
               <Field
                 label="Previous student activities or volunteering"
                 arabicLabel="أنشطة طلابية أو أعمال تطوعية"
@@ -1048,11 +1048,11 @@ export default function RegisterFlow() {
             <div>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#171c1b]/80">
+                  <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--site-ink)]/80">
                     FIRST TRACK PREFERENCE
-                    <span className="ml-1 text-[#087969] font-mono font-bold">*</span>
+                    <span className="ml-1 text-[var(--site-sky-ink)] font-mono font-bold">*</span>
                   </span>
-                  <span className="arabic text-xs sm:text-[13px] text-[#171c1b]/65 font-medium tracking-normal">
+                  <span className="arabic text-xs sm:text-[13px] text-[var(--site-ink)]/65 font-medium tracking-normal">
                     (الرغبة الأولى)
                   </span>
                 </div>
@@ -1073,11 +1073,11 @@ export default function RegisterFlow() {
                       }}
                       className={`relative p-5 text-left border transition-all duration-200 select-none ${
                         selected
-                          ? "border-opacity-100 bg-[#171c1b]/[0.035]"
-                          : "border-[#171c1b]/[0.08] bg-[#eceeed] hover:border-[#171c1b]/20 hover:bg-[#171c1b]/[0.02]"
+                          ? "border-opacity-100 bg-[var(--site-glass-soft)]"
+                          : "border-[var(--site-glass-border)] bg-[var(--site-glass)] hover:border-[var(--site-glass-border)] hover:bg-[var(--site-glass-soft)]"
                       }`}
                       style={{
-                        borderColor: selected ? track.color : undefined,
+                        borderColor: selected ? track.color : "var(--site-glass-border)",
                         boxShadow: selected ? `0 0 20px ${track.color}25` : undefined,
                       }}
                     >
@@ -1092,15 +1092,15 @@ export default function RegisterFlow() {
                         <div
                           className="w-5 h-5 rounded-full border flex items-center justify-center transition-colors"
                           style={{
-                            borderColor: selected ? track.color : "rgba(255,255,255,0.2)",
+                            borderColor: selected ? track.color : "var(--site-glass-border)",
                             backgroundColor: selected ? track.color : "transparent",
                           }}
                         >
-                          {selected && <Check size={12} className="text-[#171c1b] stroke-[3]" />}
+                          {selected && <Check size={12} className="text-[var(--site-ink)] stroke-[3]" />}
                         </div>
                       </div>
 
-                      <h3 className="text-base font-bold text-[#171c1b] mb-0.5">{track.title}</h3>
+                      <h3 className="text-base font-bold text-[var(--site-ink)] mb-0.5">{track.title}</h3>
                       <p
                         className="arabic text-xs sm:text-sm font-semibold mb-2 tracking-normal leading-normal"
                         style={{ color: `${track.color}EE` }}
@@ -1108,7 +1108,7 @@ export default function RegisterFlow() {
                       >
                         {track.ar}
                       </p>
-                      <p className="text-xs text-[#171c1b]/65 leading-relaxed">{track.description}</p>
+                      <p className="text-xs text-[var(--site-ink)]/65 leading-relaxed">{track.description}</p>
                     </button>
                   );
                 })}
@@ -1117,7 +1117,7 @@ export default function RegisterFlow() {
             </div>
 
             {/* Secondary Track Dropdown */}
-            <div className="mt-8 pt-6 border-t border-[#171c1b]/[0.08]">
+            <div className="mt-8 pt-6 border-t border-[var(--site-glass-border)]">
               <Field
                 label="Second Track Preference"
                 arabicLabel="الرغبة الثانية"
@@ -1129,20 +1129,20 @@ export default function RegisterFlow() {
                     value={values.secondaryTrack}
                     onChange={(e) => setValue("secondaryTrack", e.target.value)}
                   >
-                    <option value="" className="bg-[#eceeed]">
+                    <option value="" className="bg-[var(--site-glass)]">
                       No second preference (لا يوجد رغبة ثانية)
                     </option>
                     {tracks
                       .filter((track) => track.id !== values.primaryTrack)
                       .map((track) => (
-                        <option key={track.id} value={track.id} className="bg-[#eceeed]">
+                        <option key={track.id} value={track.id} className="bg-[var(--site-glass)]">
                           {track.title} — {track.ar}
                         </option>
                       ))}
                   </select>
                   <ChevronDown
                     size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#171c1b]/60"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
                   />
                 </div>
                 <ErrorText>{errors.secondaryTrack}</ErrorText>
@@ -1150,7 +1150,7 @@ export default function RegisterFlow() {
             </div>
 
             {/* Motivation & Learning Goals */}
-            <div className="mt-8 space-y-6 pt-6 border-t border-[#171c1b]/[0.08]">
+            <div className="mt-8 space-y-6 pt-6 border-t border-[var(--site-glass-border)]">
               <Field
                 label="Why do you want to join IT Club?"
                 arabicLabel="لماذا تريد الانضمام للنادي؟"
@@ -1205,38 +1205,38 @@ export default function RegisterFlow() {
                     value={values.availability}
                     onChange={(e) => setValue("availability", e.target.value)}
                   >
-                    <option value="" className="bg-[#eceeed]">
+                    <option value="" className="bg-[var(--site-glass)]">
                       Select your general availability
                     </option>
-                    <option value="weekdays" className="bg-[#eceeed]">
+                    <option value="weekdays" className="bg-[var(--site-glass)]">
                       Mostly weekdays (أيام الأسبوع الدراسية)
                     </option>
-                    <option value="weekends" className="bg-[#eceeed]">
+                    <option value="weekends" className="bg-[var(--site-glass)]">
                       Mostly weekends (عطلة نهاية الأسبوع)
                     </option>
-                    <option value="flexible" className="bg-[#eceeed]">
+                    <option value="flexible" className="bg-[var(--site-glass)]">
                       Flexible / Adaptable (مرن ومتاح)
                     </option>
                   </select>
                   <ChevronDown
                     size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#171c1b]/60"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--site-ink)]/60"
                   />
                 </div>
               </Field>
 
               {/* Legal & Authenticity Consent Checkbox */}
-              <div className="border border-[#171c1b]/[0.08] bg-[#eceeed] p-5">
+              <div className="border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-5">
                 <label className="flex items-start gap-3.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    className="accent-[#087969] h-4 w-4 rounded-none mt-0.5 shrink-0"
+                    className="accent-[var(--site-sky-ink)] h-4 w-4 rounded-none mt-0.5 shrink-0"
                     checked={values.consent}
                     onChange={(e) => setValue("consent", e.target.checked)}
                   />
-                  <div className="text-xs text-[#171c1b]/80 leading-relaxed font-sans">
-                    I confirm that all entered details are accurate and true. I understand that submitting this application places my profile into <strong className="text-[#087969]">PENDING REVIEW</strong>. Interview details will be communicated to shortlisted applicants.
-                    <span className="text-[#087969] font-mono font-bold ml-1">*</span>
+                  <div className="text-xs text-[var(--site-ink)]/80 leading-relaxed font-sans">
+                    I confirm that all entered details are accurate and true. I understand that submitting this application places my profile into <strong className="text-[var(--site-sky-ink)]">PENDING REVIEW</strong>. Interview details will be communicated to shortlisted applicants.
+                    <span className="text-[var(--site-sky-ink)] font-mono font-bold ml-1">*</span>
                   </div>
                 </label>
                 <ErrorText>{errors.consent}</ErrorText>
@@ -1364,11 +1364,11 @@ export default function RegisterFlow() {
               />
 
               {/* Submission Notice Banner */}
-              <div className="border border-[#28cdb7]/30 bg-[#28cdb7]/[0.04] p-5 flex items-start gap-3.5">
-                <LockKeyhole size={18} className="text-[#087969] shrink-0 mt-0.5" />
-                <p className="text-xs leading-relaxed text-[#171c1b]/80">
+              <div className="border border-[var(--site-sky)]/30 bg-[var(--site-sky)]/[0.04] p-5 flex items-start gap-3.5">
+                <LockKeyhole size={18} className="text-[var(--site-sky-ink)] shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed text-[var(--site-ink)]/80">
                   Submitting this application registers your profile as{" "}
-                  <strong className="text-[#171c1b] font-bold">Pending Review</strong>.
+                  <strong className="text-[var(--site-ink)] font-bold">Pending Review</strong>.
                   Submission does not guarantee acceptance. Interview details will be communicated to shortlisted applicants.
                 </p>
               </div>
@@ -1380,9 +1380,9 @@ export default function RegisterFlow() {
         {submitError ? (
           <div
             role="alert"
-            className="mt-8 border border-rose-700/25 bg-rose-100 p-4 text-xs font-mono text-rose-800 flex items-start gap-3"
+            className="mt-8 border border-rose-700/25 bg-rose-500/10 p-4 text-xs font-mono text-rose-200 flex items-start gap-3"
           >
-            <AlertCircle size={16} className="shrink-0 text-rose-700 mt-0.5" />
+            <AlertCircle size={16} className="shrink-0 text-rose-300 mt-0.5" />
             <div>
               <p className="font-bold uppercase tracking-wider">Submission Error</p>
               <p className="mt-1 leading-relaxed">{submitError}</p>
@@ -1391,12 +1391,12 @@ export default function RegisterFlow() {
         ) : null}
 
         {/* ── Action Buttons Footer Bar ── */}
-        <div className="mt-10 pt-6 border-t border-[#171c1b]/[0.08] flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mt-10 pt-6 border-t border-[var(--site-glass-border)] flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
           <button
             type="button"
             onClick={previousStep}
             disabled={step === 0 || submitting}
-            className="inline-flex h-12 items-center justify-center gap-2.5 border border-[#171c1b]/15 bg-[#171c1b]/[0.02] px-6 text-xs font-mono font-bold tracking-[0.16em] uppercase text-[#171c1b]/80 hover:border-[#171c1b]/25 hover:bg-[#171c1b]/[0.04] hover:text-[#087969] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+            className="inline-flex h-12 items-center justify-center gap-2.5 border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] px-6 text-xs font-mono font-bold tracking-[0.16em] uppercase text-[var(--site-ink)]/80 hover:border-[var(--site-glass-border)] hover:bg-[var(--site-glass-soft)] hover:text-[var(--site-sky-ink)] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed select-none"
           >
             <ArrowLeft size={15} />
             BACK
@@ -1406,7 +1406,7 @@ export default function RegisterFlow() {
             <button
               type="button"
               onClick={nextStep}
-              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[#28cdb7] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[#171c1b] hover:bg-[#eceeed] hover:shadow-[0_0_18px_rgba(8,121,105,0.16)] transition-all duration-300 select-none"
+              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[var(--site-sky)] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[var(--site-paper)] hover:bg-[var(--site-glass)] hover:text-[var(--site-ink)] hover:shadow-[0_0_18px_color-mix(in_srgb,var(--site-sky-ink)_16%,transparent)] transition-all duration-300 select-none"
             >
               CONTINUE <ArrowRight size={15} />
             </button>
@@ -1415,7 +1415,7 @@ export default function RegisterFlow() {
               type="button"
               onClick={submitApplication}
               disabled={submitting}
-              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[#28cdb7] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[#171c1b] hover:bg-[#eceeed] transition-all duration-300 disabled:cursor-wait disabled:opacity-60 select-none shadow-[0_0_24px_rgba(40,205,183,0.3)]"
+              className="inline-flex h-12 items-center justify-center gap-2.5 bg-[var(--site-sky)] px-8 text-xs font-mono font-bold tracking-[0.18em] uppercase text-[var(--site-paper)] hover:bg-[var(--site-glass)] hover:text-[var(--site-ink)] transition-all duration-300 disabled:cursor-wait disabled:opacity-60 select-none shadow-[0_0_24px_color-mix(in_srgb,var(--site-sky)_30%,transparent)]"
             >
               {submitting ? (
                 <>
@@ -1451,19 +1451,19 @@ function ReviewSection({
   onEdit: () => void;
 }) {
   return (
-    <div className="border border-[#171c1b]/[0.08] bg-[#eceeed] p-5 sm:p-6">
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#171c1b]/[0.06]">
+    <div className="border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-5 sm:p-6">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--site-glass-border)]">
         <div>
-          <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-[#087969]">
+          <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--site-sky-ink)]">
             {category}
           </span>
-          <h3 className="text-sm font-bold text-[#171c1b] tracking-wide mt-0.5">{title}</h3>
+          <h3 className="text-sm font-bold text-[var(--site-ink)] tracking-wide mt-0.5">{title}</h3>
         </div>
 
         <button
           type="button"
           onClick={onEdit}
-          className="font-mono text-[10px] font-bold tracking-widest uppercase text-[#087969] hover:text-[#087969] transition-colors border border-[#28cdb7]/30 hover:border-[#171c1b]/20 px-3 py-1 bg-[#28cdb7]/5 hover:bg-[#171c1b]/[0.05]"
+          className="font-mono text-[10px] font-bold tracking-widest uppercase text-[var(--site-sky-ink)] hover:text-[var(--site-sky-ink)] transition-colors border border-[var(--site-sky)]/30 hover:border-[var(--site-glass-border)] px-3 py-1 bg-[var(--site-sky)]/5 hover:bg-[var(--site-glass-soft)]"
         >
           EDIT
         </button>
@@ -1472,11 +1472,11 @@ function ReviewSection({
       <dl className="grid gap-4 sm:grid-cols-2">
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0">
-            <dt className="font-mono text-[10px] tracking-wider uppercase text-[#171c1b]/60">
+            <dt className="font-mono text-[10px] tracking-wider uppercase text-[var(--site-ink)]/60">
               {label}
             </dt>
-            <dd className="mt-1 text-xs sm:text-sm text-[#171c1b]/95 leading-relaxed break-words font-medium">
-              {value || <span className="text-[#171c1b]/55 italic font-sans">Not provided</span>}
+            <dd className="mt-1 text-xs sm:text-sm text-[var(--site-ink)]/95 leading-relaxed break-words font-medium">
+              {value || <span className="text-[var(--site-ink)]/55 italic font-sans">Not provided</span>}
             </dd>
           </div>
         ))}

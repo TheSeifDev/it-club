@@ -112,3 +112,13 @@
 نجح TypeScript وESLint دون أخطاء (تحذير advisory واحد من صيغة logo config الموجودة)، و29/29 pure tests وproduction build و`git diff --check` بعد آخر التعديلات. Home HTML يحتوي المحتوى والروابط، و`/manus-routes.json` JSON29routes والفيديو والصفحات العامة أعادت200. تفاصيل الدليل وحدوده في `docs/editorial-validation.md`.
 
 اكتمال الواجهة لا يعني اعتماد مسؤوليات الأعضاء أو تفعيل Supabase/RLS/CRUD وتدفقات الحسابات؛ تلك البنود السابقة تظل مفتوحة، ويظهر empty state صادق حتى نشر محتوى معتمد. لا migrations أو اختبار إرسال تطبيق/تواصل أو كتابة قاعدة بيانات. تحفظ نسخة المعاينة على المستودع Manus-managed المتصل بهذا المشروع مع `auto_publish:false`، وتزامن ملفات إعادة التصميم المطابقة على فرع GitHub القائم `refactor/club-main-site-20261118` فقط. لا دفع إلى `main` في GitHub أو نشر إنتاجي.
+
+## تعديل الحركة والهوية الداكنة — طلب المستخدم 27 نوفمبر 2026
+
+- [x] **استبدال الإحساس الفاتح بهوية full dark + glassmorphism.** الموقع العام كله، بما فيه Header/Footer وHome وCommunity/Profiles وTracks وEvents/Partners/Alumni/Contact/custom/legal/Register، يستخدم طبقات داكنة متناسقة وأسطح glass بشفافية/blur وحدود هادئة ولمسات Logo Teal. يبقى عرض full-width والمحتوى المنشور وألوان tracks الأصلية؛ لا تُمس Admin/Interview/Student/Auth/APIs أو بياناتها.
+- [x] **GSAP Awwwards واضحة فعلًا بالتمرير.** لا تظل الحركة محصورة في drift أو reveal صغير؛ عناصر ومشاهد تظهر وتتحرك ثم تخف/تختفي مع تقدم التمرير، وScrollTrigger/ scrub فعلي قابل للعكس، مع دخول عناوين مقنّع، تتابع stagger للأيقونات/الزجاج، وحركة ذات فرق مرئي على desktop والهاتف.
+- [x] **فقرة About تُملأ كلماتها وتظهر الأيقونات inline.** يبدأ نص الفقرة الكبيرة muted-gray ثم تتحول كلماته إلى cool-white/teal تدريجيًا مع progress التمرير؛ وتظهر code/book icon chips وكبسولة BATU الزجاجية بين الكلمات بتتابع scale/opacity/blur. النص النهائي مقروء في HTML وبدون JavaScript، والحركة تنظف وتُعكس عند التمرير للأعلى، وتُحترم `prefers-reduced-motion`.
+
+### دليل الهوية الداكنة والحركة — 27 نوفمبر 2026
+
+Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`، تتقدم حتى `100%` وتتراجع إلى `0%` عند الرجوع؛ الكبسولات الثلاث دخلت بالتتابع واختفت عكسيًا. على viewport حي `390×844` بقي pin مؤهلًا false، ولم يظهر overflow أفقي، وملء الكلمات/الكبسولات استجاب للتمرير صعودًا ونزولًا. أرقام المسارات وعناوينها على glass تستخدم accent path المضيء بينما نص الفلاتر فوق اللون المحتشد يبقى `track-ink` الداكن. Next/Previous Carousel وفيديو Hero pause/play عملا في DOM الحي. نجحت TypeScript وESLint بلا أخطاء (تحذير app.config.ts الموجود)، 29/29 pure tests، production build و`git diff --check`. اختبارات reduced-motion مقروءة من التنفيذ وليست محاكاة جهاز حية.

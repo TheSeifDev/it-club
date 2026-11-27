@@ -1,19 +1,21 @@
-/* Approved full-width editorial identity. Operational dashboards are not in this scope. */
+/* Public identity. Operational dashboards do not inherit these tokens. */
 .site-root[data-design="club"] {
-  --site-night: #111714;
-  --site-night-2: #1a231d;
-  --site-night-3: #263129;
-  --site-paper: #fcfcfa;
-  --site-paper-dim: #e3e6e1;
-  --site-snow: #f7f9f5;
-  --site-ink: #171c1b;
-  --site-mist: #7a857d;
-  --site-slate-ink: #667269;
+  --site-night: #05070a;
+  --site-night-2: #0a1016;
+  --site-night-3: #111a22;
+  --site-paper: #070a0f;
+  --site-paper-dim: #0c1218;
+  --site-snow: #121a20;
+  --site-ink: #f1f6f5;
+  --site-mist: #9aa8ae;
+  --site-copy: #a7b2b8;
+  --site-slate-ink: #b4c0c4;
   --site-sky: #28cdb7;
-  --site-sky-ink: #087969;
-  --site-paper-rgb: 252, 252, 250;
-  --site-ink-rgb: 23, 28, 27;
-  --site-night-rgb: 17, 23, 20;
+  --site-sky-ink: #52e8d1;
+  --site-word-muted: #75828c;
+  --site-paper-rgb: 7, 10, 15;
+  --site-ink-rgb: 241, 246, 245;
+  --site-night-rgb: 5, 7, 10;
   --site-teal-rgb: 40, 205, 183;
   --site-emerald: var(--site-sky);
   --site-charcoal: var(--site-night);
@@ -28,6 +30,6 @@
   --site-hero-size: clamp(3.4rem, 5.7vw, 7.2rem);
   --site-hero-tracking: -0.07em;
   --site-hero-leading: 1.04;
-  background: var(--site-paper);
+  background: var(--site-night);
   color: var(--site-ink);
 }

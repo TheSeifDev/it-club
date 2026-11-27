@@ -1,20 +1,20 @@
 .page {
-  --contact-paper: #fcfcfa;
-  --contact-ink: #171c1b;
-  --contact-muted: #4d5652;
-  --contact-media: #eceeed;
-  --contact-field: #f1f2f0;
-  --contact-teal: #28cdb7;
-  --contact-teal-ink: #087969;
+  --contact-paper: var(--site-paper, #070a0f);
+  --contact-ink: var(--site-ink, #f1f6f5);
+  --contact-muted: var(--site-copy, #a7b2b8);
+  --contact-media: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  --contact-field: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  --contact-teal: var(--site-sky, #28cdb7);
+  --contact-teal-ink: var(--site-sky-ink, #52e8d1);
   --contact-gutter: clamp(20px, 3.5vw, 64px);
-  background: var(--contact-paper);
+  background: transparent;
   color: var(--contact-ink);
 }
 
 .intro {
   padding: calc(var(--site-header-clearance, 112px) + clamp(36px, 5vw, 72px))
     var(--contact-gutter) clamp(48px, 7vw, 100px);
-  background: var(--contact-paper);
+  background: transparent;
   color: var(--contact-ink);
 }
 
@@ -31,7 +31,7 @@
   height: 29px;
   place-items: center;
   border-radius: 50%;
-  background: var(--contact-ink);
+  background: var(--site-paper-dim, #0c1218);
   color: #fff;
   font-size: 0.68rem;
   font-weight: 600;
@@ -93,7 +93,7 @@
 
 .contactSection {
   padding: clamp(48px, 7vw, 96px) var(--contact-gutter) clamp(88px, 11vw, 150px);
-  background: var(--contact-paper);
+  background: transparent;
   color: var(--contact-ink);
 }
 
@@ -210,11 +210,12 @@
 .field textarea {
   width: 100%;
   min-width: 0;
-  border: 1px solid #dfe2df;
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 12px;
   padding: 14px 16px;
   background: var(--contact-field);
   color: var(--contact-ink);
+  color-scheme: dark;
   font: inherit;
   font-size: 0.98rem;
   font-weight: 400;
@@ -238,7 +239,7 @@
 
 .field input::placeholder,
 .field textarea::placeholder {
-  color: #69716d;
+  color: var(--site-mist, #9aa8ae);
 }
 
 .field input:focus-visible,
@@ -247,7 +248,7 @@
   border-color: var(--contact-teal-ink);
   outline: 2px solid var(--contact-teal-ink);
   outline-offset: 2px;
-  background: #fff;
+  background: var(--site-glass, rgb(18 27 35 / 58%));
 }
 
 .honeypot {
@@ -294,7 +295,7 @@
   border-radius: 999px;
   padding: 6px 7px 6px 22px;
   background: var(--contact-teal);
-  color: var(--contact-ink);
+  color: var(--site-paper-dim, #0c1218);
   cursor: pointer;
   font: inherit;
   font-size: 0.88rem;
@@ -303,7 +304,7 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: #48d8c4;
+  background: var(--site-sky, #28cdb7);
   transform: translateY(-2px);
 }
 
@@ -324,7 +325,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: var(--contact-ink);
+  background: var(--site-paper-dim, #0c1218);
   color: #fff;
 }
 
@@ -337,13 +338,15 @@
 }
 
 .feedbackSuccess {
-  background: #e7f4ee;
-  color: #14543b;
+  background: rgb(40 205 183 / 10%);
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
+  color: var(--site-sky-ink, #52e8d1);
 }
 
 .feedbackError {
-  background: #f7e9e7;
-  color: #842f28;
+  background: rgb(255 115 100 / 10%);
+  border: 1px solid rgb(255 170 162 / 22%);
+  color: #ffaaa2;
 }
 
 @media (max-width: 760px) {

@@ -5,31 +5,32 @@
   width: 100%;
   overflow: hidden;
   isolation: isolate;
-  background: #182522;
-  color: #fcfcfa;
+  background: var(--site-paper);
+  color: var(--site-ink);
 }
 .film { position: absolute; inset: 0; z-index: -3; overflow: hidden; }
 .video { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .overlay { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgb(5 13 11 / .65) 0%, rgb(5 13 11 / .15) 62%), linear-gradient(0deg, rgb(5 13 11 / .38), transparent 68%); }
 .support { position: absolute; top: 34%; left: var(--site-gutter); width: 360px; max-width: calc(100% - 2 * var(--site-gutter)); }
-.miniPeople { display: flex; width: fit-content; padding: 5px 8px 5px 5px; border-radius: 99px; background: rgb(236 238 237 / .18); }
-.miniPeople :is(a, span) { display: grid; place-items: center; width: 41px; height: 41px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .6); background: #dfe4e1; color: #233a33; margin-right: -5px; transition: transform .25s, background .25s; }
-.miniPeople a:hover { transform: translateY(-4px); background: #28cdb7; }
-.support p { margin: 23px 0 0; font-size: clamp(.73rem, 1vw, .91rem); line-height: 1.6; letter-spacing: -.025em; color: rgb(252 252 250 / .84); }
-.supportArabic { display: block; width: fit-content; margin-top: 12px; font-size: .75rem; color: rgb(252 252 250 / .65); }
+.miniPeople { display: flex; width: fit-content; padding: 5px 8px 5px 5px; border: 1px solid var(--site-glass-border); border-radius: 99px; background: var(--site-glass); box-shadow: inset 0 1px 0 var(--site-glass-highlight); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+.miniPeople :is(a, span) { display: grid; place-items: center; width: 41px; height: 41px; border-radius: 50%; border: 1px solid var(--site-glass-border); background: var(--site-glass-strong); color: var(--site-ink); margin-right: -5px; transition: transform .25s, background .25s; }
+.miniPeople a:hover { transform: translateY(-4px); background: var(--site-sky); color: var(--site-paper); }
+.support p { margin: 23px 0 0; font-size: clamp(.73rem, 1vw, .91rem); line-height: 1.6; letter-spacing: -.025em; color: var(--site-ink); }
+.supportArabic { display: block; width: fit-content; margin-top: 12px; font-size: .75rem; color: var(--site-mist); }
 .bottom { position: absolute; bottom: clamp(36px,4vw,64px); left: var(--site-gutter); right: var(--site-gutter); display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .headline { min-width: 0; }
 .title { margin: 0; font-weight: 400; font-size: clamp(3.4rem, 5.7vw, 7.2rem); line-height: 1.04; letter-spacing: -.07em; }
 .mask { display: block; overflow: hidden; padding: .05em .06em .06em 0; margin: -.05em 0 -.04em; }
 .mask > span { display: block; }
 .lastLine { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(18px,2.2vw,38px); }
-.join { display: inline-flex; align-items: center; justify-content: space-between; gap: 16px; padding: 5px 5px 5px 17px; min-height: 47px; border-radius: 99px; background: #141b19; color: #fcfcfa !important; font-size: .82rem; line-height: 1; letter-spacing: -.03em; white-space: nowrap; }
-.join > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #171c1b; background: #fcfcfa; transition: transform .3s, background .3s; }
-.join:hover > span { transform: rotate(45deg); background: #28cdb7; }
-.scroll { display: inline-flex; gap: 12px; align-items: center; font-size: .75rem; letter-spacing: -.04em; white-space: nowrap; color: rgb(252 252 250 / .8) !important; }
-.filmNote { position: absolute; top: 110px; right: var(--site-gutter); display: grid; gap: 4px; text-align: right; color: rgb(252 252 250 / .65); font-size: .54rem; letter-spacing: .13em; }
+.join { display: inline-flex; align-items: center; justify-content: space-between; gap: 16px; padding: 5px 5px 5px 17px; min-height: 47px; border: 1px solid var(--site-glass-border); border-radius: 99px; background: var(--site-glass-strong); color: var(--site-ink) !important; font-size: .82rem; line-height: 1; letter-spacing: -.03em; white-space: nowrap; box-shadow: inset 0 1px 0 var(--site-glass-highlight); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+.join > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--site-paper); background: var(--site-sky); transition: transform .3s, background .3s; }
+.join:hover > span { transform: rotate(45deg); background: var(--site-sky-ink); }
+.scroll { display: inline-flex; gap: 12px; align-items: center; font-size: .75rem; letter-spacing: -.04em; white-space: nowrap; color: var(--site-ink) !important; }
+.filmNote { position: absolute; top: 110px; right: var(--site-gutter); display: grid; gap: 4px; text-align: right; color: var(--site-mist); font-size: .54rem; letter-spacing: .13em; }
 .filmNote span { font-size: .62rem; letter-spacing: -.02em; }
-.videoControl { position: absolute; right: var(--site-gutter); bottom: 92px; z-index: 5; display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 11px; border: 1px solid rgb(255 255 255 / .25); border-radius: 99px; background: rgb(10 20 17 / .65); color: #fcfcfa; cursor: pointer; font-size: .61rem; }
+.videoControl { position: absolute; right: var(--site-gutter); bottom: 92px; z-index: 5; display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 11px; border: 1px solid var(--site-glass-border); border-radius: 99px; background: var(--site-glass-strong); color: var(--site-ink); box-shadow: inset 0 1px 0 var(--site-glass-highlight), 0 12px 38px rgb(0 0 0 / 24%); backdrop-filter: blur(18px) saturate(145%); -webkit-backdrop-filter: blur(18px) saturate(145%); cursor: pointer; font-size: .61rem; }
+
 @media (min-width: 1600px) { .title { font-size: 6.2vw; } .support { top: 32%; } }
 @media (max-width: 900px) {
   .root { height: 90svh; min-height: 690px; max-height: 940px; }
@@ -51,4 +52,13 @@
   .join > span { width: 32px; height: 32px; }
   .video { object-position: 68% center; }
 }
-@media (prefers-reduced-motion: reduce) { .miniPeople a:hover, .join:hover > span { transform: none; } }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .miniPeople, .join, .videoControl { background: var(--site-paper-dim); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .miniPeople a:hover, .join:hover > span { transform: none; }
+  .miniPeople :is(a, span), .join > span { transition: none; }
+  .miniPeople, .join, .videoControl { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

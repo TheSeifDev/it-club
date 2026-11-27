@@ -23,6 +23,13 @@ const trackIcons: Record<string, typeof Users> = {
   hr: Users, pr: Megaphone, sm: Share2, oc: CalendarDays, it: Code2, rnd: FlaskConical,
 };
 
+/** Each word keeps its semantic text in SSR; only its paint is scroll-driven. */
+function FillWords({ text, accent = false }: { text: string; accent?: boolean }) {
+  return text.split(/(\s+)/).filter(Boolean).map((word, index) => /^\s+$/.test(word) ? word : (
+    <span key={index} className={styles.fillWord} data-editorial-word data-word-accent={accent || undefined}>{word}</span>
+  ));
+}
+
 function Chapter({ number, children }: { number: string; children: string }) {
   return <p className="site-chapter"><span>{number}</span><span>{children}</span></p>;
 }
@@ -123,7 +130,9 @@ function PeopleCards({ people }: { people: EditorialPerson[] }) {
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
     if (!cards.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const context = gsap.context(() => gsap.fromTo("[data-person-content]", { x: 20, opacity: 0 }, { x: 0, opacity: 1, stagger: .05, duration: .5, ease: "power3.out" }), cards);
+    const targets = cards.current.querySelectorAll("[data-person-content]");
+    if (!targets.length) return;
+    const context = gsap.context(() => gsap.fromTo(targets, { x: 36, opacity: 0 }, { x: 0, opacity: 1, stagger: .06, duration: .65, ease: "power3.out" }), cards);
     return () => context.revert();
   }, [offset]);
   const selected = Array.from({ length: Math.min(2, people.length) }, (_, index) => people[(offset + index) % people.length]);
@@ -161,7 +170,16 @@ export function EditorialHome({ tracks, people, events, eventMode, partners, not
         <div className={styles.sectionTop}><Chapter number="01">About</Chapter><Link className={styles.quietLink} href="/community">Meet the people <ArrowUpRight size={16} strokeWidth={1.4} aria-hidden="true" /></Link></div>
         <div className={styles.aboutStatement}>
           <div className={styles.aboutTile} data-editorial-symbol aria-hidden="true"><Cpu size={76} strokeWidth={1} /></div>
-          <h2 id="about-title">We are a student-led <span className={styles.inlineIcon}><Code2 size={30} strokeWidth={1.5} aria-hidden="true" /></span> technology community at <span className={styles.inlinePill}>BATU</span>, making room for curious minds and different starting points. From sharing knowledge <span className={styles.inlineIcon}><BookOpen size={29} strokeWidth={1.4} aria-hidden="true" /></span> to building useful ideas, we create the space to <span className={styles.aboutAccent} data-editorial-accent>learn together, practice with purpose, and move ideas forward.</span></h2>
+          <h2 id="about-title" data-editorial-statement>
+            <FillWords text="We are a student-led " />
+            <span className={styles.inlineIcon} data-editorial-chip aria-hidden="true"><Code2 size={30} strokeWidth={1.5} /></span>{" "}
+            <FillWords text="technology community at " />
+            <span className={styles.inlinePill} data-editorial-chip>BATU</span>
+            <FillWords text=", making room for curious minds and different starting points. From sharing knowledge " />
+            <span className={styles.inlineIcon} data-editorial-chip aria-hidden="true"><BookOpen size={29} strokeWidth={1.4} /></span>{" "}
+            <FillWords text="to building useful ideas, we create the space to " />
+            <FillWords text="learn together, practice with purpose, and move ideas forward." accent />
+          </h2>
           <p className={styles.aboutArabic} lang="ar" dir="rtl">نتعلّم معًا، ونبني ما بعد الفكرة.</p>
         </div>
         <div className={styles.aboutSeal} aria-hidden="true"><span /><div data-editorial-symbol><Cpu size={28} strokeWidth={1.15} /></div><span /></div>
@@ -172,7 +190,7 @@ export function EditorialHome({ tracks, people, events, eventMode, partners, not
         <TrackCarousel tracks={tracks} />
       </section>
 
-      <section className={styles.events} aria-labelledby="home-events-title">
+      <section className={styles.events} aria-labelledby="home-events-title" data-editorial-events>
         <Chapter number="03">Events</Chapter>
         <div className={styles.eventsGrid}>
           <div className={styles.eventsIntro} data-editorial-reveal>
@@ -192,7 +210,7 @@ export function EditorialHome({ tracks, people, events, eventMode, partners, not
         </div>
       </section>
 
-      <section className={styles.community} aria-labelledby="home-community-title">
+      <section className={styles.community} aria-labelledby="home-community-title" data-editorial-community>
         <Chapter number="04">Community</Chapter>
         <PeopleCards people={people} />
         <div className={styles.partners}>

@@ -57,3 +57,27 @@ On 27 November 2026, after the registration and mobile-spacing edits:
 - The active Webdev project uses Manus-managed Git, with `publishing.auto_publish: false`. The validated frontend code was saved as Preview checkpoint `1eef1bb`; subsequent handoff-document updates do not change application code. The same redesign files are synchronized only to the existing GitHub work branch `refactor/club-main-site-20261118`, never GitHub `main`. The patch applies cleanly to its original worktree, preserving previous commits and the user's separate main history. No publish command, database mutation, migration, or authentication-flow test was performed.
 
 **Remaining launch dependencies:** approved individual member duties/content and isolated Supabase/RLS/CRUD/account integration checks remain open in the earlier handoff. These are not filled with invented content or claimed complete by the frontend redesign.
+
+## Follow-up dark-glass and scroll-motion verification — 27 November 2026
+
+The latest visual instruction replaces the light editorial palette for the public site with scoped dark glass. The first live inspection found an About defect: every word's computed `--word-fill` stayed at `100%` at the top even after `gsap.set(..., 0%)`; screenshots alone could not prove the motion. About word tweens now state both endpoints explicitly with `fromTo`, while the stylesheet retains its `100%` baseline for no-JS and reduced-motion. Filtering whitespace split tokens also removes an empty word span without removing the readable SSR sentence.
+
+### Direct Preview measurements
+
+- On the live Preview at `1280×1100`, About contains 38 nonempty word spans and 3 inline chips. At `scrollY=0`, all 38 words measured `0%` fill and all chips `opacity:0`; this confirms the gray starting state rather than the former all-white baseline bug.
+- At `scrollY=950`, five words were fully filled, two were between 0–100%, and the code chip was visible. At `scrollY=1155`, thirteen words were filled, the next was partially filled, and code plus BATU were visible. At `scrollY=1450`, 24 were filled, one was in progress, and all three chips were visible.
+- At `scrollY=1900`, all 38 words measured `100%`. Scrolling back to `1155` returned the later words to gray and hid the book chip; returning to `0` restored all 38 to `0%` and hid all three chips. The About pin held at viewport top `106px` while active. This is direct runtime progress/reversal evidence, not an entrance-frozen screenshot.
+- SSR visible page text remains present before client motion; CSS initializes words at `100%` and chips have visible defaults, so no-JS/reduced-motion retain content. Reduced-motion was source-checked, not toggled in this browser session.
+- Hero video remained muted, readyState `4`, and playing before navigation; no forms were submitted.
+
+### Contrast and responsive notes
+
+Track identifiers, category labels, profile links/icons, and Tracks scene labels on translucent dark surfaces now use the bright per-track hue; the dark `--track-ink` remains where text sits on a filled filter/button background. Track hues themselves are unchanged. Desktop screenshot review of Partners, Alumni, Contact, and Register found the expected full-width night canvas and readable editorial hierarchy; their no-data states remain honest rather than fabricated. Fresh mobile captures at `390×844` show current Home, Community, Tracks, and Register layouts.
+
+- A live `390×844` same-origin mobile viewport had the pin eligibility query `false`, document horizontal overflow `0`, and no out-of-viewport About word spans. At the settled middle sample, 18 words were filled, 19 gray and one partial with code/BATU visible; at the settled end all 38 words were filled and all three chips visible; reversing returned the middle state, then `scrollY=0` restored 38 gray words and hid all chips.
+- The desktop Tracks `h1` at `scrollY=0` measured `top=221`, `bottom=581`, `height=360`, `overflow:visible`, `clip-path:none`, `opacity:1`, and `transform:none`; the former partial appearance was a screenshot-frozen animation artifact, not text clipped by the page. Direct `#hr`, `#it`, `#rnd`, and return-to-`#hr` navigation placed each panel at approximately `72–96px` below the header. Horizontal overflow remained `0` (the tool's `-10` value is extra layout width unavailable, i.e. no positive overflow).
+- Home interaction test: the muted MP4 changed from playing to paused with the button relabeled “Play background video”, then resumed and relabeled “Pause background video”. The track carousel changed Human Resources → Public Relations → Human Resources using Next/Previous. No form was submitted.
+
+### Final commands
+
+After the explicit word endpoints and track-label contrast edits, `npx tsc --noEmit` passed; `npm run lint` had 0 errors and the same existing `app.config.ts` anonymous-export warning; `npm run test:pure` passed 29/29 (with existing Node module-type performance notices); `npm run build` succeeded with Next.js 16.3.8; and `git diff --check` passed. Preview HTTP returned 200 for `/`, `/register`, `/community`, `/tracks`, `/events`, `/sponsors`, `/alumni`, `/contact`, `/privacy`, `/terms`, and `/manus-routes.json`. No API POST, database operation, or form submission was performed. Reduced-motion behavior was source-checked, not toggled in the live browser.

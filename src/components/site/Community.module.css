@@ -1,14 +1,14 @@
 .page {
-  --community-canvas: #fcfcfa;
-  --community-ink: #171c1b;
-  --community-muted: #5f6865;
-  --community-soft: #eceeed;
-  --community-media: #e3e6e4;
-  --community-teal: #087969;
-  --community-night: var(--site-night, #05070a);
+  --community-canvas: var(--site-paper, #070a0f);
+  --community-ink: var(--site-ink, #f1f6f5);
+  --community-muted: var(--site-copy, #a7b2b8);
+  --community-soft: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  --community-media: var(--site-glass, rgb(18 27 35 / 58%));
+  --community-teal: var(--site-sky-ink, #52e8d1);
+  --community-night: var(--site-paper-dim, #0c1218);
   min-width: 0;
   overflow: clip;
-  background: var(--community-canvas);
+  background: transparent;
   color: var(--community-ink);
 }
 
@@ -19,7 +19,7 @@
 
 .intro {
   padding: var(--site-header-clearance, 112px) 0 clamp(66px, 8vw, 112px);
-  background: var(--community-canvas);
+  background: transparent;
 }
 
 .introBody {
@@ -58,8 +58,8 @@
   flex: none;
   place-items: center;
   border-radius: 50%;
-  background: var(--community-ink);
-  color: #fcfcfa;
+  background: var(--site-paper-dim, #0c1218);
+  color: #fff;
   font-size: 0.67rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -87,14 +87,14 @@
 .introCopy {
   max-width: 410px;
   margin: 0 0 5px;
-  color: rgba(23, 28, 27, 0.72);
+  color: var(--community-muted);
   font-size: clamp(0.95rem, 1.2vw, 1.08rem);
   line-height: 1.8;
 }
 
 .leadership {
   padding: clamp(58px, 7.5vw, 104px) 0 clamp(76px, 9vw, 128px);
-  background: #f4f5f3;
+  background: transparent;
 }
 
 .leadershipHeading,
@@ -121,7 +121,7 @@
 .headingNote {
   max-width: 390px;
   margin: 0 0 5px;
-  color: rgba(23, 28, 27, 0.68);
+  color: var(--community-muted);
   font-size: 0.93rem;
   line-height: 1.75;
 }
@@ -135,7 +135,7 @@
 
 .boardSection {
   padding: clamp(68px, 9vw, 122px) 0;
-  background: var(--community-canvas);
+  background: transparent;
   color: var(--community-ink);
 }
 
@@ -161,12 +161,15 @@
   padding: clamp(22px, 2.4vw, 34px);
   padding-bottom: 70px;
   border-radius: 16px;
-  background: color-mix(in srgb, #eceeed 94%, var(--track-color, #28cdb7) 6%);
+  background: var(--site-glass, rgb(18 27 35 / 58%));
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
+  box-shadow: inset 0 1px 0 var(--site-glass-highlight, rgb(245 255 255 / 11%));
+  backdrop-filter: blur(12px);
 }
 
 .boardIndex {
   display: block;
-  color: var(--track-ink, var(--community-teal));
+  color: var(--track-color, var(--community-teal));
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
@@ -177,7 +180,7 @@
   align-items: center;
   gap: 8px;
   margin: 34px 0 0;
-  color: var(--track-ink, var(--community-teal));
+  color: var(--track-color, var(--community-teal));
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.5;
@@ -205,7 +208,7 @@
 .boardCard > p:last-of-type {
   max-width: 42ch;
   margin: 12px 0 0;
-  color: rgba(23, 28, 27, 0.7);
+  color: var(--community-muted);
   font-size: 0.84rem;
   line-height: 1.7;
 }
@@ -219,8 +222,8 @@
   height: 40px;
   place-items: center;
   border-radius: 50%;
-  background: #fcfcfa;
-  color: var(--track-ink, var(--community-teal));
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  color: var(--track-color, var(--community-teal));
   text-decoration: none;
   transition:
     background-color 180ms ease,
@@ -230,13 +233,13 @@
 
 .boardLink:is(:hover, :focus-visible) {
   background: var(--track-color, #28cdb7);
-  color: var(--community-ink);
+  color: var(--track-ink, var(--site-paper-dim, #0c1218));
   transform: translate(2px, -2px);
 }
 
 .directorySection {
   padding: clamp(74px, 9.5vw, 136px) 0 clamp(88px, 11vw, 152px);
-  background: #f4f5f3;
+  background: transparent;
 }
 
 .directoryHeading {
@@ -271,10 +274,10 @@
   align-items: center;
   gap: 7px;
   padding: 0 15px;
-  border: 0;
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 999px;
-  background: #e3e6e4;
-  color: rgba(23, 28, 27, 0.78);
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  color: var(--community-muted);
   cursor: pointer;
   font: inherit;
   font-size: 0.77rem;
@@ -325,16 +328,16 @@
   width: 100%;
   min-height: 44px;
   padding: 0 15px;
-  border: 1px solid transparent;
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 999px;
-  background: #e3e6e4;
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
   color: var(--community-ink);
   font: inherit;
   font-size: 0.84rem;
 }
 
 .search input::placeholder {
-  color: rgba(23, 28, 27, 0.52);
+  color: var(--site-mist, #9aa8ae);
 }
 
 .search input:focus-visible {
@@ -384,14 +387,14 @@
 .noMatches p:last-child {
   max-width: 600px;
   margin: 0;
-  color: rgba(23, 28, 27, 0.68);
+  color: var(--community-muted);
   font-size: 0.9rem;
   line-height: 1.75;
 }
 
 .cta {
   padding: clamp(58px, 8vw, 108px) 0;
-  background: var(--community-media);
+  background: transparent;
 }
 
 .ctaPanel {
@@ -400,7 +403,10 @@
   padding: clamp(24px, 4vw, 52px);
   overflow: hidden;
   border-radius: 16px;
-  background: var(--community-canvas);
+  background: var(--site-glass-strong, rgb(8 13 19 / 82%));
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
+  box-shadow: inset 0 1px 0 var(--site-glass-highlight, rgb(245 255 255 / 11%));
+  backdrop-filter: blur(14px);
 }
 
 .ctaCopy {
@@ -430,14 +436,14 @@
   flex: none;
   place-items: center;
   border-radius: 999px;
-  background: #e3e6e4;
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
   color: var(--community-teal);
 }
 
 .ctaCopy > p {
   max-width: 430px;
   margin: 19px auto 0;
-  color: rgba(23, 28, 27, 0.68);
+  color: var(--community-muted);
   font-size: 0.95rem;
   line-height: 1.7;
 }
@@ -450,8 +456,8 @@
   margin-top: 26px;
   padding: 0 8px 0 20px;
   border-radius: 999px;
-  background: var(--community-ink);
-  color: #fcfcfa;
+  background: var(--site-paper-dim, #0c1218);
+  color: #fff;
   font-size: 0.86rem;
   font-weight: 500;
   text-decoration: none;
@@ -460,6 +466,7 @@
 
 .ctaLink:hover {
   background: var(--community-teal);
+  color: var(--site-paper-dim, #0c1218);
 }
 
 .ctaArrow {
@@ -468,7 +475,7 @@
   height: 34px;
   place-items: center;
   border-radius: 50%;
-  background: #fcfcfa;
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
   color: var(--community-ink);
 }
 
@@ -481,7 +488,7 @@
   height: 58px;
   place-items: center;
   border-radius: 13px;
-  background: var(--community-soft);
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
   color: var(--community-teal);
 }
 

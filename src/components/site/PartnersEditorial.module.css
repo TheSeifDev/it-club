@@ -1,15 +1,15 @@
 .page {
-  --paper: #fcfcfa;
-  --ink: #171c1b;
-  --muted: rgb(23 28 27 / 0.66);
-  --soft: rgb(23 28 27 / 0.48);
-  --teal: #28cdb7;
-  --teal-ink: #087969;
-  --media: #eceeed;
-  --media-deep: #e3e6e4;
+  --paper: var(--site-paper, #070a0f);
+  --ink: var(--site-ink, #f1f6f5);
+  --muted: var(--site-copy, #a7b2b8);
+  --soft: var(--site-mist, #9aa8ae);
+  --teal: var(--site-sky, #28cdb7);
+  --teal-ink: var(--site-sky-ink, #52e8d1);
+  --media: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  --media-deep: var(--site-glass, rgb(18 27 35 / 58%));
   --gutter: clamp(20px, 3.5vw, 64px);
   width: 100%;
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-montserrat), var(--font-alexandria), sans-serif;
 }
@@ -37,8 +37,8 @@
   flex: 0 0 29px;
   place-items: center;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--site-paper-dim, #0c1218);
+  color: #fff;
   font-size: 0.62rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -51,7 +51,7 @@
   padding: 0 13px;
   border-radius: 999px;
   background: var(--media);
-  color: rgb(23 28 27 / 0.67);
+  color: var(--site-copy, #a7b2b8);
   font-size: 0.59rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -107,7 +107,7 @@
 
 .partners {
   padding-block: clamp(38px, 5.5vw, 78px) clamp(80px, 11vw, 154px);
-  background: #fff;
+  background: transparent;
 }
 
 .partnersHead {
@@ -135,9 +135,11 @@
 .partnerCard {
   min-width: 0;
   padding: 13px;
-  border: 1px solid #e8eae8;
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 16px;
-  background: var(--paper);
+  background: var(--site-glass, rgb(18 27 35 / 58%));
+  box-shadow: inset 0 1px 0 var(--site-glass-highlight, rgb(245 255 255 / 11%));
+  backdrop-filter: blur(12px);
 }
 
 .partnerMedia {
@@ -148,7 +150,7 @@
   place-items: center;
   border-radius: 11px;
   background: var(--media);
-  color: #77807c;
+  color: var(--site-mist, #9aa8ae);
 }
 
 .partnerMedia::before,
@@ -156,7 +158,7 @@
   position: absolute;
   width: 44%;
   aspect-ratio: 1;
-  border: 1px solid rgb(23 28 27 / 0.055);
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 50%;
   content: "";
 }
@@ -173,7 +175,7 @@
 .mediaCaption {
   position: absolute;
   z-index: 1;
-  color: rgb(23 28 27 / 0.48);
+  color: var(--site-mist, #9aa8ae);
   font-size: 0.52rem;
   font-weight: 600;
   letter-spacing: 0.13em;
@@ -196,7 +198,7 @@
   z-index: 1;
   width: clamp(60px, 7vw, 94px);
   height: auto;
-  color: #7c8580;
+  color: var(--site-mist, #9aa8ae);
 }
 
 .partnerCopy {
@@ -255,9 +257,11 @@
   gap: clamp(24px, 5vw, 70px);
   margin-top: clamp(30px, 4vw, 54px);
   padding: clamp(16px, 2vw, 24px);
-  border: 1px solid #e8eae8;
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
   border-radius: 16px;
-  background: var(--paper);
+  background: var(--site-glass, rgb(18 27 35 / 58%));
+  box-shadow: inset 0 1px 0 var(--site-glass-highlight, rgb(245 255 255 / 11%));
+  backdrop-filter: blur(12px);
 }
 
 .emptyIcon {
@@ -266,7 +270,7 @@
   place-items: center;
   border-radius: 11px;
   background: var(--media);
-  color: #7c8580;
+  color: var(--site-mist, #9aa8ae);
 }
 
 .emptyIcon svg {
@@ -276,7 +280,7 @@
 
 .cta {
   padding-block: clamp(58px, 8.5vw, 116px);
-  background: var(--media);
+  background: transparent;
 }
 
 .ctaPanel {
@@ -288,7 +292,10 @@
   margin-top: clamp(30px, 4vw, 52px);
   padding: clamp(30px, 5vw, 70px);
   border-radius: 16px;
-  background: var(--paper);
+  background: var(--site-glass-strong, rgb(8 13 19 / 82%));
+  border: 1px solid var(--site-glass-border, rgb(218 244 244 / 14%));
+  box-shadow: inset 0 1px 0 var(--site-glass-highlight, rgb(245 255 255 / 11%));
+  backdrop-filter: blur(14px);
 }
 
 .ctaPanel h2 {
@@ -318,7 +325,7 @@
   gap: 14px;
   padding: 5px 6px 5px 19px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--site-paper-dim, #0c1218);
   color: #fff !important;
   font-size: 0.69rem;
   font-weight: 600;
@@ -328,6 +335,7 @@
 .ctaLink:hover {
   transform: translateY(-2px);
   background: var(--teal-ink);
+  color: var(--site-paper-dim, #0c1218) !important;
 }
 
 .ctaArrow {
@@ -336,8 +344,8 @@
   height: 36px;
   place-items: center;
   border-radius: 50%;
-  background: var(--teal);
-  color: var(--ink);
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  color: var(--site-sky-ink, #52e8d1);
   font-size: 1rem;
 }
 
@@ -347,8 +355,8 @@
   aspect-ratio: 1;
   place-items: center;
   border-radius: 13px;
-  background: var(--media-deep);
-  color: #7c8580;
+  background: var(--site-glass-soft, rgb(233 249 250 / 5%));
+  color: var(--site-mist, #9aa8ae);
 }
 
 .ctaIcon svg {

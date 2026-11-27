@@ -2,6 +2,7 @@ import "./public-design.css";
 import "./public-hover.css";
 import "./public-layout.css";
 import "./public-editorial.css";
+import "./public-glass.css";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -16,7 +17,7 @@ import {
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="site-root" data-design="club" id="top">
+    <div className="site-root" data-design="club" data-theme="dark-glass" id="top">
       <a className="site-skip-link" href="#main-content">
         Skip to content
       </a>
@@ -131,7 +132,7 @@ export function EmptyState({
 }) {
   const destination = safeHref(href);
   return (
-    <div className="site-empty-state" data-reveal>
+    <div className="site-empty-state" data-reveal data-public-surface="glass">
       <span className="site-empty-state__index" aria-hidden="true">
         —
       </span>
@@ -278,9 +279,9 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
               </a>
             ))}
           </nav>
-        ) : null}
-      </div>
-        <figure className="site-detail-portrait" data-spotlight>
+          ) : null}
+        </div>
+        <figure className="site-detail-portrait" data-spotlight data-public-surface="glass">
           <div className="site-profile-symbol" aria-hidden="true"><Users /></div>
           <figcaption>{entry.data.role ?? "IT Club community"}</figcaption>
         </figure>

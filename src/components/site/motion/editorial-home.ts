@@ -1,6 +1,7 @@
 "use client";
 
 import { gsap, motionQueries } from "./gsap";
+import { measureAboutWordLayoutStates } from "./about-layout";
 
 type MotionMedia = ReturnType<typeof gsap.matchMedia>;
 
@@ -8,7 +9,13 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
   const home = root.querySelector<HTMLElement>("[data-editorial-home]");
   if (!home) return;
 
-  media.add(motionQueries.motion, () => {
+  media.add({
+    motion: motionQueries.motion,
+    compact: "(max-width: 800px)",
+    mobile: "(max-width: 520px)",
+    pinned: motionQueries.stage,
+  }, (context) => {
+    if (!context.conditions?.motion) return;
     const compact = window.matchMedia("(max-width: 800px)").matches;
     const distance = compact ? 58 : 96;
     const hero = home.querySelector<HTMLElement>("[data-editorial-hero]");
@@ -40,10 +47,19 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
       const sequence = Array.from(statement.querySelectorAll<HTMLElement>("[data-editorial-word], [data-editorial-chip]"));
       const words = sequence.filter((element) => element.hasAttribute("data-editorial-word"));
       const chips = sequence.filter((element) => element.hasAttribute("data-editorial-chip"));
+      const layoutStates = measureAboutWordLayoutStates(statement);
+      const hasLayoutStates = layoutStates.length === chips.length + 1 && layoutStates.every((state) => state.length === words.length);
       const aboutSection = statement.closest<HTMLElement>("[data-editorial-about]");
       const pinStory = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine) and (min-height: 760px)").matches && Boolean(aboutSection);
+      const depthTile = aboutSection?.querySelector<HTMLElement>('[data-about-depth="tile"]');
+      const depthSeal = aboutSection?.querySelector<HTMLElement>('[data-about-depth="seal"]');
+      if (depthTile) gsap.set(depthTile, { transformPerspective: 1000, transformStyle: "preserve-3d" });
+      if (depthSeal) gsap.set(depthSeal, { transformPerspective: 850, transformStyle: "preserve-3d" });
+      if (hasLayoutStates) {
+        layoutStates[0].forEach(({ element, x, y }) => gsap.set(element, { x, y }));
+      }
       gsap.set(words, { "--word-fill": "0%" });
-      gsap.set(chips, { opacity: 0, scale: .35, y: 26, rotation: -24 });
+      gsap.set(chips, { transformPerspective: 1000, transformStyle: "preserve-3d", backfaceVisibility: "hidden", opacity: 0, scale: .48, y: 25, z: -150, rotationX: -36, rotationY: 34, rotation: -16 });
       const reading = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -58,18 +74,47 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
           invalidateOnRefresh: true,
         },
       });
+      if (hasLayoutStates) {
+        const openingPositions = chips.map((chip) => sequence.indexOf(chip) * .18);
+        for (let stateIndex = 1; stateIndex < layoutStates.length; stateIndex += 1) {
+          const previousState = layoutStates[stateIndex - 1];
+          const nextState = layoutStates[stateIndex];
+          previousState.forEach((from, wordIndex) => {
+            const to = nextState[wordIndex];
+            if (Math.abs(from.x - to.x) < .5 && Math.abs(from.y - to.y) < .5) return;
+            reading.fromTo(from.element, { x: from.x, y: from.y }, {
+              x: to.x, y: to.y, duration: .56, ease: "power2.out", immediateRender: false,
+            }, openingPositions[stateIndex - 1]);
+          });
+        }
+      }
+      if (depthTile) {
+        reading.fromTo(depthTile,
+          { opacity: 0, x: -34, y: 62, z: -260, rotationX: -42, rotationY: 52, rotationZ: -43, scale: .58 },
+          { opacity: .88, x: 0, y: -7, z: 75, rotationX: 0, rotationY: 0, rotationZ: -24, scale: 1, duration: .82, ease: "power2.out" },
+          .18,
+        );
+      }
       sequence.forEach((element, index) => {
         const position = index * .18;
         if (element.hasAttribute("data-editorial-word")) {
           // Explicit endpoints survive refresh/invalidation of a scrubbed timeline.
           reading.fromTo(element, { "--word-fill": "0%" }, { "--word-fill": "100%", duration: .28, immediateRender: true }, position);
         } else {
-          reading.to(element, {
-            opacity: 1, scale: 1, y: 0, rotation: element.textContent === "BATU" ? -8 : 0,
-            duration: .48, ease: "back.out(1.4)",
-          }, position);
+          reading.fromTo(element,
+            { opacity: 0, scale: .48, y: 25, z: -150, rotationX: -36, rotationY: 34, rotationZ: -16 },
+            { opacity: 1, scale: 1, y: 0, z: 20, rotationX: 0, rotationY: 0, rotationZ: element.textContent === "BATU" ? -8 : 0, duration: .56, ease: "power2.out" },
+            position,
+          );
         }
       });
+      if (depthSeal) {
+        reading.fromTo(depthSeal,
+          { opacity: 0, y: 22, z: -170, rotationX: -62, rotationY: 38, scale: .62 },
+          { opacity: 1, y: 0, z: 0, rotationX: 0, rotationY: 0, scale: 1, duration: .7, ease: "power2.out" },
+          Math.max(.4, sequence.length * .18 - 1.05),
+        );
+      }
     }
 
     home.querySelectorAll<HTMLElement>("[data-editorial-reveal]").forEach((element, index) => {
@@ -91,6 +136,7 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
       });
     });
     home.querySelectorAll<HTMLElement>("[data-editorial-symbol]").forEach((element, index) => {
+      if (element.hasAttribute("data-about-depth")) return;
       const trigger = element.closest("section") || element;
       const tilt = index % 2 === 0 ? -12 : 10;
       const drift = gsap.timeline({
@@ -122,5 +168,22 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
         scrollTrigger: { id: "editorial-join-art", trigger: join, start: "top bottom", end: "bottom top", scrub: .9 },
       });
     }
+
+    // Word wrapping changes the premeasured FLIP states. Rebuild only after width
+    // changes settle, not on scroll or mobile browser URL-bar height changes.
+    let aboutWidth = statement?.clientWidth ?? 0;
+    let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+    const observer = statement && typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
+      const nextWidth = statement.clientWidth;
+      if (!nextWidth || nextWidth === aboutWidth) return;
+      aboutWidth = nextWidth;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => gsap.matchMediaRefresh(), 160);
+    }) : undefined;
+    if (statement) observer?.observe(statement);
+    return () => {
+      observer?.disconnect();
+      clearTimeout(resizeTimer);
+    };
   });
 }

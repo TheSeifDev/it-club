@@ -54,7 +54,8 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
       const depthSeal = aboutSection?.querySelector<HTMLElement>('[data-about-depth="seal"]');
       if (depthSeal) gsap.set(depthSeal, { transformPerspective: 850, transformStyle: "preserve-3d" });
       if (hasLayoutStates) {
-        layoutStates[0].forEach(({ element, x, y }) => gsap.set(element, { x, y }));
+        // Lock each word to its natural line baseline; only close/open the inline gaps horizontally.
+        layoutStates[0].forEach(({ element, x }) => gsap.set(element, { x, y: 0 }));
       }
       gsap.set(words, { "--word-fill": "0%" });
       gsap.set(chips, { transformPerspective: 1000, transformStyle: "preserve-3d", backfaceVisibility: "hidden", opacity: 0, scale: .48, y: 25, z: -150, rotationX: -36, rotationY: 34, rotation: -16 });
@@ -64,8 +65,8 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
           id: "editorial-about-reading",
           trigger: pinStory ? aboutSection : statement,
           start: pinStory ? "top top+=106" : "top 85%",
-          end: pinStory ? `+=${Math.round(window.innerHeight * .92)}` : "bottom 88%",
-          scrub: .55,
+          end: pinStory ? `+=${Math.round(window.innerHeight * 1.4)}` : "bottom 42%",
+          scrub: .85,
           pin: pinStory ? aboutSection : false,
           pinSpacing: pinStory,
           anticipatePin: pinStory ? 1 : 0,
@@ -79,9 +80,9 @@ export function setupEditorialHome(root: HTMLElement, media: MotionMedia) {
           const nextState = layoutStates[stateIndex];
           previousState.forEach((from, wordIndex) => {
             const to = nextState[wordIndex];
-            if (Math.abs(from.x - to.x) < .5 && Math.abs(from.y - to.y) < .5) return;
-            reading.fromTo(from.element, { x: from.x, y: from.y }, {
-              x: to.x, y: to.y, duration: .56, ease: "power2.out", immediateRender: false,
+            if (Math.abs(from.x - to.x) < .5) return;
+            reading.fromTo(from.element, { x: from.x, y: 0 }, {
+              x: to.x, y: 0, duration: .56, ease: "power2.out", immediateRender: false,
             }, openingPositions[stateIndex - 1]);
           });
         }

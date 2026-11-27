@@ -76,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${alexandria.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${alexandria.variable} motion-reduce:scroll-auto!`}>
       <body>{children}</body>
     </html>
   );

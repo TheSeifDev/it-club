@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HomeHero } from "@/src/components/site/HomeHero";
+import { HomeScrollRail } from "@/src/components/site/HomeScrollRail";
 import { EditorialHome } from "@/src/components/site/EditorialHome";
 import { SiteFrame, SiteUnavailable } from "@/src/components/site/SiteUI";
 import { getTrackTheme } from "@/lib/ui/track-theme";
@@ -71,6 +72,7 @@ export default async function HomePage() {
   return (
     <SiteFrame>
       <div data-editorial-home>
+        <HomeScrollRail />
         <HomeHero people={people.slice(0, 3)} />
         <EditorialHome
           tracks={tracks}

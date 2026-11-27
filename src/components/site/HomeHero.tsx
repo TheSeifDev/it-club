@@ -31,7 +31,7 @@ export type HeroPerson = {
 export function HomeHero({ people }: { people: HeroPerson[] }) {
   const icons = [Users, Code2, Lightbulb];
   return (
-    <section className={styles.root} data-editorial-hero aria-labelledby="home-hero-title">
+    <section className={styles.root} id="home" data-editorial-hero aria-labelledby="home-hero-title">
       <div className={styles.film} data-editorial-film>
         <HeroVideo />
       </div>

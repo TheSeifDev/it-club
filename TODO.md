@@ -162,3 +162,15 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - قياس DOM بعد reload نظيف يثبت 5 أسطر على desktop `1280×1100` و10 أسطر على الهاتف `390×844`. ظل ترتيب الكلمات أفقيًا بلا أي تداخل عند الإغلاق والمنتصف وقرب النهاية، وعاد كما كان عند الرجوع؛ أقصى Y transform للكلمات `0px` في كل حالة.
 - مدى التمرير في Desktop صار `1540px` (`1.4 × 1100`) مع `scrub:0.85` بدل نحو `1012px` (`0.92 × 1100`) و`0.55` سابقًا. الهاتف يستخدم مدى مقاسًا `740px`؛ الكبسولات تدخل تباعًا وتختفي عكسيًا، و`scrollWidth-innerWidth=-10` لا يدل على overflow.
 - هذا يثبت معالجة سلوك About وترتيب السطور فقط؛ بند السلاسة العامة يظل مفتوحًا حتى وجود trace ممثل للأجهزة، ولا يوجد ادعاء FPS أو ضمان عام.
+
+## شريط جانبي مقسّم للسكرول — طلب المستخدم 27 نوفمبر 2026
+
+- [x] **Side scroll bar مقسّم حسب أقسام Home ويتابع الحركة.** أجزاء واضحة لـHome/About/Tracks/Events/Community/Find your place؛ حد رمادي، والقسم الذي يصل له المستخدم يصبح opacity100%، ويتابع fill تقدمه مع التمرير والعكس. يتيح الضغط والفوكس والتنقل المباشر إلى القسم، من دون تعطيل native scroll أو تغيير حركة About البطيئة وثبات سطورها. متجاوب على الهاتف ويدعم reduced-motion وروابط anchors بلا JavaScript؛ لا تغيير Admin/Interview/Student/Auth/APIs أو بيانات، ولا نشر إنتاجي.
+
+
+### دليل side rail — 27 نوفمبر 2026
+
+- Desktop Preview `1280×1100`: الروابط الستة تحدد Home/About/Tracks/Events/Community/Find your place. الحدود المحسوبة لكل القطع `rgb(146, 152, 160)` و`opacity:1`. نقرة About وصلت إلى موضع pin `top=106px`؛ بعد تمرير700px أظهر rail تقدم About عند46%، ثم عاد Home إلى `scrollY=0` وأعاد التقدم للصفر. نقرت Tracks وEvents وCommunity وFind your place وHome كلٌّ وصل إلى الsection الصحيحة وأبقى `aria-current` متزامنًا.
+- Mobile Preview داخل iframe same-origin `390×844`: ظهر rail بعرض24px وارتفاع264px في منتصف اليمين، بلا overflow أفقي. computed border بقي `rgb(146, 152, 160)` و`opacity:1`. اختُبرت نقرة About وCommunity وFind your place والعودة إلى Home؛ الأهداف وصلت إلى `top=104px` أو `0px` لـHome، وتغيرت حالة active/fill مع التمرير.
+- Native hash navigation: Events وCommunity وFind your place وصلت إلى `top=88px` عبر `scroll-margin-top:88px`؛ Home بقي عند أعلى الصفحة. `prefers-reduced-motion` مضبوط بوسيلة Tailwind على الجذر للـnative/no-JS، وتنقل JavaScript يستخدم `instant` عند تفعيله. لم تُحاكَ media preference حيًا.
+- فحوص الإغلاق بعد تعديل reduced-motion والـnative offsets: TypeScript مرّ، ESLint بلا أخطاء (تحذير `app.config.ts` السابق فقط)، pure tests `29/29`، production build ناجح على Next.js16.3.8، و`git diff --check` ناجح. لم يُغيّر مصدر Admin/Interview/Student/Auth/APIs أو بياناتها؛ `auto_publish:false` ولم يُنفذ نشر.

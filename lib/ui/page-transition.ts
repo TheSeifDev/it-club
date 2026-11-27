@@ -81,39 +81,44 @@ export type TransitionTile = {
   y: number;
   delay: number;
   tone: number;
-  band: number;
 };
 
-/** Small gap-free hexagons; only the <=38 horizontal bands are animated. */
+/** Larger hex blocks fan out from the top-centre in a deliberate radial wave. */
 export function transitionHoneycomb(width: number, height: number) {
   const safeWidth = Number.isFinite(width) ? Math.max(1, width) : 1;
   const safeHeight = Number.isFinite(height) ? Math.max(1, height) : 1;
-  const minimumRadius = safeWidth < 600 ? 9 : 12;
-  // Density cap keeps 4K/tall screens bounded without making ordinary tiles large.
-  const radius = Math.max(
-    minimumRadius,
-    Math.sqrt((safeWidth * safeHeight) / (2600 * 2.598)),
+  const minimumRadius = safeWidth < 600 ? 24 : safeWidth < 900 ? 34 : 44;
+  const densityRadius = Math.sqrt(
+    (safeWidth * safeHeight) / (2.598 * 280),
   );
+  const radius = Math.min(72, Math.max(minimumRadius, densityRadius));
   const stepX = radius * 1.5;
   const stepY = radius * Math.sqrt(3);
   const columns = Math.ceil(safeWidth / stepX) + 2;
   const rows = Math.ceil(safeHeight / stepY) + 2;
-  const bandHeight = Math.max(stepY, safeHeight / 36);
-  const bandCount = Math.ceil(safeHeight / bandHeight);
-  const tiles: TransitionTile[] = [];
+  const originX = safeWidth / 2;
+  const positions: Array<Omit<TransitionTile, "delay">> = [];
+
   for (let column = 0; column < columns; column += 1) {
     for (let row = 0; row < rows; row += 1) {
       const x = column * stepX;
       const y = (row - 0.5 + (column % 2) * 0.5) * stepY;
-      const band = Math.min(bandCount, Math.max(0, Math.floor(y / bandHeight)));
-      tiles.push({
+      positions.push({
         x,
         y,
-        band,
-        delay: (band / Math.max(1, bandCount)) * 0.28,
         tone: (column * 3 + row * 5) % 7,
       });
     }
   }
+
+  const distances = positions.map((tile) =>
+    Math.hypot(tile.x - originX, tile.y),
+  );
+  const maximumDistance = Math.max(1, ...distances);
+  const tiles = positions.map((tile, index) => ({
+    ...tile,
+    delay: (distances[index] / maximumDistance) * 0.62,
+  }));
+
   return { radius: radius + 0.75, tiles };
 }

@@ -123,12 +123,13 @@ describe("public visual page transitions", () => {
       assert.equal(transitionStartsAtTop(href), false, href);
     }
   });
-  it("uses very small shapes on ordinary desktop and mobile screens", () => {
-    assert.ok(transitionHoneycomb(390, 844).radius <= 10);
-    assert.ok(transitionHoneycomb(1440, 900).radius <= 15);
-    assert.ok(transitionHoneycomb(1920, 1080).radius <= 19);
+  it("uses prominent hex blocks on ordinary desktop and mobile screens", () => {
+    assert.ok(transitionHoneycomb(390, 844).radius >= 24);
+    assert.ok(transitionHoneycomb(1440, 900).radius >= 44);
+    assert.ok(transitionHoneycomb(1920, 1080).radius >= 50);
+    assert.ok(transitionHoneycomb(3840, 2160).radius <= 73);
   });
-  it("bounds tile count and staggers top-to-bottom at all viewport sizes", () => {
+  it("bounds tile count and staggers a radial wave from the top-centre", () => {
     for (const [width, height] of [
       [1920, 1080],
       [390, 844],
@@ -138,34 +139,26 @@ describe("public visual page transitions", () => {
     ]) {
       const { radius, tiles } = transitionHoneycomb(width, height);
       assert.ok(
-        tiles.length > 10 && tiles.length < 3300,
+        tiles.length > 10 && tiles.length < 2000,
         `${width}x${height}: ${tiles.length}`,
       );
-      assert.ok(radius >= 9);
+      assert.ok(radius >= 24);
       assert.ok(
         tiles.every(
           (tile) =>
-            Number.isFinite(tile.x + tile.y + tile.delay) && tile.delay >= 0,
+            Number.isFinite(tile.x + tile.y + tile.delay) &&
+            tile.delay >= 0 &&
+            tile.delay <= 0.62,
         ),
       );
-      const bands = new Set(tiles.map((tile) => tile.band));
-      assert.ok(
-        bands.size <= 38,
-        `${width}x${height}: ${bands.size} animated bands`,
+      const nearest = tiles.reduce((best, tile) =>
+        Math.hypot(tile.x - width / 2, tile.y) <
+        Math.hypot(best.x - width / 2, best.y)
+          ? tile
+          : best,
       );
-      for (const band of bands) {
-        assert.equal(
-          new Set(
-            tiles
-              .filter((tile) => tile.band === band)
-              .map((tile) => tile.delay),
-          ).size,
-          1,
-        );
-      }
-      const firstColumn = tiles.filter((tile) => tile.x === 0);
-      for (let i = 1; i < firstColumn.length; i += 1)
-        assert.ok(firstColumn[i].delay >= firstColumn[i - 1].delay);
+      assert.ok(nearest.delay < 0.05, `${width}x${height}: origin delay`);
+      assert.ok(Math.max(...tiles.map((tile) => tile.delay)) > 0.5);
       assert.ok(Math.max(...tiles.map((tile) => tile.x)) >= width);
       assert.ok(Math.max(...tiles.map((tile) => tile.y)) >= height);
     }

@@ -276,13 +276,15 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 ### خلاصة التنفيذ والتحقق
 الـPreview يعرض خمس لجان منشورة وصفر ملفات أعضاء منشورة؛ empty state صادقة. اختبارات الفلاتر والتفاعل أثبتت عدم عرض R&D مع بقاء مصدره دون تعديل، والـcursor وPause والتوقف خارج الشاشة يعملون. نجح TypeScript وESLint المركّز و`npm run test:pure` (39/39) وبناء Next.js16.3.8 و`git diff --check`. صور Preview للـdesktop/mobile ودليل التحقق الكامل في `docs/editorial-validation.md`. لا نشر أو قاعدة بيانات مكتوبة؛ لا مساس بـGitHub `main`.
 
-## تصغير shapes وانتقال من أعلى الصفحة — 27 نوفمبر 2026
-- [x] تصغير shapes انتقال الصفحات جدًا على desktop/mobile بألوان الموقع، مع بقاء wipe من فوق لتحت والحركة خفيفة بلا DOM tweens منفصلة لكل شكل صغير.
+## انتقال الصفحات ببلوكات hex — 27 نوفمبر 2026
+- [x] استبدال الـshapes الصغيرة بموجة hex blocks كبيرة وواضحة تتوسع شعاعيًا من أعلى المنتصف، تغطي الصفحة ثم تكشف الجديدة بالترتيب؛ حركة مقصودة أبطأ من الـwipe السابق، مع الحفاظ على Logo Teal/Night وتجنب overlay ناعم فقط.
 - [x] عند فتح صفحة عامة جديدة يبدأ عرضها من أعلى الصفحة لا موضع scroll القديم أو أسفلها، قبل انكشاف المحتوى. الحفاظ على روابط الأقسام #hash ومفاتيح النقر المعدلة وروابط المناطق المحمية وreduced-motion والتنقل native للتاريخ.
-- [x] تحقق من الانتقال بين صفحتين بعد scrolling ومن anchors وحجم/اتجاه الشبكة، TypeScript وESLint والاختبارات والبناء وdiff-check. حفظ checkpoint ومزامنة فرع GitHub feature المحدد فقط، بلا نشر أو تعديل GitHub main.
+- [x] تحقق من النقر الحقيقي `Tracks → Community` وتسلسل `cover → hold → reveal → idle`، حجم الشبكة responsive، TypeScript وESLint و53 اختبارًا وproduction build و`git diff --check`. لا نشر أو تعديل GitHub main.
+- [ ] حفظ Manus checkpoint بعد دمج الاختبارات والتوثيق؛ مزامنة GitHub اختيارية وتقتصر على `refactor/club-main-site-20261118` فقط.
 
 ### خلاصة التنفيذ والتحقق
-في Preview عند `1280×1100` انتقل النقر الفعلي من Community عند `scrollY=4910` إلى Tracks عند `scrollY=0`؛ انتقل `/#about` من أسفل Tracks مع الحفاظ على hash واستهداف القسم قرب أعلى الشاشة (`top=106px`)، وعاد Back إلى Tracks عند `3069px` دون فرض reset إلى صفر، لا كضمان لمطابقة coordinate تاريخ pin السابق. الشبكة 37 band و2,852 شكل SVG صغير على هذا المقاس، و8/8 اختبارات الانتقال و39/39 pure tests وTypeScript وESLint المركّز وproduction build و`git diff --check` نجحت. لا نشر إنتاجي أو تعديل GitHub main.
+اختبار Preview حي بعد التعديل وصل من `Tracks` إلى `Community`، ومرّت الحالة بـ`cover`, `hold`, `reveal`, ثم `idle` من دون تقليل الحركة؛ شوهدت 374 خلية hex في الموجة واكتمل الانتقال خلال `2.6s`. نصف قطر الأساس للخلايا يتغير مع المقاس (24–72px)، مع تداخل بصري قدره `0.75px` لمنع الفواصل؛ وتثبت اختبارات `transitionHoneycomb` التغطية والـstagger الشعاعي من أعلى المنتصف. نجح `npm run test:pure` ‏53/53 وTypeScript وESLint المركّز و`npm run build` و`git diff --check`. لا نشر إنتاجي أو تعديل GitHub main.
+
 
 ## صفحة Store للفست وID card + lanyard — 27 نوفمبر 2026
 - [x] صفحة عامة premium لطلبة IT Club لعرض الفست المرفق من أمام وخلف، واستخدام صور الفعاليات الأصلية من دون تبديل الهوية أو إزالة/تغيير شعاراتها، وترتبط بالتنقل العام والـfooter والـpage transition. English أساسي مع لمسات عربي ونفس Night/Logo Teal وfull-width/Tailwind/responsive.

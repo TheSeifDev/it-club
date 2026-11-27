@@ -42,7 +42,7 @@ export default function PublicPageTransition() {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animation: gsap.core.Timeline | null = null;
     let watchdog: ReturnType<typeof setTimeout> | undefined;
-    let bands: SVGGElement[] = [];
+    let tileGroups: SVGGElement[] = [];
     let delays: number[] = [];
     let viewport = "";
     let busy = false;
@@ -63,7 +63,8 @@ export default function PublicPageTransition() {
       busy = false;
       overlay.dataset.phase = "idle";
       gsap.set(overlay, { visibility: "hidden", pointerEvents: "none" });
-      if (bands.length) gsap.set(bands, { clearProps: "willChange" });
+      if (tileGroups.length)
+        gsap.set(tileGroups, { clearProps: "transform,opacity,willChange" });
     };
     const prepare = () => {
       // Tokens stay owned by the public theme, not the operational root layout.
@@ -99,31 +100,30 @@ export default function PublicPageTransition() {
         shape.setAttribute("points", points);
         defs.append(shape);
         fragment.append(defs);
-        const strips = new Map<number, SVGGElement>();
-        bands = [];
-        delays = [];
+        const groups: SVGGElement[] = [];
+        const tileDelays: number[] = [];
         for (const tile of grid.tiles) {
-          let strip = strips.get(tile.band);
-          if (!strip) {
-            strip = document.createElementNS(svgNamespace, "g");
-            strip.setAttribute("data-transition-band", String(tile.band));
-            strips.set(tile.band, strip);
-            fragment.append(strip);
-            bands.push(strip);
-            delays.push(tile.delay);
-          }
+          const group = document.createElementNS(svgNamespace, "g");
+          group.setAttribute("data-transition-tile", "");
           const hex = document.createElementNS(svgNamespace, "use");
           hex.setAttribute("href", "#club-transition-hex");
           hex.setAttribute("x", String(tile.x));
           hex.setAttribute("y", String(tile.y));
-          hex.setAttribute("data-transition-tile", "");
           hex.style.fill = tileTones[tile.tone];
-          strip.append(hex);
+          group.append(hex);
+          fragment.append(group);
+          groups.push(group);
+          tileDelays.push(tile.delay);
         }
+        tileGroups = groups;
+        delays = tileDelays;
         svg.replaceChildren(fragment);
       }
       gsap.set(overlay, { visibility: "visible", pointerEvents: "auto" });
-      gsap.set(bands, { willChange: "transform,opacity" });
+      gsap.set(tileGroups, {
+        transformOrigin: "50% 50%",
+        willChange: "transform,opacity",
+      });
       busy = true;
     };
     const sendNavigation = () => {
@@ -148,14 +148,16 @@ export default function PublicPageTransition() {
       clearWatchdog();
       prepare();
       destination = null;
-      if (!alreadyCovered) gsap.set(bands, { y: 0, opacity: 1 });
+      if (!alreadyCovered)
+        gsap.set(tileGroups, { scale: 1, rotation: 0, opacity: 1 });
       overlay.dataset.phase = "reveal";
       animation = gsap.timeline({ onComplete: settle });
-      animation.to(bands, {
-        y: 10,
+      animation.to(tileGroups, {
+        scale: 0,
+        rotation: 16,
         opacity: 0,
-        duration: 0.26,
-        ease: "power3.inOut",
+        duration: 0.46,
+        ease: "power3.in",
         stagger: (index: number) => delays[index],
       });
     };
@@ -164,15 +166,21 @@ export default function PublicPageTransition() {
       destination = href;
       navigationSent = false;
       overlay.dataset.phase = "cover";
-      gsap.set(bands, { y: -10, opacity: 0 });
+      gsap.set(tileGroups, {
+        scale: 0,
+        rotation: -8,
+        opacity: 0,
+        transformOrigin: "50% 50%",
+      });
       // A delayed/failed route must never trap the visitor under the overlay.
       watchdog = setTimeout(() => reveal(false), 8000);
       animation = gsap.timeline({ onComplete: sendNavigation });
-      animation.to(bands, {
-        y: 0,
+      animation.to(tileGroups, {
+        scale: 1,
+        rotation: 0,
         opacity: 1,
-        duration: 0.28,
-        ease: "power3.inOut",
+        duration: 0.42,
+        ease: "power3.out",
         stagger: (index: number) => delays[index],
       });
     };

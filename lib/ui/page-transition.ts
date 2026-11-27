@@ -7,6 +7,7 @@ export function isPublicTransitionPath(pathname: string): boolean {
       "/about",
       "/tracks",
       "/events",
+      "/store",
       "/community",
       "/sponsors",
       "/contact",

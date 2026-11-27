@@ -27,11 +27,13 @@ describe("public section navigation", () => {
     assert.equal(isSitePageActive("/events", "/events"), true);
     assert.equal(isSitePageActive("/events/workshop", "/events"), true);
     assert.equal(isSitePageActive("/community/person", "/community"), true);
+    assert.equal(isSitePageActive("/store", "/store"), true);
   });
   it("does not match unrelated prefixes or protected workspaces", () => {
     assert.equal(isSitePageActive("/events-preview", "/events"), false);
     assert.equal(isSitePageActive("/interview", "/community"), false);
     assert.equal(isSitePageActive("/admin", "/tracks"), false);
+    assert.equal(SITE_NAV_LINKS.find((link) => link.label === "Store")?.href, "/store");
   });
 });
 

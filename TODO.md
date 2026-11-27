@@ -283,3 +283,17 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 
 ### خلاصة التنفيذ والتحقق
 في Preview عند `1280×1100` انتقل النقر الفعلي من Community عند `scrollY=4910` إلى Tracks عند `scrollY=0`؛ انتقل `/#about` من أسفل Tracks مع الحفاظ على hash واستهداف القسم قرب أعلى الشاشة (`top=106px`)، وعاد Back إلى Tracks عند `3069px` دون فرض reset إلى صفر، لا كضمان لمطابقة coordinate تاريخ pin السابق. الشبكة 37 band و2,852 شكل SVG صغير على هذا المقاس، و8/8 اختبارات الانتقال و39/39 pure tests وTypeScript وESLint المركّز وproduction build و`git diff --check` نجحت. لا نشر إنتاجي أو تعديل GitHub main.
+
+## صفحة Store للفست وID card + lanyard — 27 نوفمبر 2026
+- [x] صفحة عامة premium لطلبة IT Club لعرض الفست المرفق من أمام وخلف، واستخدام صور الفعاليات الأصلية من دون تبديل الهوية أو إزالة/تغيير شعاراتها، وترتبط بالتنقل العام والـfooter والـpage transition. English أساسي مع لمسات عربي ونفس Night/Logo Teal وfull-width/Tailwind/responsive.
+- [x] ID card عليها logo IT Club ومعها lanyard رغم عدم وصول صورتها النهائية. تقديم 3D تفاعلي مع cursor/drag ودخول/سكرول GSAP غني وmockup label صادقة، وfallback/pause/reduced-motion وتعليق خارج الشاشة وتنظيف الموارد. لا تُقدّم mockup كصورة المنتج النهائي أو credential معتمد.
+- [x] kit builder فعلي لحزمة Vest + ID + lanyard بسعر 250 EGP كما أكد المستخدم، وخيار ID + lanyard فقط للي دفع قبل كده أو Main Board. يتيح الكميات وsize preference والملخص؛ لا يخترع سعر ID-only أو توفر مقاسات/مخزون/دفع/استلام. يظهر طلب التواصل للاستفسار غير مؤكد بوضوح؛ لا ادعاء بإتمام طلب أو دفع ولا fake checkout.
+- [x] مراجعة مستقلة read-only للتكامل/الشروط، اختبارات catalog/order/helpers وTypeScript/ESLint/build/diff-check والتحقق من الصور والروابط وlayout/interaction ذات العيوب المعينة. توثيق الدليل؛ لا نشر أو كتابة بيانات أو تعديل GitHub main.
+- [ ] حفظ Manus checkpoint على `origin/main` بعد جلب أحدث نسخة وفحصها؛ إن حصلت مزامنة GitHub لاحقًا فتكون على `refactor/club-main-site-20261118` فقط، لا GitHub `main`.
+
+### دليل Store
+
+- حمّلت الصور الثلاثة مباشرة من Stable `/manus-storage/...` في Preview: صورة المنتج `841×560` وكل صورة فعالية `1280×720`. استُخدمت النسخ lossless المرفوعة كما هي، وظهرت صورة الأمام/الخلف وصورتا الاستخدام الأصليتان؛ bypass optimizer المحلي ضروري لهذا المسار.
+- حمّل badge مشهد Three.js lazy عند وصوله للـviewport؛ renderer وصل `webgl` وcanvas إلى نحو `490×613`، وأظهرت المراجعة البصرية لوجو النادي بعد إضافة UVs إلى سطح texture المخصص. زر Pause والتدوير وإعادة الضبط عملوا. الـfallback موجود، والـ3D يوقف الرسم خارج الشاشة/عند تغيير التبويب، ويستجيب كود الصفحة لتغيّر تفضيل reduced-motion. عند الهاتف تتدفق صور الفعاليات رأسيًا بلا pin desktop.
+- تفاعليًا: الفست وحده احتسب `EGP 250`؛ وعند إضافة ID-only بلا أهلية صار زر الطلب بلا `href` ويعرض توجيهًا لاختيار Already paid أو Main Board. بعد الاختيار جهّز `mailto:` بمبلغ ID-only المؤجل للتأكيد؛ لم يُضغط الرابط أو يُرسل بريد. عادت الكميات لصفر بعد الاختبار.
+- نجحت `npm run test:pure` ‏53/53، و`npx tsc --noEmit` وESLint المركز و`npm run build` و`git diff --check`. أعاد `/store` و`/sitemap.xml` و`/manus-routes.json` حالة 200، ويتضمن الـmanifest 30 مسارًا مع `/store`. لا Checkout أو دفع أو مخزون/مقاسات أو استلام مؤكد؛ سعر ID-only ما زال غير معلوم. لا كتابة قاعدة بيانات أو نشر إنتاجي.

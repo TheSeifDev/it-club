@@ -9,6 +9,7 @@ const siteLinks = [
   { href: "/tracks", label: "Tracks" },
   { href: "/community", label: "Community" },
   { href: "/events", label: "Events" },
+  { href: "/store", label: "Store" },
   { href: "/sponsors", label: "Partners" },
   { href: "/alumni", label: "Alumni" },
 ];

@@ -20,6 +20,7 @@ describe("public visual page transitions", () => {
       "/about",
       "/tracks",
       "/events",
+      "/store",
       "/community/person",
       "/events/workshop",
       "/pages/club",

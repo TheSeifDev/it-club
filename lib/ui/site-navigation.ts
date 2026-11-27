@@ -5,6 +5,7 @@ export const SITE_NAV_LINKS = [
   { href: "/community", label: "Community", arabic: "المجتمع" },
   { href: "/tracks", label: "Tracks", arabic: "المسارات" },
   { href: "/events", label: "Events", arabic: "الفعاليات" },
+  { href: "/store", label: "Store", arabic: "المتجر" },
   { href: "/sponsors", label: "Partners", arabic: "الشركاء" },
 ] as const;
 

@@ -89,6 +89,10 @@
       "title": "sponsors"
     },
     {
+      "path": "/store",
+      "title": "IT Club Store"
+    },
+    {
       "path": "/student",
       "title": "student"
     },

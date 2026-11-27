@@ -94,3 +94,261 @@
 ## دليل المراجعة السادسة
 
 نجح تراكب GSAP فعليًا في Preview على desktop: pin أعلى96px، واللوح التالي يصعد فوق السابق، والعداد/progress يتبعان scroll. فهرس `#it` وdirect fragment `#rnd` تنقلا إلى اللوحين 05 و06، وسهم Down حرك 05→06 مع بقاء الفوكس. لا timeline منافسة على سطح desktop؛ وcompact/reduced-motion/no-JS يظل تدفقًا طبيعيًا. نجح build وTypeScript وESLint و29/29 pure tests. لم يحدث تعديل CMS/API/Auth أو قاعدة بيانات أو نشر.
+
+## المرجع المعتمد النهائي — 27 نوفمبر 2026
+
+- [x] **Home مثل الصورة في التكوين والترتيب عدا المحتوى والألوان.** Hero + About مركزي + feature Tracks كبيرة وبطاقتين صغيرتين + split Events + بطاقات Community + CTA مركزي + Footer داكن؛ لا الاحتفاظ بالشكل القديم على أنه التصميم المعتمد، ولا شهادات أو إحصاءات أو أحداث أو مسؤوليات فردية مختلقة.
+- [x] **عرض رئيسي واحد full-width.** لا غلاف رمادي خارجي وأبيض داخلي، ولا max-width container يحصر الصفحة؛ gutter متجاوب واحد مع مسطحات ممتدة وحواف بسيطة وتنسيق صحيح desktop/mobile.
+- [x] **Hero فيديو وليس صورة.** MP4 حقيقي أصلي تقني abstract، poster للحالات المتوقفة، inline/muted/loop، accessible pause/play وتوقف في reduced-motion وخارج الشاشة، ونص/تنقل مقروء فوقه. لا خلطه مع صور البطاقة الثابتة.
+- [x] **كل موضع صورة آخر أيقونة على bg رمادي.** Home والصفحات العامة تقتبس مواضع media المرجع لكن تعرض رموزًا بدل صور؛ أسماء الأشخاص وأدوارهم والبيانات المنشورة موجودة، شعار النادي الفعلي يبقى شعارًا لا صورة بديلة.
+- [x] **إعادة تصميم frontend العام كاملًا بنفس الهوية.** Header/Footer والـHome وCommunity/Profiles وTracks وEvents/detail وSponsors/Alumni/Contact/custom pages/legal متناسقة في palette/type/gutter/radius/icon surfaces، بلا المساس بـAdmin/Interview/Student/Auth/backend أو نشر/كتابة إنتاجية.
+- [x] **GSAP وGSAP Scroll فعلية ذات غرض.** Hero mask/parallax، About symbol drift، carousel controls فعالة لجميع tracks، lifts/staggers أثناء scroll وCTA choreography، مع cleanup وreduced-motion، وanchors/keyboard وتدفق مقروء بلا JavaScript.
+- [x] **مراجعة التكامل المستقلة وتسليم نسخة محفوظة.** read-only validation ضد الخطة/TODO وربط مكونات الواجهة، type/lint/build/pure tests المناسبة، checkpoint Preview وتحديث فرع العمل الحالي دون نشر إنتاجي.
+
+## دليل المرجع النهائي
+
+أغلقت عيوب المراجعة المستقلة: غلاف Events/detail، نشر أعضاء fallback المسودة، غياب بقية المسارات من SSR، main المتداخل، ودلالات زر الفيديو/تغيير reduced-motion. الهوية العامة full-width واحدة، والفيديو MP4 حقيقي402,977bytes، وباقي مواضع الصور أيقونات على رمادي. فحص الهاتف390×844 أكد ظهور عنوان Hero وسلامة مقدمة Events/Partners/Alumni بعد تصحيح مسافة Header، وكذلك Community/Tracks/Contact/Privacy/Terms/Register. صفحة التسجيل اتبعت نفس الهوية وأزالت موعد أكتوبر2026 القديم مع بقاء state/validation/handlers/payload و`/api/register` كما هي.
+
+نجح TypeScript وESLint دون أخطاء (تحذير advisory واحد من صيغة logo config الموجودة)، و29/29 pure tests وproduction build و`git diff --check` بعد آخر التعديلات. Home HTML يحتوي المحتوى والروابط، و`/manus-routes.json` JSON29routes والفيديو والصفحات العامة أعادت200. تفاصيل الدليل وحدوده في `docs/editorial-validation.md`.
+
+اكتمال الواجهة لا يعني اعتماد مسؤوليات الأعضاء أو تفعيل Supabase/RLS/CRUD وتدفقات الحسابات؛ تلك البنود السابقة تظل مفتوحة، ويظهر empty state صادق حتى نشر محتوى معتمد. لا migrations أو اختبار إرسال تطبيق/تواصل أو كتابة قاعدة بيانات. تحفظ نسخة المعاينة على المستودع Manus-managed المتصل بهذا المشروع مع `auto_publish:false`، وتزامن ملفات إعادة التصميم المطابقة على فرع GitHub القائم `refactor/club-main-site-20261118` فقط. لا دفع إلى `main` في GitHub أو نشر إنتاجي.
+
+## تعديل الحركة والهوية الداكنة — طلب المستخدم 27 نوفمبر 2026
+
+- [x] **استبدال الإحساس الفاتح بهوية full dark + glassmorphism.** الموقع العام كله، بما فيه Header/Footer وHome وCommunity/Profiles وTracks وEvents/Partners/Alumni/Contact/custom/legal/Register، يستخدم طبقات داكنة متناسقة وأسطح glass بشفافية/blur وحدود هادئة ولمسات Logo Teal. يبقى عرض full-width والمحتوى المنشور وألوان tracks الأصلية؛ لا تُمس Admin/Interview/Student/Auth/APIs أو بياناتها.
+- [x] **GSAP Awwwards واضحة فعلًا بالتمرير.** لا تظل الحركة محصورة في drift أو reveal صغير؛ عناصر ومشاهد تظهر وتتحرك ثم تخف/تختفي مع تقدم التمرير، وScrollTrigger/ scrub فعلي قابل للعكس، مع دخول عناوين مقنّع، تتابع stagger للأيقونات/الزجاج، وحركة ذات فرق مرئي على desktop والهاتف.
+- [x] **فقرة About تُملأ كلماتها وتظهر الأيقونات inline.** يبدأ نص الفقرة الكبيرة muted-gray ثم تتحول كلماته إلى cool-white/teal تدريجيًا مع progress التمرير؛ وتظهر code/book icon chips وكبسولة BATU الزجاجية بين الكلمات بتتابع scale/opacity وعمق 3D. النص النهائي مقروء في HTML وبدون JavaScript، والحركة تنظف وتُعكس عند التمرير للأعلى، وتُحترم `prefers-reduced-motion`.
+
+### دليل الهوية الداكنة والحركة — 27 نوفمبر 2026
+
+Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`، تتقدم حتى `100%` وتتراجع إلى `0%` عند الرجوع؛ الكبسولات الثلاث دخلت بالتتابع واختفت عكسيًا. على viewport حي `390×844` بقي pin مؤهلًا false، ولم يظهر overflow أفقي، وملء الكلمات/الكبسولات استجاب للتمرير صعودًا ونزولًا. أرقام المسارات وعناوينها على glass تستخدم accent path المضيء بينما نص الفلاتر فوق اللون المحتشد يبقى `track-ink` الداكن. Next/Previous Carousel وفيديو Hero pause/play عملا في DOM الحي. نجحت TypeScript وESLint بلا أخطاء (تحذير app.config.ts الموجود)، 29/29 pure tests، production build و`git diff --check`. اختبارات reduced-motion مقروءة من التنفيذ وليست محاكاة جهاز حية.
+
+## Tailwind والسلاسة والأصول — طلب المستخدم 27 نوفمبر 2026، الساعة 16:02
+
+- [x] **CSS لازم يتعمل Tailwind.** تنسيقات الواجهة العامة المعروضة تستخدم Tailwind v4 utilities بدل CSS Modules وطبقات layout/styles القديمة؛ لا مجرد نقل CSS إلى `@apply`. الثيم الداكن والـglassmorphism والـtracks والأبعاد والوظائف محفوظة، وCSS المتبقي محصور في tokens وضرورات native محدودة.
+- [ ] **الموقع يكون smooth ومشكلة lag تتعالج.** مراجعة وتقليل مؤثرات scroll المكلفة والتهيئة المكررة مع الحفاظ على GSAP/ScrollTrigger وAbout fill والإظهار/الإخفاء القابل للعكس، وعدم تقديم screenshot كدليل FPS أو ضمان كل الأجهزة.
+- [x] **الصور والفيديو الموجودون مضغوطون دون خسارة الجودة.** قياس وتحسين lossless فقط إذا صار الأصل أصغر وتأكد تطابق البكسلات/streams؛ لا حذف أو downscale أو ترميز ضائع تحت اسم lossless. توضيح الأصول المضغوطة مسبقًا وحدود التحسين.
+- [x] **اختيار فيديو16 ثانية أم64frames للمستقبل فقط.** تقديم التوصية حسب autoplay مقابل scroll sequence، وعدم توليد أو بناء أي من الخيارين الآن لأن المستخدم سيجهزهما لاحقًا.
+
+### إثبات الجولة — 27 نوفمبر 2026
+
+- نُقلت تنسيقات الواجهة العامة النشطة إلى Tailwind v4 utilities؛ `app/globals.css` أصبح99 سطرًا و`public-theme.css` يحوي tokens فقط. حُذفت CSS Modules الخاصة بالمكونات النشطة؛ تبقى بعض وحدات قديمة فقط في components غير مستوردة من المسارات العامة الحالية.
+- تغيّرت GSAP reveals المستهدفة من `filter:blur()` و`clip-path` إلى `transform` و`opacity`. القياس الحي المتكرر يرى p95≈16.9ms بلا Long Tasks في آخر عينة، لكن أعداد الفجوات فوق33.4ms تذبذبت1/3/0؛ لذلك لا يُغلق بند smoothness كحل مثبت على أجهزة المستخدم.
+- تقرير `docs/media-optimization.json` يغطي82 ملف PNG/WebP/MP4: تحسّن22 ملفًا بـlossless بعد تطابق pixels/frames، ووفر147,268 بايتًا، بلا أخطاء. حُفظت النسخ الأصلية المعدّلة خارج `public`؛60 أصلًا بقيت كما هي لعدم وجود مرشح أصغر. الفيديو الحالي لم يتغير. بقي ملفا JPG غير مستخدمين في المسارات العامة الحالية وfavicon ICO كما هما لتجنب إعادة ترميز غير مثبتة كـlossless.
+- لا فيديو16ثانية ولا مجموعة64frame أُنشئت. أولوية MP4/WebM للتشغيل الزمني أو loop؛ sequence فقط عند الحاجة إلى frame-accurate scroll scrubbing.64frame في16ثانية تعادل4fps عند التشغيل الخطي فقط، وليس عند ربطها بالتمرير.
+
+## تحسين About من المرجع المرئي — طلب المستخدم 27 نوفمبر 2026، الساعة16:38
+
+- [x] **نص About يبدأ من دون فراغات تشغلها الكبسولات ثم يفتحها مع السكرول.** تتحرك الكلمات بصريًا لإغلاق أماكن الأيقونات وكبسولة BATU وكأنها غير موجودة في البداية، ثم تفتح الفراغات بالتتابع مع ظهور كل عنصر في موضعه؛ يبقى كل سطر في عضويته وترتيبه ولا تهبط الكلمات أو تتداخل بين السطور، يستمر color fill، وتنعكس الحركة عند الرجوع، من دون ضغط رأسي عام للنص. يظل SSR و`prefers-reduced-motion` مقروءَين.
+- [x] **عناصر About لها عمق 3D ظاهر وخفيف من دون بلاطة متداخلة.** الكبسولات المضمنة والخاتمة تدخل بعمق منظور وrotationX/rotationY/Z باستخدام GSAP وCSS 3D الموجودين بدل إضافة WebGL ثقيل أو مكتبة جديدة؛ لا توجد بلاطة CPU مربعة تتداخل مع الفقرة، والحركة مقتصدة وتعتمد `transform`/`opacity`.
+
+### دليل فتح المسافات والعمق — 27 نوفمبر 2026
+
+في Preview حي عند `1280×1100`، بدأت حالة About المغلقة عند `scrollY=771`: الكلمات الـ38 كلها fill عند `0%` والكبسولات الثلاث opacity0، ولا فراغات العناصر ظاهرة لأن الكلمات انتقلت إلى مواضع نسخة مخفية انهارت فيها الشرائح. عند `1331` كانت20 كلمة مكتملة و18 رمادية، وأول كبسولتين ظاهرتين والثالثة opacity≈0.63؛ عند `1790` اكتمل fill للكلمات الـ38 وظهرت كل العناصر. الرجوع إلى771 أعاد كل الكلمات والكبسولات والبلاطة والخاتمة لحالة البداية. البلاطة والكبسولات والخاتمة أعادت `matrix3d` ولم يظهر overflow أو خروج كلمات عن viewport.
+
+على viewport حي فعلي `390×844` داخل iframe same-origin، لم يتفعّل pin (`false`): عند `scrollY=293` كانت38 كلمة عند0% والكبسولات مخفية؛ عند489 كانت20 كلمة ممتلئة و18 رمادية وظهر أول عنصرين؛ عند651 اكتمل fill وظهرت العناصر الثلاثة. الرجوع إلى293 أعاد حالة البداية. لم تظهر كلمات خارج الشاشة أو زيادة عرض أفقية (`scrollWidth-innerWidth=-10`)، وظهرت مصفوفات `matrix3d` للعناصر. جُرّب تغيير iframe من عرض390 إلى800px ثم الرجوع؛ تغير عرض h2 من340 إلى662px، وتغيرت إزاحة الكلمة المقاسة، ثم رجعت القيمة ذاتها بعد العودة390px. `ResizeObserver` مؤجل بـ160ms يعيد قياس حالات التفاف الكلمات عند تغير عرض عنوان About، كما تعيد نقاط matchMedia الملائمة التهيئة النظيفة. النسخ المؤقتة تقاس عند التهيئة فقط؛ لا تتحرك خصائص layout أثناء scroll. نجحت TypeScript وESLint (تحذير `app.config.ts` السابق فقط) و29/29 pure tests وproduction build و`git diff --check`. سلوك reduced-motion/SSR تم التحقق منه من CSS والسياق المصدر لا عبر محاكاة تفضيل live.
+
+
+### تحديث التحقق بعد إزالة بلاطة About — 27 نوفمبر 2026
+
+- حُذفت بلاطة CPU المربعة من markup وGSAP؛ بقيت كبسولات Code/BATU/Book والخاتمة و3D، واختُصر الفراغ العلوي الذي كانت البلاطة تشغله.
+- تأكدت حالات About على desktop `1280×1100` والهاتف `390×844`: الكلمات والكبسولات تنتقل من الإغلاق إلى الظهور ثم تعود عند الرجوع، بلا بلاطة أو overflow أفقي. تحسين الكبسولات يستخدم تدرجًا وحافة وظلًا ساكنة بلا backdrop blur جديد.
+- خُفّض عمل scroll المؤكد: العنوان داخل `[data-reveal]` لم يعد يأخذ ScrollTrigger ثانيًا، وشريط Tracks لا يكتب `aria-valuenow` إلا عند تغير النسبة الصحيحة؛ سجل التحقق يتضمن قياسات Preview.
+- **السلاسة العامة ما زالت غير مغلقة:** عينة Home القصيرة على Preview تذبذبت (p95 `33.6ms` و10 فجوات فوق`33.4ms` من120 إطارًا، دون Long Tasks جديدة)، بينما عينة Tracks كانت أهدأ. لا تكفي هذه العينات لإثبات تحسن سببي أو ضمان أجهزة أخرى؛ حافظنا على ملء الكلمات المطلوب وعلى بند الأداء مفتوحًا لحين trace ممثل للأجهزة.
+- نجحت TypeScript وESLint (0 errors، تحذير `app.config.ts` السابق فقط) و29/29 pure tests وproduction build و`git diff --check`. تم التأكد من أن `auto_publish:false` ولم يحدث نشر إنتاجي.
+
+### تأكيد ترتيب الأسطر وإبطاء الحركة — 27 نوفمبر 2026
+
+- قياس DOM بعد reload نظيف يثبت 5 أسطر على desktop `1280×1100` و10 أسطر على الهاتف `390×844`. ظل ترتيب الكلمات أفقيًا بلا أي تداخل عند الإغلاق والمنتصف وقرب النهاية، وعاد كما كان عند الرجوع؛ أقصى Y transform للكلمات `0px` في كل حالة.
+- مدى التمرير في Desktop صار `1540px` (`1.4 × 1100`) مع `scrub:0.85` بدل نحو `1012px` (`0.92 × 1100`) و`0.55` سابقًا. الهاتف يستخدم مدى مقاسًا `740px`؛ الكبسولات تدخل تباعًا وتختفي عكسيًا، و`scrollWidth-innerWidth=-10` لا يدل على overflow.
+- هذا يثبت معالجة سلوك About وترتيب السطور فقط؛ بند السلاسة العامة يظل مفتوحًا حتى وجود trace ممثل للأجهزة، ولا يوجد ادعاء FPS أو ضمان عام.
+
+## شريط جانبي مقسّم للسكرول — طلب المستخدم 27 نوفمبر 2026
+
+- [x] **Side scroll bar مقسّم حسب أقسام Home ويتابع الحركة.** أجزاء واضحة لـHome/About/Tracks/Events/Community/Find your place؛ حد رمادي، والقسم الذي يصل له المستخدم يصبح opacity100%، ويتابع fill تقدمه مع التمرير والعكس. يتيح الضغط والفوكس والتنقل المباشر إلى القسم، من دون تعطيل native scroll أو تغيير حركة About البطيئة وثبات سطورها. متجاوب على الهاتف ويدعم reduced-motion وروابط anchors بلا JavaScript؛ لا تغيير Admin/Interview/Student/Auth/APIs أو بيانات، ولا نشر إنتاجي.
+
+
+### دليل side rail — 27 نوفمبر 2026
+
+- Desktop Preview `1280×1100`: الروابط الستة تحدد Home/About/Tracks/Events/Community/Find your place. الحدود المحسوبة لكل القطع `rgb(146, 152, 160)` و`opacity:1`. نقرة About وصلت إلى موضع pin `top=106px`؛ بعد تمرير700px أظهر rail تقدم About عند46%، ثم عاد Home إلى `scrollY=0` وأعاد التقدم للصفر. نقرت Tracks وEvents وCommunity وFind your place وHome كلٌّ وصل إلى الsection الصحيحة وأبقى `aria-current` متزامنًا.
+- Mobile Preview داخل iframe same-origin `390×844`: ظهر rail بعرض24px وارتفاع264px في منتصف اليمين، بلا overflow أفقي. computed border بقي `rgb(146, 152, 160)` و`opacity:1`. اختُبرت نقرة About وCommunity وFind your place والعودة إلى Home؛ الأهداف وصلت إلى `top=104px` أو `0px` لـHome، وتغيرت حالة active/fill مع التمرير.
+- Native hash navigation: Events وCommunity وFind your place وصلت إلى `top=88px` عبر `scroll-margin-top:88px`؛ Home بقي عند أعلى الصفحة. `prefers-reduced-motion` مضبوط بوسيلة Tailwind على الجذر للـnative/no-JS، وتنقل JavaScript يستخدم `instant` عند تفعيله. لم تُحاكَ media preference حيًا.
+- فحوص الإغلاق بعد تعديل reduced-motion والـnative offsets: TypeScript مرّ، ESLint بلا أخطاء (تحذير `app.config.ts` السابق فقط)، pure tests `29/29`، production build ناجح على Next.js16.3.8، و`git diff --check` ناجح. لم يُغيّر مصدر Admin/Interview/Student/Auth/APIs أو بياناتها؛ `auto_publish:false` ولم يُنفذ نشر.
+
+## تصحيح تصور الشريط — حلقة عدسة كاميرا، 27 نوفمبر 2026
+
+- [x] **المستخدم لا يريد نقاط الشريط السابق؛ يريد واجهة مثل حلقة عدسة الكاميرا التي تُلف.** يستبدل الشريط الخطي بحلقة lens/focus معدنية رمادية جانبية ذات تدريج ومؤشر ثابت وست علامات sections. تدور الحلقة مع السكرول والعكس، ويمكن سحب محيطها لتدويرها والتحكم في السكرول، والنقر على علامات الأقسام للتنقل إليها؛ اسم القسم والتقدم واضحان في الوسط. يظل border رماديًا والقسم الجاري كامل الوضوح، ويعمل desktop/mobile والكيبورد/reduced-motion وnative anchors دون JavaScript. لا تغيير حركة About الحالية أو ملفات العمليات/المصادقة/APIs/البيانات؛ يحفظ Preview checkpoint وتزامن فرع GitHub المحدد فقط بدون نشر إنتاجي.
+
+### دليل camera-lens dial — 27 نوفمبر 2026
+
+- Desktop `1280×1100`: عدسة108×108px بحد رمادي `rgb(146, 152, 160)` وعتامة1. النقرة المادية على علامة About غيّرت hash إلى `#about` ووصلت `scrollY=776` مع readout `02 / 06 · ABOUT`. دوران الصفحة وصل إلى69deg بمنتصف About ثم عاد إلى0 عند Home. محاكاة سلسلة pointer بزاوية48deg نقلت الصفحة إلى `scrollY=887` ولفت الحلقة قرابة48deg؛ PageDown تحرك Home→About ومفتاح Home رجّع الصفحة والصفر. Community وFind your place نقلا للهدف الصحيح.
+- Mobile `390×844`: عدسة82×82px، border `rgb(146, 152, 160)`, `opacity:1`، بلا overflow. سلسلة touch-pointer محاكاة بزاوية36deg حرّكت الصفحة إلى `scrollY=562` وأدارت الحلقة35.97deg؛ marker Community وصل للهدف عند104px وHome أعاد scroll/rotation إلى0. هذه سلسلة أحداث synthetic وليست ادعاء اختبار سحب على جهاز مادي.
+- HTML SSR يحتوي ستة hrefs قابلة للنقر بزوايا منفصلة `0,-60,-120,-180,-240,-300deg`؛ بعد hydration تقاس بدقة حسب مواضع الأقسام، وزر فقد pointer capture ينظف السحب.
+- Final QA بعد تعديل قرص العدسة: TypeScript مرّ، ESLint بلا أخطاء مع تحذير `app.config.ts` الموجود مسبقًا، pure tests `29/29`، production build على Next.js16.3.8 نجح، و`git diff --check` نجح. لا DB/API writes أو نشر خلال الاختبار.
+
+## تصحيح نهائي من الصور المرفقة — 27 نوفمبر 2026، الساعة19:10
+
+المرجع الجديد يلغي تصور القرص والعدسة في الجولة السابقة؛ المطلوب شريط رأسي مسطح مثل الصور، لا دوران ولا واجهة ميكانيكية.
+
+- [x] **شريط أقسام مطابق لطريقة الصور المرفقة.** علامات أفقية قصيرة رمادية مصطفة رأسيًا على يمين الشاشة بتباعد منتظم؛ العلامة النشطة أطول باللون الأحمر ويظهر اسم القسم بالإنجليزية uppercase إلى يسارها، دون دائرة أو عدسة أو أرقام أو نسبة أو خلفية/إطار/ظل. يتغير الموضع النشط مع الأقسام صعودًا ونزولًا، والنقر والكيبورد ينقلان إلى Home/About/Tracks/Events/Community/Find your place. التنفيذ Tailwind ومتجاوب ويحتفظ بروابط HTML وتقليل الحركة وAbout الحالية؛ لا تعديلات عمليات/Auth/APIs/بيانات ولا نشر. يحفظ checkpoint Manus وتزامن فرع GitHub `refactor/club-main-site-20261118` فقط دون لمس GitHub `main`.
+
+### دليل المرجع النهائي للشريط — 27 نوفمبر 2026
+
+- Desktop Preview `1280×1100`: حاوية الشريط36×240px؛ الروابط الستة Home/About/Tracks/Events/Community/Find your place. العلامات غير النشطة طولها12px ولونها `rgb(96, 96, 96)`؛ النشطة32px ولونها `rgb(255, 57, 48)` والاسم uppercase بعتامة1. التمرير إلى `y=900` فعّل About؛ تفعيل Events وضع active على `home-events` ونقل إلى `y=3748`؛ تفعيل Home أعاد `scrollY=0`. لا يوجد DOM لعدسة الكاميرا ولا overflow أفقي.
+- Mobile Preview `390×844`: الشريط36×240px وبلا overflow. التفعيل وصل About عند `y=740` وCommunity عند `y=3454` وHome عند0، مع active marker الصحيح. عند عرض320px بقي الشريط داخل حافة الشاشة ومن دون overflow. احتُفظ بستة روابط `href` فعلية وfocus styles؛ التنقل بالكيبورد متاح دلاليًا من الرابط الأصلي ولم يُختبر بلوحة مفاتيح جهاز فعلية.
+- فحوص ما بعد تعديل المكون: TypeScript مرّ؛ ESLint بلا أخطاء مع تحذير `app.config.ts` القائم؛ `29/29` pure tests؛ production build Next.js16.3.8؛ `git diff --check` نجح. النشر التلقائي مغلق، ولا تغييرات بيانات أو APIs.
+
+## لون شريط الأقسام — 27 نوفمبر 2026، الساعة19:23
+
+- [x] **العلامة النشطة تستخدم لون الموقع لا أحمر الصورة المرجعية.** استبدال الأحمر بمتغير Logo Teal المعتمد `--site-sky`، مع بقاء الشرطات الرمادية واسم القسم الأبيض والمقاسات وحركة التنقل كما هي. لا نشر ولا تغييرات بيانات؛ حفظ checkpoint ومزامنة فرع GitHub المحدد فقط.
+
+### دليل تصحيح اللون
+
+- استُخدم token الموقع نفسه `--site-sky` (`#28cdb7`)، وPreview حسب العلامة النشطة `rgb(40, 205, 183)` بعرض32px وارتفاع2px؛ العلامات الخمس غير النشطة بقيت `rgb(96, 96, 96)` بعرض12px. لا أثر لكلاس الأحمر، والروابط الستة والسلوك محفوظان. TypeScript وESLint المركّز والبناء الإنتاجي و`git diff --check` نجحت؛ لا نشر أو تغييرات بيانات.
+
+## Navbar وpage transition — طلب المستخدم 27 نوفمبر 2026، الساعة19:29
+
+- [x] **تحسين Navbar مع hover fill white دائري خفيف من تحت لفوق.** الحفاظ على الروابط والـmobile menu واللغة، مع ملء أبيض بصري مقوّس يصعد من أسفل link وكلام داكن مقروء عند hover/focus، وأبعاد ومحاذاة متوازنة. التنفيذ Tailwind وحركة transform خفيفة مع reduced-motion؛ لا background blur جديد عند السكرول.
+- [x] **عند تبديل الصفحات انتقال بلاطات هندسية من فوق لتحت بألوان الموقع أو Matrix.** الاختيار الحالي بلاطات هندسية مستوحاة من الصور المرفقة مع ألوان Logo Teal/درجات الموقع الداكنة لا الأحمر، تغطي الصفحة القديمة ثم تكشف الجديدة بالتتابع الرأسي. يعمل مع روابط الصفحات العامة، بدون تعطيل anchors داخل الصفحة أو روابط خارجية/new-tab/download أو Admin/Interview/Student/Auth/APIs، مع cleanup وreduced-motion وحماية من overlay عالقة وفشل التنقل. لا نشر أو تغييرات بيانات؛ checkpoint Manus وفرع GitHub refactor فقط.
+
+### دليل التنفيذ والتحقق
+
+- Hover Preview على سطح مكتب `1280×1100`: الرابط 47px ارتفاعًا؛ المؤشر فوق Tracks أظهر fill أبيض `rgb(255,255,255)` ونصًا داكنًا `rgb(5,7,10)`. حُفظت الروابط الدلالية وactive state وقفل mobile menu/focus trap، وأزيل تبدل لون header المرتبط بالسكرول. لم يُختبر هذا التغيير على جهاز موبايل فعلي.
+- تنقل فعلي Home→Tracks في Preview: `cover` بالبلاطات لمدة نحو600ms ثم `hold`، وعند تحديث المسار بدأ `reveal`؛ عاد الـoverlay إلى `idle/hidden` بعد نحو1.3s، مع154 سداسيًا ممتدة خارج حواف viewport. `history.back()` نفّذ reveal إلى Home ثم أعاد الطبقة `idle/hidden`؛ رابط About إلى `/#about` غيّر hash والتمرير مع بقاء transition مخفيًا.
+- `npm run test:pure`: 29/29؛ اختبارات transition الجديدة والمنفصلة: 5 حالات إضافية. `npx tsc --noEmit` وESLint للملفات المتغيرة و`git diff --check` مرّت؛ `npm run build` أنتج مسارات Next.js16.3.8 بنجاح. اختُبرت قواعد الحماية للمسارات المحمية والتعديلات والروابط الخارجية/download/reduced-motion في pure tests؛ لم تُفعّل تفضيلات reduced-motion مباشرة في browser. لا نشر أو تغييرات بيانات/APIs.
+
+
+## Navbar radius, footer chips, and mobile menu background — 27 November 2026, 19:45
+
+- [x] تقليل radius روابط الـdesktop والـmobile navbar عن القيمة الحالية، مع الحفاظ على fill أبيض صاعد والنص الداكن الواضح.
+- [x] تطبيق إحساس nav-pill والملء الأبيض الصاعد على روابط Footer، مع خلفية داكنة وحد رفيع وارتفاع/حجم مناسبين للصورة المرجعية، والإبقاء على زر Back to top بلون Teal.
+- [x] قائمة الموبايل تصبح طبقة full-screen بخلفية site-night صلبة كاملة؛ لا glass أو شفافية أو backdrop blur، مع بقاء الـlogo والـclose button فوق الخلفية وإمكانية تمرير القائمة وإغلاقها والتنقل بلوحة المفاتيح. فحص وإصلاح أي أخطاء ظاهرة في navbar/footer دون تغيير Admin/Interview/Student/Auth/APIs.
+
+### دليل التنفيذ والتحقق
+
+- Desktop nav radius انخفض من12px إلى8px، وحركة الـwhite-rise الأصلية محفوظة. روابط الـFooter بقت pills داكنة صلبة بارتفاع33px، والـBack-to-top بقى33×33px بلون Teal؛ Hover فعلي على Home في الـFooter أعطى نصًا داكنًا `rgb(5,7,10)` فوق fill أبيض. روابط الـNavbar والـFooter عطّلت انتقال pseudo-fill عند reduced-motion.
+- تجربة Preview لقائمة الموبايل على DOM: full viewport `1280×1100`, background `rgb(5,7,10)`, `opacity:1`, `backdrop-filter:none`, radius0؛ ستة روابط، Escape أغلقها واستعاد document overflow. أداة Preview لم تسمح بتغيير viewport إلى875px أو هاتف، لذلك لا أدّعي فحصًا على شاشة هاتف فعلية.
+- `npx tsc --noEmit`, ESLint للمكونين، `npm run test:pure` نجح29/29، و`npm run build` اكتمل بنجاح؛ `git diff --check` نظيف. لا تغييرات بيانات أو APIs.
+
+## متابعة Navbar من المرجعين المرفقين — 27 نوفمبر 2026، الساعة20:02
+
+النص الأخير «ar color ?» و«قلل زود raduis nav links اكتر» غير حاسم؛ التفسير المعلن للمستخدم هو رفع radius روابط desktop من8px إلى12px نحو المرجع، وتوضيح اللون النشط من Logo Teal مع خط أبيض أسفله، والحفاظ على hover fill الأبيض الصاعد. مرجع الموبايل يعني صفوف English نصية بسيطة وفواصل بعد Community وبعد Partners، لا cards أو أيقونات/عناوين ثانوية، فوق الخلفية الداكنة الصلبة المعتمدة.
+
+- [x] روابط desktop برادياس12px، active Teal من tokens الموقع وخط أبيض أسفل الرابط النشط؛ hover/focus ملء أبيض صاعد ونص داكن واضح، مع reduced-motion.
+- [x] قائمة mobile full-screen صلبة بلا glass/blur؛ صفوف About/Community/Tracks/Events/Partners/Contact بسيطة مع فاصلين مطابقين للمرجع، وحفظ close/Escape/focus loop/scroll lock والروابط الحقيقية. محتوى الموقع bilingual خارج هذه القائمة وFooter الحالي دون تغيير.
+- [x] تعديل عام محدود على التنقل؛ لا Admin/Interview/Student/Auth/APIs أو بيانات، لا نشر إنتاجي. حفظ Manus checkpoint وتزامن tree نفسه فقط إلى GitHub `refactor/club-main-site-20261118` دون لمس GitHub `main`.
+
+### دليل متابعة المرجع — 27 نوفمبر 2026، الساعة20:13
+
+في Preview `1280×1100` الرابط النشط Partners بارتفاع47px/radius12px وحد Logo Teal `rgb(82,232,209)` وخط أبيض؛ hover أبيض مع نص `rgb(5,7,10)`. قائمة الموبايل المفتوحة فُحصت بأحداث synthetic في DOM: خلفية `rgb(5,7,10)` بلا backdrop/full viewport، ستة روابط نصية68px وفاصلان1px بلون ink38%، Focus على About وEscape/scroll lock يعملان. لقطة Webdev عند375×812 أكدت محاذاة الـlogo وزر menu وعدم قص أفقي ظاهر في الحالة المقفولة؛ أداة اللقطة لا تفتح القائمة وليست تجربة جهاز مادي. TypeScript وESLint المركّز وpure tests29/29 وبناء Next.js16.3.8 وdiff-check نجحت؛ HTTP200 لـPartners والـmanifest. لا تغييرات تطبيق بعد آخر build.
+
+## تصحيح Navbar حسب طلب20:19–20:20 — 27 نوفمبر 2026
+
+هذا الطلب يلغي الخط الأبيض أسفل active desktop والفواصل البيضاء في mobile التي أضيفت في الجولة السابقة. الروابط desktop تصبح pill بنفس تدوير اللوجو، من دون underline أو border مرئي على الروابط غير النشطة، مع إبقاء active Teal والـwhite-rise hover. قائمة الموبايل تحتفظ بالخلفية الصلبة الكاملة، ويعود subtitle عربي تحت كل رابط مع مسافات موحدة ومريحة بين العنوان والـsubtitle وبين الصفوف.
+
+- [x] إزالة underline والإطارات البيضاء من desktop؛ radius كبسولة مثل اللوجو، وإبقاء تمييز Teal والـhover الأبيض الصاعد.
+- [x] إزالة الفواصل البيضاء في mobile وإضافة subtitle عربي لكل الروابط الستة مع ضبط padding/gap/line-height والحفاظ على close/Escape/focus trap/scroll lock والروابط الحالية.
+- [x] تعديل SiteHeader والتوثيق فقط؛ لا Footer أو مسارات محمية/بيانات، ولا نشر. حفظ Manus checkpoint ومزامنة فرع GitHub refactor المحدد فقط.
+
+## إعادة تصميم Upcoming Events — 27 نوفمبر 2026
+
+إعادة تقديم قسم الأحداث في الصفحة الرئيسية مستوحاة من المراجع المرئية، مع الحفاظ على هوية IT Club الداكنة وTeal. تظل البيانات المنشورة وحدها مصدر الحقيقة؛ لا إنشاء أحداث أو مواعيد أو تفاصيل أو صور غير موجودة.
+
+- [x] عرض الحدث المنشور الأقرب كعنصر Featured واضح، ثم الفعاليات المنشورة التالية في قائمة منظمة؛ إظهار التاريخ/الوقت/المكان/التصنيف والوصف والرابط فقط إذا كانت الحقول موجودة، مع احترام الروابط الآمنة الحالية.
+- [x] استخدام صورة الحدث المعتمدة والآمنة عند وجودها، وإلا تقديم معالجة بصرية بديلة من هوية الموقع من دون صور مخزنة أو عامة توحي بأنها صورة لحدث حقيقي. الحفاظ على حالات عدم وجود أحداث منشورة أو وجود أحداث مؤرشفة/بلا تاريخ من دون إيهام الزائر بوجود موعد مؤكد.
+- [x] تطبيق عرض متجاوب للهاتف وسطح المكتب، مستوحى من تسلسل Featured + event list في المراجع، ومنسجم مع palette الموقع الحالية؛ الحفاظ على التنقل إلى صفحة Events وعلى نطاق Home Events وعدم تغيير صفحات أخرى أو بيانات المحتوى.
+- [x] التحقق من حالات المحتوى الفعلية والموبايل والروابط، ثم TypeScript وESLint المركّز والاختبارات والبناء و`git diff --check`، وتوثيق نتيجة الفحوص. لا نشر للإنتاج؛ الـGitHub branch المستهدف فقط `refactor/club-main-site-20261118` ولا تعديل لـGitHub `main`.
+
+### خلاصة التحقق
+
+- حالة Preview الحقيقية لا تحتوي فعاليات منشورة، لذلك تعرض Empty state صادقة ولا تبتكر تاريخًا أو صورة.
+- فحص عرض البطاقات تم ببيانات QA موسومة داخل iframe مؤقت فقط، ثم حُذفت الملفات والـiframe قبل الـbuild النظيف؛ لا تعديل لـCMS أو قاعدة البيانات.
+- نجحت فحوص TypeScript وESLint المركّز و`npm run test:pure` (35/35) والـproduction build و`git diff --check`.
+
+## Community landing التفاعلية — 27 نوفمبر 2026
+تقديم landing قوية مستوحاة من المرجع المرئي للمستخدم بهوية IT Club الداكنة وLogo Teal، ثم باقي اللجان تحتها. لا إعادة فتح صورة المرجع ولا نسخ palette الأخضر النيون حرفيًا.
+- [x] Hero full-width بتكوين بصري واضح وactive animation تتفاعل بسلاسة مع cursor؛ GSAP للدخول والحركة وprogressive 3D مع fallback مرئي، Tailwind للواجهة، responsive للهاتف وسطح المكتب، reduced-motion وتعليق الحركة خارج الشاشة وتنظيف الموارد عند تغيير الصفحة.
+- [x] عرض اللجان المنشورة تحت الـlanding بترتيب واضح وهوية ألوان كل لجنة، ثم الأشخاص بجانب بعض ودليل البحث والفلاتر والروابط الحقيقية. الحفاظ على English الأساسي واللمسات العربية وحالات المحتوى الفارغة الصادقة.
+- [x] «احنا دلوقتي من غير r&d»: استبعاد R&D من hero واللجان والأعضاء والفلاتر في /community فقط؛ لا حذف أو تعديل سجلات CMS/seed ولا تغيير صفحات أخرى أو نشر المسودات.
+- [x] التحقق من بيانات النشر وresponsive والـcursor والـkeyboard والـreduced-motion والروابط؛ TypeScript وESLint المركّز وpure tests وproduction build وgit diff --check. توثيق الدليل وحفظ Manus checkpoint دون نشر إنتاجي أو تعديل GitHub main؛ مزامنة فرع refactor/club-main-site-20261118 فقط إذا تمت المزامنة.
+
+
+### خلاصة التنفيذ والتحقق
+الـPreview يعرض خمس لجان منشورة وصفر ملفات أعضاء منشورة؛ empty state صادقة. اختبارات الفلاتر والتفاعل أثبتت عدم عرض R&D مع بقاء مصدره دون تعديل، والـcursor وPause والتوقف خارج الشاشة يعملون. نجح TypeScript وESLint المركّز و`npm run test:pure` (39/39) وبناء Next.js16.3.8 و`git diff --check`. صور Preview للـdesktop/mobile ودليل التحقق الكامل في `docs/editorial-validation.md`. لا نشر أو قاعدة بيانات مكتوبة؛ لا مساس بـGitHub `main`.
+
+## انتقال الصفحات ببلوكات hex — 27 نوفمبر 2026
+- [x] استبدال الـshapes الصغيرة بموجة hex blocks كبيرة وواضحة تتوسع شعاعيًا من أعلى المنتصف، تغطي الصفحة ثم تكشف الجديدة بالترتيب؛ حركة مقصودة أبطأ من الـwipe السابق، مع الحفاظ على Logo Teal/Night وتجنب overlay ناعم فقط.
+- [x] عند فتح صفحة عامة جديدة يبدأ عرضها من أعلى الصفحة لا موضع scroll القديم أو أسفلها، قبل انكشاف المحتوى. الحفاظ على روابط الأقسام #hash ومفاتيح النقر المعدلة وروابط المناطق المحمية وreduced-motion والتنقل native للتاريخ.
+- [x] تحقق من النقر الحقيقي `Tracks → Community` وتسلسل `cover → hold → reveal → idle`، حجم الشبكة responsive، TypeScript وESLint و53 اختبارًا وproduction build و`git diff --check`. لا نشر أو تعديل GitHub main.
+- [x] حفظ Manus checkpoint بتحميل commit `28ff326e76485fa115a9bf14c5f7511317884997` إلى `origin/main`؛ مزامنة GitHub اختيارية وتقتصر على `refactor/club-main-site-20261118` فقط.
+
+### خلاصة التنفيذ والتحقق
+اختبار Preview حي بعد التعديل وصل من `Tracks` إلى `Community`، ومرّت الحالة بـ`cover`, `hold`, `reveal`, ثم `idle` من دون تقليل الحركة؛ شوهدت 374 خلية hex في الموجة واكتمل الانتقال خلال `2.6s`. نصف قطر الأساس للخلايا يتغير مع المقاس (24–72px)، مع تداخل بصري قدره `0.75px` لمنع الفواصل؛ وتثبت اختبارات `transitionHoneycomb` التغطية والـstagger الشعاعي من أعلى المنتصف. نجح `npm run test:pure` ‏53/53 وTypeScript وESLint المركّز و`npm run build` و`git diff --check`. لا نشر إنتاجي أو تعديل GitHub main.
+
+
+## صفحة Store للفست وID card + lanyard — 27 نوفمبر 2026
+- [x] صفحة عامة premium لطلبة IT Club لعرض الفست المرفق من أمام وخلف، واستخدام صور الفعاليات الأصلية من دون تبديل الهوية أو إزالة/تغيير شعاراتها، وترتبط بالتنقل العام والـfooter والـpage transition. English أساسي مع لمسات عربي ونفس Night/Logo Teal وfull-width/Tailwind/responsive.
+- [x] ID card عليها logo IT Club ومعها lanyard رغم عدم وصول صورتها النهائية. تقديم 3D تفاعلي مع cursor/drag ودخول/سكرول GSAP غني وmockup label صادقة، وfallback/pause/reduced-motion وتعليق خارج الشاشة وتنظيف الموارد. لا تُقدّم mockup كصورة المنتج النهائي أو credential معتمد.
+- [x] kit builder فعلي لحزمة Vest + ID + lanyard بسعر 250 EGP كما أكد المستخدم، وخيار ID + lanyard فقط للي دفع قبل كده أو Main Board. يتيح الكميات وsize preference والملخص؛ لا يخترع سعر ID-only أو توفر مقاسات/مخزون/دفع/استلام. يظهر طلب التواصل للاستفسار غير مؤكد بوضوح؛ لا ادعاء بإتمام طلب أو دفع ولا fake checkout.
+- [x] مراجعة مستقلة read-only للتكامل/الشروط، اختبارات catalog/order/helpers وTypeScript/ESLint/build/diff-check والتحقق من الصور والروابط وlayout/interaction ذات العيوب المعينة. توثيق الدليل؛ لا نشر أو كتابة بيانات أو تعديل GitHub main.
+- [x] حفظ Manus checkpoint على `origin/main` بعد جلب أحدث نسخة وفحصها؛ إن حصلت مزامنة GitHub لاحقًا فتكون على `refactor/club-main-site-20261118` فقط، لا GitHub `main`.
+
+### دليل Store
+
+- حمّلت الصور الثلاثة مباشرة من Stable `/manus-storage/...` في Preview: صورة المنتج `841×560` وكل صورة فعالية `1280×720`. استُخدمت النسخ lossless المرفوعة كما هي، وظهرت صورة الأمام/الخلف وصورتا الاستخدام الأصليتان؛ bypass optimizer المحلي ضروري لهذا المسار.
+- حمّل badge مشهد Three.js lazy عند وصوله للـviewport؛ renderer وصل `webgl` وcanvas إلى نحو `490×613`، وأظهرت المراجعة البصرية لوجو النادي بعد إضافة UVs إلى سطح texture المخصص. زر Pause والتدوير وإعادة الضبط عملوا. الـfallback موجود، والـ3D يوقف الرسم خارج الشاشة/عند تغيير التبويب، ويستجيب كود الصفحة لتغيّر تفضيل reduced-motion. عند الهاتف تتدفق صور الفعاليات رأسيًا بلا pin desktop.
+- تفاعليًا: الفست وحده احتسب `EGP 250`؛ وعند إضافة ID-only بلا أهلية صار زر الطلب بلا `href` ويعرض توجيهًا لاختيار Already paid أو Main Board. بعد الاختيار جهّز `mailto:` بمبلغ ID-only المؤجل للتأكيد؛ لم يُضغط الرابط أو يُرسل بريد. عادت الكميات لصفر بعد الاختبار.
+- نجحت `npm run test:pure` ‏53/53، و`npx tsc --noEmit` وESLint المركز و`npm run build` و`git diff --check`. أعاد `/store` و`/sitemap.xml` و`/manus-routes.json` حالة 200، ويتضمن الـmanifest 30 مسارًا مع `/store`. لا Checkout أو دفع أو مخزون/مقاسات أو استلام مؤكد؛ سعر ID-only ما زال غير معلوم. لا كتابة قاعدة بيانات أو نشر إنتاجي.
+## Awwwards pass — Home أولًا — 27 نوفمبر 2026
+- [x] مرجع Attio Offsite: عنوان "IT [film tile] Club" في sticky stage بارتفاع 250svh؛ الفيلم يُقص بـclip-path على البلاطة ويتوسع full-bleed مع السكرول، وكلمتا IT/Club تتباعدان، ثم يظهر "Curiosity deserves a community.". سطور دوّارة Learn by doing / Build together / Share forward، وmeta (Borg Al Arab) و(BATU — السنة). fallback بلا JS/reduced-motion: فيلم full-bleed ثابت مقروء.
+- [x] Lenis smooth scroll داخل SiteFrame فقط مربوط بـgsap.ticker وScrollTrigger.update، ومعطل مع reduced-motion؛ PublicPageTransition وHomeScrollRail يستخدمان Lenis عند وجوده.
+- [x] Preloader مرة لكل session على "/" فقط (عداد 000→100 وwordmark وستارة)، inline boot script قبل الرسم، مخفي افتراضيًا ومع reduced-motion، وتايمر أمان يزيله لو JS ما وصلش. دخول الـhero يستنى انتهاءه.
+- [x] SiteCursor (dot + ring بـmix-blend-difference وlabels عبر `data-cursor`) للـfine pointer فقط.
+- [x] إزالة الأيقونات الزخرفية: About chips بقت mini film وشعار وBATU، seal نصي دوّار حول اللوجو؛ فصول رومانية I–V؛ Tracks panels أفقية مثبتة على desktop وsnap native على الموبايل بأكواد typographic وألوان الـtracks؛ Events بـlabels نصية و↗ وfallback تيبوغرافي؛ Community بـmonogram initials؛ finale marquee "Find your people" وlogo tile؛ notice؛ الهيدر والفوتر (Menu/X الوظيفية فقط باقية).
+- [x] Stats بأرقام حقيقية منشورة فقط (count-up، الصفر مخفي). Sessions manifest فارغ في `lib/ui/session-gallery.ts`؛ القسم والـrail يظهرا فقط لما تتضاف صور حقيقية.
+- [x] فحص Playwright للـPreview على 1440×900 و390×844 وreduced-motion بلا pageerror؛ `npm run test:pure` ‏53/53، tsc، ESLint، `npm run build`، `git diff --check`. لا نشر إنتاجي ولا تعديل GitHub main.
+- [x] تعميم الأسلوب على باقي الصفحات (انظر القسم التالي).
+- [ ] لاحقًا: إضافة صور جلسات اللجان عند وصولها.
+
+## Awwwards pass — باقي الصفحات بلا أيقونات — 28 نوفمبر 2026
+- [x] إزالة lucide من كل الصفحات العامة (Tracks، Community، Alumni، Sponsors، Events، Store/ID badge، Contact، Register، CMS pages، Header). البديل تيبوغرافي: أسهم ↗ ↓ ← → نصية، أكواد الـtracks بخط مفرّغ بلون كل track، initials مشتركة من `lib/ui/initials.ts` للـPortrait وProfileDetail وكروت الأعضاء والـalumni، أسماء الشركاء كـwordmark، شعار النادي في tiles الختام، و`DateMark` (يوم مفرّغ + شهر/سنة أو "Soon.") بدل أيقونات التقويم/التذكرة.
+- [x] أزرار التحكم (Pause/Play، تدوير الـbadge، الكمية، select، spinner) بقت نصية/نقطة نابضة/CSS spinner مع نفس aria labels؛ زر القائمة على الموبايل خطّان يتحولان X.
+- [x] مشاهد Tracks المكدسة بقت بخلفية معتمة تحت الـglass عشان المشهد الداخل يغطي اللي تحته بالكامل بدل تداخل النصوص.
+- [x] حذف مكونات ميتة غير مستخدمة (ClubPractice وSkillsMarquee وTrackShowcase وملفات CSS modules بتاعتها).
+- [x] tsc، ESLint، `npm run test:pure` ‏53/53، `npm run build`، Playwright لـ/tracks و/community و/sponsors و/store و/events و/alumni و/contact و/register على desktop وmobile بلا pageerror. لا نشر إنتاجي.
+
+## إعادة تصميم حقيقية للصفحات الداخلية (Attio Offsite direction) — 28 نوفمبر 2026
+
+- [x] محرك حركة مشترك `src/components/site/motion/editorial-pages.ts` (kinetic titles، velocity marquees، clip reveals، sticky stacks، fill text، printed photos قابلة للسحب بـDraggable + Inertia) وبيشتغل بس جوه `[data-editorial-page]` ومع `prefers-reduced-motion: no-preference`.
+- [x] Kit مشترك `src/components/site/editorial/` (kit، HoverIndex، CodeCycle، Prints).
+- [x] Community: "A club is its people." + index للـboards بمعاينة بتتبع الـcursor + كروت boards مكدسة بصورة لكل board (`lib/ui/board-photos.ts`) + directory.
+- [x] Tracks: "Six ways to build." + index + مشاهد full-bleed فوق بعض بلون كل track.
+- [x] Events: "Events together." + تذكرة "To be announced." + قسم Memories بصور مطبوعة (`lib/ui/memories.ts`).
+- [x] Store: lookbook "Wear the work." (Drop 01) بـcutouts للـvest (`public/store/vest-*.webp`)، lookbook، Front/Back anatomy من تفاصيل الصورة فقط، ID 3D، وbuilder بنفس منطق `lib/store/catalog`.
+- [x] Partners: "In good company." + lockups "IT Club × partner" بـhover fill + marquee + CTA للإيميل.
+- [x] حذف Storefront وCommunityCommittees وTracksExperienceClasses/Motion.
+- [ ] صور الـboards الحقيقية والذكريات من المستخدم (manifests جاهزة).
+
+### دليل التحقق
+tsc ✓ · eslint --quiet ✓ · test:pure 53/53 ✓ · build ✓ · diff --check ✓ · لقطات desktop 1440×900 وmobile 390×844 لكل الصفحات، من غير overflow أفقي.
+
+### صور الـboards من الـroster القديم
+- [x] استخراج cutouts من `faec84c:public/COMMITTEES/cutouts` → `public/media/people/<id>.webp` (26 شخص، 5.2MB → 1.4MB، شفافية محفوظة)
+- [x] `lib/ui/board-roster.ts` (club / it / hr / sm / oc) — Head PR مستبعد، PR فاضي لحد صورة جديدة
+- [x] صورة جماعية لكل board في كروت Community + chips بالأسماء والأدوار + قسم «Club leadership»
+- [ ] صور جماعية حقيقية لكل لجنة (`lib/ui/board-photos.ts`) لما توصل — هتتقدم تلقائيًا على الـlineup
+- [ ] تأكيد مكان Benjamin (اتحط في SM حسب دوره القديم «Supervisor of sm»)
+
+### انتقال الصفحات (إعادة تصميم)
+- [x] بلوكات hex dark بدرجات Night بدل الموزاييك الـteal، ستارة من فوق لتحت ومنحنية من النص
+- [x] موجة teal رفيعة على حافة الستارة بس
+- [x] اسم الصفحة اللي رايح لها (English + عربي) مع شريط تقدم teal في النص
+- [x] الحد الأدنى للعرض 0.32s عشان الاسم يتقري، والستارة بتترفع بنفس الترتيب
+
+### Store: حجز بدل سلة
+- [x] اختيار كيت واحد (A: Vest + ID + lanyard بـ250 / B: ID + lanyard للي دفع قبل كده أو Main board) بدل الـ+/−
+- [x] الاسم، الرقم الأكاديمي (بيقبل أرقام عربي)، البوزيشن، اللجنة، مقاس الـvest (لـA بس)
+- [x] `POST /api/store/reserve` → كود `ITC-XXXXX` + صف في Google Sheet عبر Apps Script (`docs/store-reservations-sheet.md`)
+- [x] تحويل لواتساب برسالة جاهزة فيها الكود والبيانات + الصورة الشخصية وسكرين الدفع
+- [ ] ضبط `STORE_SHEET_WEBHOOK_URL` و`STORE_SHEET_SECRET` و`STORE_WHATSAPP_NUMBER` (مستني رقم الواتساب ونشر الـApps Script)
+- [ ] تأكيد إن Edition B مش عليها دفع جديد

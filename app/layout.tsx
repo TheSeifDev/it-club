@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Alexandria, Montserrat } from "next/font/google";
+import PublicPageTransition from "@/src/components/site/PublicPageTransition";
+import { PreloaderBoot } from "@/src/components/site/HomePreloader";
 import "./globals.css";
 
 // CMS snapshots and authentication configuration are runtime concerns. A build
@@ -76,8 +78,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${alexandria.variable}`}>
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning className={`${montserrat.variable} ${alexandria.variable} motion-reduce:scroll-auto!`}>
+      <body>
+        <PreloaderBoot />
+        {children}
+        <PublicPageTransition />
+      </body>
     </html>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { setupTrackStack } from "./track-stack";
+import { setupEditorialHome } from "./editorial-home";
+import { setupEditorialPages } from "./editorial-pages";
 
 import { gsap, motionQueries, type ScrollTrigger } from "./gsap";
 import { setupSpotlights } from "./spotlight";
@@ -55,38 +57,41 @@ function setupGeneralReveals(root: HTMLElement, mm: MotionMedia) {
     reveals.forEach((element, index) => {
       gsap.fromTo(
         element,
-        { y: 28, autoAlpha: 0 },
+        { y: window.innerWidth < 800 ? 58 : 88, opacity: 0.12 },
         {
           y: 0,
-          autoAlpha: 1,
-          duration: 0.72,
-          delay: Math.min(index * 0.025, 0.18),
-          ease: "power3.out",
+          opacity: 1,
+          ease: "power2.out",
           scrollTrigger: {
             id: `site-reveal-${index + 1}`,
             trigger: element,
-            start: "top 91%",
-            end: "top 68%",
-            scrub: 0.45,
+            start: "top 96%",
+            end: "top 65%",
+            scrub: 0.6,
           },
         },
       );
     });
 
-    all(root, "[data-line-heading]").forEach((heading, index) => {
+    // A parent [data-reveal] already animates nested headings; avoid a second,
+    // nearly identical scrubbed trigger on the same content.
+    const lineHeadings = all(root, "[data-line-heading]").filter(
+      (heading) => !heading.closest("[data-reveal]"),
+    );
+    lineHeadings.forEach((heading, index) => {
       gsap.fromTo(
         heading,
-        { clipPath: "inset(0 0 100% 0)", y: 18 },
+        { opacity: 0.12, y: 58 },
         {
-          clipPath: "inset(0 0 0% 0)",
+          opacity: 1,
           y: 0,
           ease: "power3.out",
           scrollTrigger: {
             id: `site-line-heading-${index + 1}`,
             trigger: heading,
-            start: "top 88%",
-            end: "top 55%",
-            scrub: 0.5,
+            start: "top 94%",
+            end: "top 62%",
+            scrub: 0.6,
           },
         },
       );
@@ -522,9 +527,14 @@ function setupMagnetic(root: HTMLElement, mm: MotionMedia) {
 
 export function setupSiteScenes(root: HTMLElement, mm: MotionMedia) {
   setupGeneralReveals(root, mm);
-  setupHero(root, mm);
-  setupAbout(root, mm);
-  setupIdentity(root, mm);
+  if (root.querySelector("[data-editorial-home]")) {
+    setupEditorialHome(root, mm);
+  } else {
+    setupHero(root, mm);
+    setupAbout(root, mm);
+    setupIdentity(root, mm);
+  }
+  setupEditorialPages(root, mm);
   setupTrackStack(root, mm);
   setupMagnetic(root, mm);
   setupSpotlights(root, mm);

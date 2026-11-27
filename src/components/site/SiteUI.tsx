@@ -1,28 +1,29 @@
-import "./public-design.css";
-import "./public-hover.css";
-import "./public-layout.css";
-import Image from "next/image";
+import { siteUi } from "@/src/components/site/public-ui";
+import { initials } from "@/lib/ui/initials";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import SiteFooter from "@/src/components/site/SiteFooter";
 import SiteHeader from "@/src/components/site/SiteHeader";
 import SiteMotion from "@/src/components/site/SiteMotion";
+import { SmoothScroll } from "@/src/components/site/SmoothScroll";
+import { SiteCursor } from "@/src/components/site/SiteCursor";
 import type { ContentEntry } from "@/lib/site-content/types";
 import {
   displayResponsibilities,
   safeHref,
-  safeImage,
 } from "@/src/components/site/content-utils";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="site-root" data-design="club" id="top">
-      <a className="site-skip-link" href="#main-content">
+    <div className={siteUi("site-root")} data-design="club" data-theme="dark-glass" id="top">
+      <a className={siteUi("site-skip-link")} href="#main-content">
         Skip to content
       </a>
+      <SmoothScroll />
+      <SiteCursor />
       <SiteMotion>
         <SiteHeader />
-        <main id="main-content" tabIndex={-1}>
+        <main className="min-w-0 bg-transparent" id="main-content" tabIndex={-1}>
           {children}
         </main>
         <SiteFooter />
@@ -44,7 +45,7 @@ export function SectionLabel({
 }) {
   return (
     <div
-      className={`site-section-label site-section-label--${tone} ${className}`.trim()}
+      className={`${siteUi(`site-section-label site-section-label--${tone}`)} ${className}`.trim()}
     >
       <span>{number ?? ""}</span>
       <span>{children}</span>
@@ -68,26 +69,26 @@ export function PageIntro({
   tone?: "dark" | "paper";
 }) {
   return (
-    <section className={`site-page-intro site-page-intro--${tone}`}>
-      <div className="site-container">
+    <section className={siteUi(`site-page-intro site-page-intro--${tone}`)}>
+      <div className={siteUi("site-container")}>
         <SectionLabel
           number={number}
           tone={tone === "paper" ? "dark" : "light"}
         >
           {eyebrow}
         </SectionLabel>
-        <div className="site-page-intro__body" data-reveal>
+        <div className={siteUi("site-page-intro__body")} data-reveal>
           <div>
-            <h1 className="site-display site-page-title" data-line-heading>
+            <h1 className={siteUi("site-display site-page-title")} data-line-heading>
               {title}
             </h1>
             {arabic ? (
-              <p className="site-intro-arabic" lang="ar" dir="rtl">
+              <p className={siteUi("site-intro-arabic")} lang="ar" dir="rtl">
                 {arabic}
               </p>
             ) : null}
           </div>
-          <div className="site-page-intro__copy">
+          <div className={siteUi("site-page-intro__copy")}>
             <p>{description}</p>
           </div>
         </div>
@@ -106,12 +107,12 @@ export function SectionHeading({
   note?: string;
 }) {
   return (
-    <div className="site-section-heading" data-reveal>
-      <p className="site-eyebrow">{eyebrow}</p>
-      <h2 className="site-display" data-line-heading>
+    <div className={siteUi("site-section-heading")} data-reveal>
+      <p className={siteUi("site-eyebrow")}>{eyebrow}</p>
+      <h2 className={siteUi("site-display")} data-line-heading>
         {title}
       </h2>
-      {note ? <p className="site-section-heading__note">{note}</p> : null}
+      {note ? <p className={siteUi("site-section-heading__note")}>{note}</p> : null}
     </div>
   );
 }
@@ -131,16 +132,16 @@ export function EmptyState({
 }) {
   const destination = safeHref(href);
   return (
-    <div className="site-empty-state" data-reveal>
-      <span className="site-empty-state__index" aria-hidden="true">
+    <div className={siteUi("site-empty-state")} data-reveal data-public-surface="glass">
+      <span className={siteUi("site-empty-state__index")} aria-hidden="true">
         —
       </span>
       <div>
-        <p className="site-eyebrow">{label}</p>
+        <p className={siteUi("site-eyebrow")}>{label}</p>
         <h2>{title}</h2>
         <p>{text}</p>
         {destination && linkLabel ? (
-          <Link className="site-text-link" href={destination}>
+          <Link className={siteUi("site-text-link")} href={destination}>
             {linkLabel}
             <span aria-hidden="true">↗</span>
           </Link>
@@ -153,12 +154,12 @@ export function EmptyState({
 export function SiteUnavailable() {
   return (
     <section
-      className="site-data-unavailable site-container"
+      className={siteUi("site-data-unavailable site-container")}
       aria-labelledby="site-data-unavailable-title"
     >
       <SectionLabel number="00">PUBLISHED INFORMATION</SectionLabel>
       <h1
-        className="site-display"
+        className={siteUi("site-display")}
         id="site-data-unavailable-title"
         data-line-heading
       >
@@ -169,7 +170,7 @@ export function SiteUnavailable() {
         again later, or contact the team. No draft or archived content has been
         substituted.
       </p>
-      <Link className="site-button site-button--sky" href="/contact">
+      <Link className={siteUi("site-button site-button--sky")} href="/contact">
         CONTACT THE TEAM <span aria-hidden="true">↗</span>
       </Link>
     </section>
@@ -190,12 +191,12 @@ export function EntryRow({
   const description = entry.data.summary?.trim() || entry.data.body?.trim();
   const link = safeHref(href) ?? "/";
   return (
-    <article className="site-entry-row" data-reveal data-spotlight>
-      <span className="site-entry-row__number">
+    <article className={siteUi("site-entry-row")} data-reveal data-spotlight>
+      <span className={siteUi("site-entry-row__number")}>
         {String(index + 1).padStart(2, "0")}
       </span>
-      <div className="site-entry-row__main">
-        <p className="site-eyebrow">
+      <div className={siteUi("site-entry-row__main")}>
+        <p className={siteUi("site-eyebrow")}>
           {kind}
           {entry.data.category ? ` / ${entry.data.category}` : ""}
         </p>
@@ -206,10 +207,10 @@ export function EntryRow({
           </Link>
         </h3>
         {description ? (
-          <p className="site-entry-row__summary">{description}</p>
+          <p className={siteUi("site-entry-row__summary")}>{description}</p>
         ) : null}
       </div>
-      <div className="site-entry-row__meta">
+      <div className={siteUi("site-entry-row__meta")}>
         {entry.data.role ? <span>{entry.data.role}</span> : null}
         {entry.data.committee ? <span>{entry.data.committee}</span> : null}
       </div>
@@ -219,59 +220,46 @@ export function EntryRow({
 
 export function Portrait({
   entry,
-  cutout = false,
-  priority = false,
 }: {
   entry: ContentEntry;
   cutout?: boolean;
   priority?: boolean;
 }) {
-  const src = safeImage(entry.data.image);
-  if (!src) return null;
   return (
-    <Image
-      src={src}
-      alt={cutout ? "" : entry.data.title}
-      width={cutout ? 520 : 640}
-      height={cutout ? 700 : 800}
-      unoptimized
-      priority={priority}
-      className={
-        cutout ? "site-portrait site-portrait--cutout" : "site-portrait"
-      }
-    />
+    <span className={siteUi("site-icon-portrait")} role="img" aria-label={`${entry.data.title} — community profile`}>
+      <span aria-hidden="true">{initials(entry.data.title)}</span>
+    </span>
   );
 }
 
 export function ProfileDetail({ entry }: { entry: ContentEntry }) {
   const responsibilities = displayResponsibilities(entry);
-  const image = safeImage(entry.data.image);
   const links = entry.data.links
     ?.map((item) => ({ ...item, href: safeHref(item.href) }))
     .filter((item): item is { label: string; href: string } =>
       Boolean(item.href),
     );
   return (
-    <article className="site-detail-layout">
-      <div className="site-detail-layout__copy">
+    <article className={siteUi("site-detail-layout")}>
+      <div className={siteUi("site-detail-layout__copy")}>
         <SectionLabel number="01">
           PROFILE / {entry.data.committee ?? "COMMUNITY"}
         </SectionLabel>
-        <h1 className="site-display site-detail-title" data-line-heading>
+        <h1 className={siteUi("site-display site-detail-title")} data-line-heading>
           {entry.data.title}
         </h1>
-        <p className="site-detail-role">
+        <p className={siteUi("site-detail-role")}>
           {[entry.data.role, entry.data.committee].filter(Boolean).join(" · ")}
         </p>
         {entry.data.summary ? (
-          <p className="site-detail-lede">{entry.data.summary}</p>
+          <p className={siteUi("site-detail-lede")}>{entry.data.summary}</p>
         ) : null}
         {entry.data.body ? (
-          <p className="site-detail-body">{entry.data.body}</p>
+          <p className={siteUi("site-detail-body")}>{entry.data.body}</p>
         ) : null}
         {responsibilities.length ? (
-          <div className="site-detail-responsibilities">
-            <p className="site-eyebrow">PUBLISHED TEAM SCOPE</p>
+          <div className={siteUi("site-detail-responsibilities")}>
+            <p className={siteUi("site-eyebrow")}>PUBLISHED TEAM SCOPE</p>
             <ul>
               {responsibilities.map((item) => (
                 <li key={item}>{item}</li>
@@ -281,7 +269,7 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
         ) : null}
         {links?.length ? (
           <nav
-            className="site-detail-links"
+            className={siteUi("site-detail-links")}
             aria-label={`${entry.data.title} links`}
           >
             {links.map((item) => (
@@ -291,20 +279,12 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
               </a>
             ))}
           </nav>
-        ) : null}
-      </div>
-      {image ? (
-        <figure className="site-detail-portrait" data-spotlight>
-          <Image
-            src={image}
-            alt={entry.data.title}
-            width={640}
-            height={800}
-            unoptimized
-          />
+          ) : null}
+        </div>
+        <figure className={siteUi("site-detail-portrait")} data-spotlight data-public-surface="glass">
+          <div className={siteUi("site-profile-symbol")} aria-hidden="true">{initials(entry.data.title)}</div>
           <figcaption>{entry.data.role ?? "IT Club community"}</figcaption>
         </figure>
-      ) : null}
     </article>
   );
 }

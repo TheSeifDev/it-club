@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --env-file=.env.local --env-file=config/test.env --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/**/*.test.ts",
-    "test:pure": "node --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/auth-routing-security-pure.test.ts tests/site-content-backend.test.ts tests/site-content-public.test.ts tests/track-theme.test.ts tests/site-navigation.test.ts",
+    "test:pure": "node --import=./tests/helpers/network-policy.mjs --test --experimental-strip-types tests/auth-routing-security-pure.test.ts tests/site-content-backend.test.ts tests/site-content-public.test.ts tests/track-theme.test.ts tests/site-navigation.test.ts tests/page-transition.test.ts tests/store-catalog.test.ts",
     "generate:assets": "node scripts/generate-assets.js"
   },
   "dependencies": {
@@ -22,6 +22,7 @@
     "country-flag-icons": "^1.6.20",
     "gsap": "^3.15.1",
     "html5-qrcode": "^2.3.8",
+    "lenis": "^1.3.29",
     "lucide-react": "^1.52.0",
     "next": "16.3.8",
     "nodemailer": "^10.1.0",

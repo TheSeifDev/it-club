@@ -13,7 +13,6 @@ import {
   publicMetadata,
   readPublicSiteContent,
   safeHref,
-  safeImage,
 } from "@/src/components/site/content-utils";
 import { SiteFrame, SiteUnavailable } from "@/src/components/site/SiteUI";
 
@@ -107,7 +106,6 @@ export default async function TracksPage() {
       color: theme.color,
       rgb: theme.rgb,
       ink: theme.ink,
-      image: safeImage(entry.data.image),
       terrain,
       board: board
         ? ({
@@ -116,7 +114,7 @@ export default async function TracksPage() {
           } satisfies ExhibitionBoard)
         : undefined,
       members: linkedMembers,
-      iconName: canonical?.iconName ?? "code2",
+      code: theme.short === "CLUB" ? "IT" : theme.short,
       number: canonical?.number ?? String(published.indexOf(entry) + 1).padStart(2, "0"),
     };
   });

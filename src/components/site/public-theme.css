@@ -1,0 +1,50 @@
+/* Public-only tokens; layout/typography/components use Tailwind utilities. */
+.site-root {
+  --site-night: #05070a;
+  --site-night-2: #0a1016;
+  --site-night-3: #111a22;
+  --site-paper: #070a0f;
+  --site-paper-dim: #0c1218;
+  --site-snow: #121a20;
+  --site-ink: #f1f6f5;
+  --site-mist: #9aa8ae;
+  --site-copy: #a7b2b8;
+  --site-slate-ink: #b4c0c4;
+  --site-sky: #28cdb7;
+  --site-sky-ink: #52e8d1;
+  --site-word-muted: #75828c;
+  --site-paper-rgb: 7, 10, 15;
+  --site-ink-rgb: 241, 246, 245;
+  --site-night-rgb: 5, 7, 10;
+  --site-teal-rgb: 40, 205, 183;
+  --site-emerald: var(--site-sky);
+  --site-charcoal: var(--site-night);
+  --site-charcoal-2: var(--site-night-2);
+  --site-muted: var(--site-mist);
+  --site-gutter: clamp(20px, 3.5vw, 64px);
+  --site-max: none;
+  --site-panel-max: none;
+  --site-header-clearance: 112px;
+  --site-radius: 12px;
+  --site-panel-radius: 18px;
+  --site-display-weight: 400;
+  --site-hero-size: clamp(3.4rem, 5.7vw, 7.2rem);
+  --site-hero-tracking: -0.07em;
+  --site-hero-leading: 1.04;
+  --site-glass: rgb(18 27 35 / 58%);
+  --site-glass-strong: rgb(8 13 19 / 90%);
+  --site-glass-soft: rgb(233 249 250 / 5%);
+  --site-glass-border: rgb(218 244 244 / 14%);
+  --site-glass-highlight: rgb(245 255 255 / 11%);
+  --site-glass-blur: 6px;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .site-root {
+    --site-glass: #111a22;
+    --site-glass-strong: #0a1016;
+    --site-glass-soft: #151f28;
+  }
+}
+@media (max-width: 800px) {
+  .site-root { --site-glass-blur: 0px; }
+}

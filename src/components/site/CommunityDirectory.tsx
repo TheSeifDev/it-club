@@ -6,7 +6,7 @@ import { getTrackTheme } from "@/lib/ui/track-theme";
 import CommunityPersonCard, {
   type CommunityPerson,
 } from "@/src/components/site/CommunityPersonCard";
-import styles from "@/src/components/site/Community.module.css";
+import styles from "@/src/components/site/CommunityStyles";
 
 type MemberItem = CommunityPerson;
 
@@ -73,7 +73,7 @@ export default function CommunityDirectory({
                 key={committee}
                 type="button"
                 style={style}
-                className={isActive ? styles.activeFilter : undefined}
+                className={`${styles.filterButton}${isActive ? ` ${styles.activeFilter}` : ""}`}
                 aria-pressed={isActive}
                 onClick={() =>
                   updateResults(() => setActiveCommittee(committee))
@@ -81,7 +81,7 @@ export default function CommunityDirectory({
               >
                 <span>{committee}</span>
                 {theme.arabic ? (
-                  <small lang="ar" dir="rtl">
+                  <small className={styles.filterArabic} lang="ar" dir="rtl">
                     {theme.arabic}
                   </small>
                 ) : null}
@@ -92,6 +92,7 @@ export default function CommunityDirectory({
         <label className={styles.search}>
           <span>Search people</span>
           <input
+            className={styles.searchInput}
             type="search"
             value={query}
             onChange={(event) =>

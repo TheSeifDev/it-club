@@ -154,13 +154,10 @@ export const SITE_CONTENT_SEED: readonly SiteContentSeed[] = [
   ...eventSeeds,
 ];
 
-// When Supabase is absent, Preview can show only code-verified names, roles,
-// photos and committee scope. These read-only references are not imported as
-// published CMS records; each member remains a draft until individual duties
-// are supplied and published by the owner.
-const previewMemberSeeds: readonly SiteContentSeed[] = memberSeeds
-  .filter((member) => member.slug !== "omar-mehawed")
-  .map((member) => ({ ...member, status: "published", data: { ...member.data } }));
+// The source-only Preview fallback never promotes member rows: every seeded
+// member remains draft until an owner supplies and publishes an approved,
+// individual responsibility through the normal publication workflow.
+const previewMemberSeeds: readonly SiteContentSeed[] = [];
 
 export const UNRESOLVED_SEED_NOTES = unverifiedLeadershipPositions.map((position) => ({
   role: position.role,

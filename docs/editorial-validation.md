@@ -233,3 +233,20 @@ The Home-only Events section now follows a featured-upcoming-event + structured-
 ### Final checks
 
 `npx tsc --noEmit` passed; focused ESLint over the Home page, the new event component/helper/types, and the public-content test file returned no errors; `npm run test:pure` passed `35/35` (8 suites), including upcoming/archive/undated selection, optional-field safety, Cairo date badges, malformed-date rejection, and the four-event limit; the clean Next.js `16.3.8` production build passed after deleting all temporary QA files; and `git diff --check` passed. `GET config` confirmed `publishing.auto_publish: false`. No production publish, database write, migration, or change outside the Home Events implementation, its tests, TODO, and validation documentation was performed.
+
+
+## Community landing redesign — 27 November 2026
+
+`/community` now opens with an English-first, Logo Teal hero and cursor-reactive, procedural Three.js point globe, orbit paths, and labels for the currently published committees. GSAP handles the entrance and pointer parallax; an SSR SVG fallback renders before WebGL and on reduced-motion/low-power devices. The live hero has a pause control. It keeps the full-width dark site shell and flows directly into the committee showcase, followed by the existing optional leadership, published-member directory, filters/search, and CTA. Each committee uses its original track color and published summary/responsibilities; links target actual `/tracks#hr`, `#pr`, `#sm`, `#oc`, and `#it` sections.
+
+### Preview and content evidence
+
+- Desktop Preview at `1440×900` shows the full hero composition and bottom controls. Full-page Preview at `375×812` shows the stacked mobile hero, then all five committees before the member directory and CTA; the adjusted mobile tags remain within the screen. The browser DOM measured zero horizontal overflow at `1280×1100`; the mobile screenshot shows no visible horizontal clipping.
+- Current public Preview content has five visible committees — Human Resources, Public Relations, Social Media, Organizing Committee, and Information Technology — and zero published individual member profiles. The directory truthfully renders its existing empty state. `communityBoards()` and `communityMembers()` delegate to the existing published-content selectors, then filter R&D by board identifiers/title/committee/Arabic title and member committee only; draft/unpublished entries stay excluded. Rendered hero/committee/member DOM contains no R&D. R&D seed/CMS data and other routes were not modified.
+- All five committee links resolve to matching track section anchors. Hero calls to action point to `#community-committees`; links/buttons are native focusable controls with visible focus styling. Section numbering remains consecutive when there are no published leaders.
+- In Preview, a synthetic pointer event changed the parallax transform from `none` to a translated matrix; the canvas rendered at `683×683`. Activating Pause set `aria-pressed=true`, switched to the fallback, and removed the WebGL canvas. A sampled draw-call check recorded72 WebGL draws while visible,0 while the hero was offscreen, and72 after return. This verifies the tested lifecycle path, not a frame-rate benchmark or physical-device result. The active browser preference was `prefers-reduced-motion: false`; reduced-motion behavior is confirmed in code but was not live-emulated in this browser.
+- `/community` and `/manus-routes.json` returned HTTP200; the route manifest remains29 routes. No test content was written to Supabase/CMS.
+
+### Final checks and limits
+
+`npx tsc --noEmit` and focused ESLint over the Community page, new hero/committee/content modules, Three scene, and public-content test passed; `npm run test:pure` passed `39/39` across10 suites; the Next.js `16.3.8` production build and `git diff --check` passed. `publishing.auto_publish` remains false. No production publication, database write, migration, or GitHub `main` change occurred.

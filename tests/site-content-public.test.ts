@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { getPublicSiteContent, SiteContentUnavailableError } from "../lib/site-content/public.ts";
 import { activeAnnouncements, formatEventDate, publicEventTimeline } from "../src/components/site/content-utils.ts";
+import { communityBoards, communityMembers } from "../src/components/site/community-content.ts";
 import type { ContentEntry } from "../lib/site-content/types.ts";
 
 const environmentKeys = [
@@ -10,6 +11,34 @@ const environmentKeys = [
   "SUPABASE_URL",
   "SUPABASE_PUBLISHABLE_KEY",
 ] as const;
+
+function communityFixture(
+  kind: "member" | "board",
+  slug: string,
+  data: Partial<ContentEntry["data"]> = {},
+  overrides: Partial<ContentEntry> = {},
+): ContentEntry {
+  return {
+    id: `${kind}-${slug}`,
+    kind,
+    slug,
+    status: "published",
+    sort_order: 1,
+    featured: false,
+    publish_at: null,
+    unpublish_at: null,
+    revision: 1,
+    data: {
+      title: `Fixture ${slug}`,
+      role: "Team member",
+      committee: "IT",
+      summary: "Builds software",
+      ...data,
+    },
+    ...overrides,
+  };
+}
+
 const originalEnvironment = new Map(environmentKeys.map((key) => [key, process.env[key]]));
 const originalFetch = globalThis.fetch;
 
@@ -55,6 +84,107 @@ describe("public event and notice display", () => {
       data: { title: "A campus update", summary: "Room change" },
     };
     assert.deepEqual(activeAnnouncements([entry]).map((item) => item.slug), ["notice"]);
+  });
+});
+
+describe("Community R&D content presentation", () => {
+  const researchAndDevelopmentAliases = [
+    "R&D",
+    "r-and-d",
+    "rnd",
+    "r-d",
+    "Research & Development",
+    "Research and Development",
+    "research-development",
+    "البحث والتطوير",
+    "R&D Committee",
+    "Research and Development Team",
+    "IT Club / R&D Board",
+    "research-and-development-team",
+    "لجنة البحث والتطوير",
+  ];
+
+  it("excludes R&D aliases from board slugs, titles, committee identifiers, and member committees", () => {
+    const boards = researchAndDevelopmentAliases.flatMap((identifier, index) => [
+      communityFixture("board", `board-slug-${index}`, { title: `Board ${index}` }, { slug: identifier }),
+      communityFixture("board", `board-title-${index}`, { title: identifier }),
+      communityFixture("board", `board-committee-${index}`, { committee: identifier }),
+    ]);
+    boards.push(
+      communityFixture("board", "arabic-title", {
+        title: "Arabic title fixture",
+        arabicTitle: "البحث والتطوير",
+      }),
+    );
+    const members = researchAndDevelopmentAliases.map((identifier, index) =>
+      communityFixture("member", `member-${index}`, { committee: identifier }),
+    );
+
+    assert.deepEqual(communityBoards(boards), []);
+    assert.deepEqual(communityMembers(members), []);
+  });
+
+  it("applies published, draft, future, and expired visibility before the Community exclusion", () => {
+    const boards = [
+      communityFixture("board", "published-rnd", { committee: "rnd" }),
+      communityFixture("board", "draft-rnd", { committee: "rnd" }, { status: "draft" }),
+      communityFixture("board", "future-rnd", { committee: "rnd" }, { publish_at: "2999-01-01T00:00:00Z" }),
+      communityFixture("board", "expired-rnd", { committee: "rnd" }, { unpublish_at: "2000-01-01T00:00:00Z" }),
+      communityFixture("board", "visible-it-board", { title: "IT Board", committee: "IT" }),
+    ];
+    const members = [
+      communityFixture("member", "published-rnd-member", { committee: "research-development" }),
+      communityFixture("member", "draft-rnd-member", { committee: "rnd" }, { status: "draft" }),
+      communityFixture("member", "future-rnd-member", { committee: "rnd" }, { publish_at: "2999-01-01T00:00:00Z" }),
+      communityFixture("member", "expired-rnd-member", { committee: "rnd" }, { unpublish_at: "2000-01-01T00:00:00Z" }),
+      communityFixture("member", "visible-it-member", { committee: "IT" }),
+    ];
+
+    assert.deepEqual(communityBoards(boards).map((entry) => entry.slug), ["visible-it-board"]);
+    assert.deepEqual(communityMembers(members).map((entry) => entry.slug), ["visible-it-member"]);
+  });
+
+  it("keeps leadership and IT members when development appears in role or summary", () => {
+    const boards = [
+      communityFixture("board", "leadership-board", { title: "Club Leadership", committee: "Executive" }),
+      communityFixture("board", "it-board", { title: "IT Board", committee: "IT" }),
+      communityFixture("board", "software-development", { title: "Software Development", committee: "IT" }),
+      communityFixture("board", "public-relations", { title: "Public Relations", committee: "PR" }),
+    ];
+    const members = [
+      communityFixture("member", "club-president", {
+        title: "Club President",
+        role: "President",
+        committee: "Executive",
+        summary: "Leads the club team",
+      }),
+      communityFixture("member", "it-development-lead", {
+        title: "IT Development Lead",
+        role: "Research and Development Lead",
+        committee: "IT",
+        summary: "Leads software development",
+      }),
+    ];
+
+    assert.deepEqual(communityBoards(boards).map((entry) => entry.slug), ["leadership-board", "it-board", "software-development", "public-relations"]);
+    assert.deepEqual(communityMembers(members).map((entry) => entry.slug), ["club-president", "it-development-lead"]);
+  });
+
+  it("does not mutate fixture entries and returns empty arrays for empty input", () => {
+    const entries = [
+      communityFixture("member", "it-member-later", { committee: "IT" }, { sort_order: 2 }),
+      communityFixture("board", "research-and-development", { title: "R&D Board" }),
+      communityFixture("member", "rnd-member", { committee: "rnd" }),
+      communityFixture("board", "it-board", { title: "IT Board", committee: "IT" }, { sort_order: 2 }),
+    ];
+    const originalEntries = JSON.parse(JSON.stringify(entries)) as ContentEntry[];
+
+    communityMembers(entries);
+    communityBoards(entries);
+
+    assert.deepEqual(entries, originalEntries);
+    assert.deepEqual(communityMembers([]), []);
+    assert.deepEqual(communityBoards([]), []);
   });
 });
 

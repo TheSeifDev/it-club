@@ -264,3 +264,14 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 - حالة Preview الحقيقية لا تحتوي فعاليات منشورة، لذلك تعرض Empty state صادقة ولا تبتكر تاريخًا أو صورة.
 - فحص عرض البطاقات تم ببيانات QA موسومة داخل iframe مؤقت فقط، ثم حُذفت الملفات والـiframe قبل الـbuild النظيف؛ لا تعديل لـCMS أو قاعدة البيانات.
 - نجحت فحوص TypeScript وESLint المركّز و`npm run test:pure` (35/35) والـproduction build و`git diff --check`.
+
+## Community landing التفاعلية — 27 نوفمبر 2026
+تقديم landing قوية مستوحاة من المرجع المرئي للمستخدم بهوية IT Club الداكنة وLogo Teal، ثم باقي اللجان تحتها. لا إعادة فتح صورة المرجع ولا نسخ palette الأخضر النيون حرفيًا.
+- [x] Hero full-width بتكوين بصري واضح وactive animation تتفاعل بسلاسة مع cursor؛ GSAP للدخول والحركة وprogressive 3D مع fallback مرئي، Tailwind للواجهة، responsive للهاتف وسطح المكتب، reduced-motion وتعليق الحركة خارج الشاشة وتنظيف الموارد عند تغيير الصفحة.
+- [x] عرض اللجان المنشورة تحت الـlanding بترتيب واضح وهوية ألوان كل لجنة، ثم الأشخاص بجانب بعض ودليل البحث والفلاتر والروابط الحقيقية. الحفاظ على English الأساسي واللمسات العربية وحالات المحتوى الفارغة الصادقة.
+- [x] «احنا دلوقتي من غير r&d»: استبعاد R&D من hero واللجان والأعضاء والفلاتر في /community فقط؛ لا حذف أو تعديل سجلات CMS/seed ولا تغيير صفحات أخرى أو نشر المسودات.
+- [x] التحقق من بيانات النشر وresponsive والـcursor والـkeyboard والـreduced-motion والروابط؛ TypeScript وESLint المركّز وpure tests وproduction build وgit diff --check. توثيق الدليل وحفظ Manus checkpoint دون نشر إنتاجي أو تعديل GitHub main؛ مزامنة فرع refactor/club-main-site-20261118 فقط إذا تمت المزامنة.
+
+
+### خلاصة التنفيذ والتحقق
+الـPreview يعرض خمس لجان منشورة وصفر ملفات أعضاء منشورة؛ empty state صادقة. اختبارات الفلاتر والتفاعل أثبتت عدم عرض R&D مع بقاء مصدره دون تعديل، والـcursor وPause والتوقف خارج الشاشة يعملون. نجح TypeScript وESLint المركّز و`npm run test:pure` (39/39) وبناء Next.js16.3.8 و`git diff --check`. صور Preview للـdesktop/mobile ودليل التحقق الكامل في `docs/editorial-validation.md`. لا نشر أو قاعدة بيانات مكتوبة؛ لا مساس بـGitHub `main`.

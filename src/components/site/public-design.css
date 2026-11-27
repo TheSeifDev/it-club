@@ -1,33 +1,33 @@
-/* One public visual system; isolated from CMS, interviews and student screens. */
+/* Approved full-width editorial identity. Operational dashboards are not in this scope. */
 .site-root[data-design="club"] {
-  --site-night: #05070a;
-  --site-night-2: #0b0e13;
-  --site-night-3: #11151b;
-  --site-paper: #f3f4f6;
-  --site-paper-dim: #e2e6eb;
-  --site-snow: #eef1f5;
-  --site-ink: #0a0d12;
-  --site-mist: #8a94a3;
-  --site-slate-ink: #5a6370;
+  --site-night: #111714;
+  --site-night-2: #1a231d;
+  --site-night-3: #263129;
+  --site-paper: #fcfcfa;
+  --site-paper-dim: #e3e6e1;
+  --site-snow: #f7f9f5;
+  --site-ink: #171c1b;
+  --site-mist: #7a857d;
+  --site-slate-ink: #667269;
   --site-sky: #28cdb7;
   --site-sky-ink: #087969;
-  --site-paper-rgb: 243, 244, 246;
-  --site-ink-rgb: 10, 13, 18;
-  --site-night-rgb: 5, 7, 10;
+  --site-paper-rgb: 252, 252, 250;
+  --site-ink-rgb: 23, 28, 27;
+  --site-night-rgb: 17, 23, 20;
   --site-teal-rgb: 40, 205, 183;
   --site-emerald: var(--site-sky);
   --site-charcoal: var(--site-night);
   --site-charcoal-2: var(--site-night-2);
   --site-muted: var(--site-mist);
-  --site-gutter: clamp(20px, 4vw, 64px);
-  --site-max: 1400px;
-  --site-panel-max: 1600px;
-  --site-radius: 10px;
-  --site-panel-radius: 12px;
-  --site-display-weight: 850;
-  --site-hero-size: clamp(4rem, 8.7vw, 9.2rem);
-  --site-hero-tracking: -0.095em;
-  --site-hero-leading: 0.82;
-  background: var(--site-night);
-  color: var(--site-snow);
+  --site-gutter: clamp(20px, 3.5vw, 64px);
+  --site-max: none;
+  --site-panel-max: none;
+  --site-radius: 12px;
+  --site-panel-radius: 18px;
+  --site-display-weight: 400;
+  --site-hero-size: clamp(3.4rem, 5.7vw, 7.2rem);
+  --site-hero-tracking: -0.07em;
+  --site-hero-leading: 1.04;
+  background: var(--site-paper);
+  color: var(--site-ink);
 }

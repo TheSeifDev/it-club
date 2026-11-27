@@ -94,3 +94,21 @@
 ## دليل المراجعة السادسة
 
 نجح تراكب GSAP فعليًا في Preview على desktop: pin أعلى96px، واللوح التالي يصعد فوق السابق، والعداد/progress يتبعان scroll. فهرس `#it` وdirect fragment `#rnd` تنقلا إلى اللوحين 05 و06، وسهم Down حرك 05→06 مع بقاء الفوكس. لا timeline منافسة على سطح desktop؛ وcompact/reduced-motion/no-JS يظل تدفقًا طبيعيًا. نجح build وTypeScript وESLint و29/29 pure tests. لم يحدث تعديل CMS/API/Auth أو قاعدة بيانات أو نشر.
+
+## المرجع المعتمد النهائي — 27 نوفمبر 2026
+
+- [x] **Home مثل الصورة في التكوين والترتيب عدا المحتوى والألوان.** Hero + About مركزي + feature Tracks كبيرة وبطاقتين صغيرتين + split Events + بطاقات Community + CTA مركزي + Footer داكن؛ لا الاحتفاظ بالشكل القديم على أنه التصميم المعتمد، ولا شهادات أو إحصاءات أو أحداث أو مسؤوليات فردية مختلقة.
+- [x] **عرض رئيسي واحد full-width.** لا غلاف رمادي خارجي وأبيض داخلي، ولا max-width container يحصر الصفحة؛ gutter متجاوب واحد مع مسطحات ممتدة وحواف بسيطة وتنسيق صحيح desktop/mobile.
+- [x] **Hero فيديو وليس صورة.** MP4 حقيقي أصلي تقني abstract، poster للحالات المتوقفة، inline/muted/loop، accessible pause/play وتوقف في reduced-motion وخارج الشاشة، ونص/تنقل مقروء فوقه. لا خلطه مع صور البطاقة الثابتة.
+- [x] **كل موضع صورة آخر أيقونة على bg رمادي.** Home والصفحات العامة تقتبس مواضع media المرجع لكن تعرض رموزًا بدل صور؛ أسماء الأشخاص وأدوارهم والبيانات المنشورة موجودة، شعار النادي الفعلي يبقى شعارًا لا صورة بديلة.
+- [x] **إعادة تصميم frontend العام كاملًا بنفس الهوية.** Header/Footer والـHome وCommunity/Profiles وTracks وEvents/detail وSponsors/Alumni/Contact/custom pages/legal متناسقة في palette/type/gutter/radius/icon surfaces، بلا المساس بـAdmin/Interview/Student/Auth/backend أو نشر/كتابة إنتاجية.
+- [x] **GSAP وGSAP Scroll فعلية ذات غرض.** Hero mask/parallax، About symbol drift، carousel controls فعالة لجميع tracks، lifts/staggers أثناء scroll وCTA choreography، مع cleanup وreduced-motion، وanchors/keyboard وتدفق مقروء بلا JavaScript.
+- [x] **مراجعة التكامل المستقلة وتسليم نسخة محفوظة.** read-only validation ضد الخطة/TODO وربط مكونات الواجهة، type/lint/build/pure tests المناسبة، checkpoint Preview وتحديث فرع العمل الحالي دون نشر إنتاجي.
+
+## دليل المرجع النهائي
+
+أغلقت عيوب المراجعة المستقلة: غلاف Events/detail، نشر أعضاء fallback المسودة، غياب بقية المسارات من SSR، main المتداخل، ودلالات زر الفيديو/تغيير reduced-motion. الهوية العامة full-width واحدة، والفيديو MP4 حقيقي402,977bytes، وباقي مواضع الصور أيقونات على رمادي. فحص الهاتف390×844 أكد ظهور عنوان Hero وسلامة مقدمة Events/Partners/Alumni بعد تصحيح مسافة Header، وكذلك Community/Tracks/Contact/Privacy/Terms/Register. صفحة التسجيل اتبعت نفس الهوية وأزالت موعد أكتوبر2026 القديم مع بقاء state/validation/handlers/payload و`/api/register` كما هي.
+
+نجح TypeScript وESLint دون أخطاء (تحذير advisory واحد من صيغة logo config الموجودة)، و29/29 pure tests وproduction build و`git diff --check` بعد آخر التعديلات. Home HTML يحتوي المحتوى والروابط، و`/manus-routes.json` JSON29routes والفيديو والصفحات العامة أعادت200. تفاصيل الدليل وحدوده في `docs/editorial-validation.md`.
+
+اكتمال الواجهة لا يعني اعتماد مسؤوليات الأعضاء أو تفعيل Supabase/RLS/CRUD وتدفقات الحسابات؛ تلك البنود السابقة تظل مفتوحة، ويظهر empty state صادق حتى نشر محتوى معتمد. لا migrations أو اختبار إرسال تطبيق/تواصل أو كتابة قاعدة بيانات. تحفظ نسخة المعاينة على المستودع Manus-managed المتصل بهذا المشروع مع `auto_publish:false`، وتزامن ملفات إعادة التصميم المطابقة على فرع GitHub القائم `refactor/club-main-site-20261118` فقط. لا دفع إلى `main` في GitHub أو نشر إنتاجي.

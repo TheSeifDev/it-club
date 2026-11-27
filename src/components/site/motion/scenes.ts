@@ -1,6 +1,7 @@
 "use client";
 
 import { setupTrackStack } from "./track-stack";
+import { setupEditorialHome } from "./editorial-home";
 
 import { gsap, motionQueries, type ScrollTrigger } from "./gsap";
 import { setupSpotlights } from "./spotlight";
@@ -522,9 +523,13 @@ function setupMagnetic(root: HTMLElement, mm: MotionMedia) {
 
 export function setupSiteScenes(root: HTMLElement, mm: MotionMedia) {
   setupGeneralReveals(root, mm);
-  setupHero(root, mm);
-  setupAbout(root, mm);
-  setupIdentity(root, mm);
+  if (root.querySelector("[data-editorial-home]")) {
+    setupEditorialHome(root, mm);
+  } else {
+    setupHero(root, mm);
+    setupAbout(root, mm);
+    setupIdentity(root, mm);
+  }
   setupTrackStack(root, mm);
   setupMagnetic(root, mm);
   setupSpotlights(root, mm);

@@ -14,6 +14,19 @@ export default function SiteHeader() {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    const hero = document.querySelector("[data-editorial-hero]");
+    if (!header) return;
+    if (!hero) { header.dataset.tone = "paper"; return; }
+    const observer = new IntersectionObserver(([entry]) => {
+      header.dataset.tone = entry.isIntersecting ? "film" : "paper";
+    }, { rootMargin: "-75px 0px 0px 0px", threshold: 0 });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +72,7 @@ export default function SiteHeader() {
   }, [open]);
 
   return (
-    <header className={styles.header}>
+    <header ref={headerRef} className={styles.header} data-tone={pathname === "/" ? "film" : "paper"}>
       <div className={styles.inner}>
         <Link
           className={styles.brand}
@@ -87,7 +100,7 @@ export default function SiteHeader() {
           ))}
         </nav>
         <Link className={styles.contact} href="/contact">
-          <span>Join the conversation</span>
+          <span>Let’s connect</span>
           <span className={styles.contactArrow} aria-hidden="true">
             <ArrowUpRight size={16} />
           </span>

@@ -64,18 +64,18 @@ export default function TracksExperienceMotion({
         if (heroVisual) {
           gsap.fromTo(
             heroVisual,
-            { y: 24, autoAlpha: 0, scale: 0.96 },
+            { y: 24, autoAlpha: 0, scale: 0.97 },
             {
               y: 0,
               autoAlpha: 1,
               scale: 1,
-              duration: 1.15,
+              duration: 1.05,
               delay: 0.2,
               ease: "power2.out",
             },
           );
           gsap.to(heroVisual, {
-            yPercent: 7,
+            yPercent: 5,
             ease: "none",
             scrollTrigger: {
               trigger: hero,
@@ -94,9 +94,9 @@ export default function TracksExperienceMotion({
             "[data-tracks-exhibition-closing-copy] h2, [data-tracks-exhibition-closing-copy] > p:not([data-tracks-exhibition-closing-label]), [data-tracks-exhibition-closing-cta], [data-tracks-exhibition-closing-arabic]",
           );
           gsap.from(closingTargets, {
-            y: 28,
+            y: 24,
             autoAlpha: 0,
-            duration: 0.72,
+            duration: 0.7,
             stagger: 0.08,
             ease: "power3.out",
             scrollTrigger: {
@@ -106,34 +106,6 @@ export default function TracksExperienceMotion({
             },
           });
         }
-
-        const cleanupSpotlights = scenes.map((scene) => {
-          const move = (event: PointerEvent) => {
-            const rect = scene.getBoundingClientRect();
-            scene.style.setProperty(
-              "--spot-x",
-              `${event.clientX - rect.left}px`,
-            );
-            scene.style.setProperty(
-              "--spot-y",
-              `${event.clientY - rect.top}px`,
-            );
-            scene.dataset.isHovering = "true";
-          };
-          const leave = () => {
-            scene.dataset.isHovering = "false";
-          };
-          scene.addEventListener("pointermove", move, { passive: true });
-          scene.addEventListener("pointerleave", leave, { passive: true });
-          return () => {
-            scene.removeEventListener("pointermove", move);
-            scene.removeEventListener("pointerleave", leave);
-            scene.dataset.isHovering = "false";
-            scene.style.removeProperty("--spot-x");
-            scene.style.removeProperty("--spot-y");
-          };
-        });
-        return () => cleanupSpotlights.forEach((cleanup) => cleanup());
       });
 
       setupTrackStack(scope, media, {
@@ -142,16 +114,16 @@ export default function TracksExperienceMotion({
         hashNavigation: true,
       });
 
-      // Individual entrances are only for the unpinned flow, never competing with a stack.
+      // In compact layouts the stack is a natural document flow, so reveal scenes individually.
       media.add(motionQueries.compact, () => {
         const index = scope.querySelector<HTMLElement>(
           "[data-tracks-exhibition-index]",
         );
         if (index) {
           gsap.from(index, {
-            y: 24,
+            y: 20,
             autoAlpha: 0,
-            duration: 0.65,
+            duration: 0.62,
             scrollTrigger: {
               trigger: index,
               start: "top 88%",
@@ -170,10 +142,10 @@ export default function TracksExperienceMotion({
           );
           if (targets.length) {
             gsap.from(targets, {
-              y: 26,
+              y: 22,
               autoAlpha: 0,
-              duration: 0.72,
-              stagger: 0.08,
+              duration: 0.68,
+              stagger: 0.07,
               ease: "power3.out",
               scrollTrigger: {
                 trigger: scene,
@@ -185,7 +157,7 @@ export default function TracksExperienceMotion({
           if (visual) {
             gsap.fromTo(
               visual,
-              { clipPath: "inset(8% 0 8% 0)", scale: 0.97 },
+              { clipPath: "inset(7% 0 7% 0)", scale: 0.98 },
               {
                 clipPath: "inset(0% 0 0% 0)",
                 scale: 1,

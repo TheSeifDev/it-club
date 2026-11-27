@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { getCommittedPublicSeed, getOwnerSeed, isVisibleAt, SITE_CONTENT_SEED } from "../lib/site-content/seed.ts";
 import { isSafeContentUrl, isValidSlug, validateContentData, validatePublicationWindow, validatePublishReadiness } from "../lib/site-content/validation.ts";
 import { prepareSeedForImport } from "../lib/site-content/repository.ts";
-import { teamMembers } from "../src/components/interview/committee-data.ts";
 
 describe("site-content validation", () => {
   it("accepts contract-shaped data and rejects malformed or unsafe fields", () => {
@@ -39,28 +38,13 @@ describe("site-content validation", () => {
 });
 
 describe("site-content seed and publication visibility", () => {
-  it("keeps canonical verified people, tracks, and documented sponsors public while hiding the PR role under review", () => {
+  it("keeps seeded people private while serving published tracks and documented sponsors in Preview", () => {
     const publicSeed = getCommittedPublicSeed(Date.parse("2026-11-18T00:00:00Z"));
-    assert.ok(publicSeed.members.length > 0);
-    assert.ok(publicSeed.members.some((member) => member.data.alumni === true));
-    assert.equal(publicSeed.members.some((member) => member.slug === "omar-mehawed"), false);
-    const canonicalPublicRoster = teamMembers.filter((member) => !member.isAlternate && !member.needsReview && member.id !== "omar-mehawed");
-    assert.equal(publicSeed.members.length, canonicalPublicRoster.length);
-    for (const member of canonicalPublicRoster) {
-      const seeded = publicSeed.members.find((entry) => entry.slug === member.id);
-      assert.ok(seeded, `Expected canonical member ${member.id} in the public seed`);
-      assert.equal(seeded.data.title, member.name);
-      assert.equal(seeded.data.role, member.role.trim());
-      assert.equal(seeded.data.committee, member.committee);
-    }
+    assert.deepEqual(publicSeed.members, []);
     assert.equal(publicSeed.events.length, 0);
     assert.ok(publicSeed.tracks.length >= 6);
     assert.deepEqual(publicSeed.sponsors.map((sponsor) => sponsor.slug).sort(), ["icealex", "wrkr"]);
-    const rosterMember = publicSeed.members.find((member) => member.slug === "seif-ayman");
-    assert.equal(rosterMember?.data.role, "Vice Head");
-    assert.equal(rosterMember?.data.responsibilities, undefined);
-    assert.ok(rosterMember?.data.summary?.startsWith("Committee mission:"));
-    assert.deepEqual(rosterMember?.data.links?.map((link) => link.label), ["LinkedIn", "GitHub", "Portfolio"]);
+    assert.ok(SITE_CONTENT_SEED.filter((entry) => entry.kind === "member").every((entry) => entry.status === "draft"));
   });
 
   it("keeps Omar's record as a draft and all source events as drafts for owner review", () => {

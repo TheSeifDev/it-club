@@ -13,7 +13,6 @@ import {
   publicMetadata,
   readPublicSiteContent,
   safeHref,
-  safeImage,
 } from "@/src/components/site/content-utils";
 import { SiteFrame, SiteUnavailable } from "@/src/components/site/SiteUI";
 
@@ -107,7 +106,6 @@ export default async function TracksPage() {
       color: theme.color,
       rgb: theme.rgb,
       ink: theme.ink,
-      image: safeImage(entry.data.image),
       terrain,
       board: board
         ? ({

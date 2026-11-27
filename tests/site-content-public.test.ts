@@ -18,10 +18,10 @@ function clearSupabaseEnvironment(): void {
 }
 
 describe("public content configuration behavior", () => {
-  it("returns committed seed only when database configuration is absent", async () => {
+  it("returns published non-person seed only when database configuration is absent", async () => {
     clearSupabaseEnvironment();
     const content = await getPublicSiteContent();
-    assert.ok(content.members.length > 0);
+    assert.deepEqual(content.members, []);
     assert.ok(content.tracks.length > 0);
     assert.ok(content.sponsors.length > 0);
   });

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -6,6 +5,7 @@ import {
   CalendarDays,
   Code2,
   FlaskConical,
+  Layers,
   Megaphone,
   Share2,
   Users,
@@ -39,7 +39,6 @@ export type ExhibitionTrack = {
   color: string;
   rgb: string;
   ink: string;
-  image?: string;
   terrain: Array<{ title: string; desc?: string }>;
   board?: ExhibitionBoard;
   members: ExhibitionMember[];
@@ -57,90 +56,18 @@ const ICONS: Record<ExhibitionTrack["iconName"], TrackIcon> = {
   flask: FlaskConical,
 };
 
-const VISUAL_LABELS: Record<string, { kicker: string; phrase: string }> = {
-  hr: { kicker: "people / culture", phrase: "listen · align · grow" },
-  pr: { kicker: "relations / outreach", phrase: "connect · represent · open" },
-  sm: { kicker: "media / storytelling", phrase: "frame · shape · share" },
-  oc: { kicker: "operations / stage", phrase: "plan · move · deliver" },
-  it: { kicker: "engineering / code", phrase: "build · test · maintain" },
-  rnd: { kicker: "research / discovery", phrase: "question · test · learn" },
-};
-
-const VISUAL_CLASSES: Record<string, string> = {
-  hr: styles.visualHr,
-  pr: styles.visualPr,
-  sm: styles.visualSm,
-  oc: styles.visualOc,
-  it: styles.visualIt,
-  rnd: styles.visualRnd,
-};
-
-function TrackVisual({
-  track,
-  index,
-}: {
-  track: ExhibitionTrack;
-  index: number;
-}) {
+function TrackVisual({ track }: { track: ExhibitionTrack }) {
   const Icon = ICONS[track.iconName] ?? Code2;
-  const label = VISUAL_LABELS[track.slug] ?? {
-    kicker: "published track",
-    phrase: "learn · contribute · connect",
-  };
-  const visualClass = VISUAL_CLASSES[track.slug] ?? styles.visualGeneric;
 
   return (
-    <div
-      className={`${styles.visual} ${visualClass}`}
-      aria-label={`${track.title} abstract capability visual`}
-    >
-      <div className={styles.visualTop}>
-        <span>{track.number} / field note</span>
-        <span>{label.kicker}</span>
+    <div className={styles.visual}>
+      <span className={styles.visualLabel}>{track.number} / track</span>
+      <div className={styles.visualGlyph} aria-hidden="true">
+        <Icon size={112} strokeWidth={1.15} />
       </div>
-      <div className={styles.visualStage}>
-        <div className={styles.visualGlyph} aria-hidden="true">
-          <span className={styles.glyphHalo} />
-          <Icon size={54} strokeWidth={1.25} />
-        </div>
-        <p className={styles.visualPhrase}>{label.phrase}</p>
-        <span className={styles.visualWord}>
-          {track.slug === "rnd" ? "R&D" : track.slug.toUpperCase()}
-        </span>
-      </div>
-      <div className={styles.visualBottom}>
-        <span>Track {String(index + 1).padStart(2, "0")}</span>
-        <span>{track.title}</span>
-      </div>
-      <span className={styles.visualAccent} aria-hidden="true" />
+      <span className={styles.visualTitle}>{track.title}</span>
     </div>
   );
-}
-
-function TrackMedia({
-  track,
-  index,
-}: {
-  track: ExhibitionTrack;
-  index: number;
-}) {
-  if (track.image) {
-    return (
-      <Image
-        src={track.image}
-        alt={`${track.title} track visual`}
-        width={1400}
-        height={920}
-        unoptimized
-        priority={index === 0}
-        loading={index === 0 ? undefined : "lazy"}
-        sizes="(min-width: 1050px) 50vw, 100vw"
-        className={styles.mediaImage}
-      />
-    );
-  }
-
-  return <TrackVisual track={track} index={index} />;
 }
 
 function TrackScene({
@@ -162,7 +89,6 @@ function TrackScene({
       className={`${styles.scene} ${index % 2 ? styles.sceneReverse : ""}`}
       data-stack-panel
       data-tracks-exhibition-scene
-      data-is-hovering="false"
       style={
         {
           "--track-color": track.color,
@@ -173,7 +99,7 @@ function TrackScene({
       aria-labelledby={`track-title-${track.slug}`}
     >
       <div className={styles.sceneMedia} data-tracks-exhibition-visual>
-        <TrackMedia track={track} index={index} />
+        <TrackVisual track={track} />
       </div>
       <div
         className={styles.sceneCopy}
@@ -183,7 +109,7 @@ function TrackScene({
       >
         <div className={styles.sceneMeta}>
           <span className={styles.sceneNumber}>{track.number}</span>
-          <span>{track.tag}</span>
+          <span className={styles.sceneTag}>{track.tag}</span>
           <span className={styles.sceneAccent} aria-hidden="true" />
         </div>
         <div className={styles.sceneHeading} data-tracks-exhibition-title>
@@ -251,6 +177,7 @@ export default function TracksExperience({
 }) {
   const trackCount = tracks.length;
   const trackCountLabel = `${trackCount} ${trackCount === 1 ? "track" : "tracks"}`;
+  const FeaturedIcon = tracks[0] ? ICONS[tracks[0].iconName] : Layers;
 
   return (
     <TracksExperienceMotion>
@@ -259,14 +186,12 @@ export default function TracksExperience({
           <div className={styles.heroInner}>
             <div className={styles.heroCopy}>
               <p className={styles.heroKicker}>
-                <span>03</span>
-                <i aria-hidden="true" />
-                Tracks / where ideas get a team
+                <span className={styles.labelNumber}>03</span>
+                <span className={styles.labelText}>Tracks / where ideas get a team</span>
               </p>
               <h1 className={styles.heroTitle} data-tracks-exhibition-title>
-                <span>Different</span>
-                <span>ways to</span>
-                <em>build.</em>
+                <span>Different ways</span>
+                <span>to build.</span>
               </h1>
               <p className={styles.heroLead} data-tracks-exhibition-copy>
                 {trackCountLabel}. One shared practice. Find the kind of
@@ -281,38 +206,37 @@ export default function TracksExperience({
                 href={tracks.length ? `#${tracks[0].slug}` : "#tracks-index"}
               >
                 <span>
-                  {tracks.length ? "Enter the tracks" : "View the track index"}
+                  {tracks.length ? "Explore the tracks" : "View the track index"}
                 </span>
-                <ArrowDown size={15} aria-hidden="true" />
+                <span className={styles.promptArrow} aria-hidden="true">
+                  <ArrowDown size={15} />
+                </span>
               </a>
             </div>
             <div className={styles.heroAside} data-tracks-exhibition-visual>
-              <span className={styles.heroAsideLabel}>
-                IT Club / shared practice
-              </span>
-              <div className={styles.heroLogo}>
-                <Image src="/logo.webp" alt="" fill priority sizes="420px" />
+              <span className={styles.heroAsideLabel}>IT Club / shared practice</span>
+              <div className={styles.heroIcon} aria-hidden="true">
+                <FeaturedIcon size={108} strokeWidth={1.1} />
               </div>
               <span className={styles.heroAsideNumber}>
                 {String(trackCount).padStart(2, "0")}
               </span>
-              <div className={styles.heroTrackList} aria-hidden="true">
+              <div className={styles.heroTrackList} aria-label="Published tracks">
                 {tracks.map((track) => (
-                  <span
+                  <a
+                    href={`#${track.slug}`}
                     key={track.id}
                     style={{ "--orbit-color": track.color } as CSSProperties}
                   >
                     <b>{track.number}</b> {track.title}
-                  </span>
+                  </a>
                 ))}
               </div>
             </div>
           </div>
           <div className={styles.heroFoot}>
             <span>Tracks / BATU</span>
-            <span>
-              Scroll to explore <b>↓</b>
-            </span>
+            <span>Scroll to explore <b aria-hidden="true">↓</b></span>
           </div>
         </header>
 
@@ -322,7 +246,10 @@ export default function TracksExperience({
           aria-labelledby="tracks-index-title"
         >
           <div className={styles.indexIntro}>
-            <p className={styles.sectionLabel}>The direct index</p>
+            <p className={styles.sectionLabel}>
+              <span className={styles.labelNumber}>04</span>
+              <span className={styles.labelText}>The track index</span>
+            </p>
             <h2 id="tracks-index-title">Choose a starting point.</h2>
             <p>
               Jump directly into a track. Every scene keeps its published remit,
@@ -403,14 +330,15 @@ export default function TracksExperience({
           aria-labelledby="tracks-closing-title"
         >
           <div className={styles.closingMark} aria-hidden="true">
-            +
+            <Users size={64} strokeWidth={1.1} />
           </div>
           <div data-tracks-exhibition-closing-copy>
             <p
               className={styles.sectionLabel}
               data-tracks-exhibition-closing-label
             >
-              Where contributions meet
+              <span className={styles.labelNumber}>05</span>
+              <span className={styles.labelText}>Where contributions meet</span>
             </p>
             <h2 id="tracks-closing-title">
               The work gets stronger <em>in contact.</em>

@@ -1,7 +1,8 @@
 import "./public-design.css";
 import "./public-hover.css";
 import "./public-layout.css";
-import Image from "next/image";
+import "./public-editorial.css";
+import { Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import SiteFooter from "@/src/components/site/SiteFooter";
@@ -11,7 +12,6 @@ import type { ContentEntry } from "@/lib/site-content/types";
 import {
   displayResponsibilities,
   safeHref,
-  safeImage,
 } from "@/src/components/site/content-utils";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
@@ -219,33 +219,20 @@ export function EntryRow({
 
 export function Portrait({
   entry,
-  cutout = false,
-  priority = false,
 }: {
   entry: ContentEntry;
   cutout?: boolean;
   priority?: boolean;
 }) {
-  const src = safeImage(entry.data.image);
-  if (!src) return null;
   return (
-    <Image
-      src={src}
-      alt={cutout ? "" : entry.data.title}
-      width={cutout ? 520 : 640}
-      height={cutout ? 700 : 800}
-      unoptimized
-      priority={priority}
-      className={
-        cutout ? "site-portrait site-portrait--cutout" : "site-portrait"
-      }
-    />
+    <span className="site-icon-portrait" role="img" aria-label={`${entry.data.title} — community profile`}>
+      <Users aria-hidden="true" />
+    </span>
   );
 }
 
 export function ProfileDetail({ entry }: { entry: ContentEntry }) {
   const responsibilities = displayResponsibilities(entry);
-  const image = safeImage(entry.data.image);
   const links = entry.data.links
     ?.map((item) => ({ ...item, href: safeHref(item.href) }))
     .filter((item): item is { label: string; href: string } =>
@@ -293,18 +280,10 @@ export function ProfileDetail({ entry }: { entry: ContentEntry }) {
           </nav>
         ) : null}
       </div>
-      {image ? (
         <figure className="site-detail-portrait" data-spotlight>
-          <Image
-            src={image}
-            alt={entry.data.title}
-            width={640}
-            height={800}
-            unoptimized
-          />
+          <div className="site-profile-symbol" aria-hidden="true"><Users /></div>
           <figcaption>{entry.data.role ?? "IT Club community"}</figcaption>
         </figure>
-      ) : null}
     </article>
   );
 }

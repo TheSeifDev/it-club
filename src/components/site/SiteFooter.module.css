@@ -1,0 +1,23 @@
+.root { background: #111714; color: #fcfcfa; padding: 66px var(--site-gutter) 34px; }
+.top { position: relative; min-height: 360px; }
+.brand { display: inline-flex; gap: 9px; height: 59px; align-items: center; padding: 6px 18px 6px 7px; background: #fcfcfa; color: #171c1b !important; border-radius: 99px; font-size: 1.35rem; letter-spacing: -.07em; font-weight: 500; }
+.brand img { width: 45px; height: 45px; object-fit: contain; }
+.message { position: relative; z-index: 1; margin-top: 90px; }
+.message h2 { max-width: 750px; margin: 0; font-size: clamp(2rem,3.6vw,4.7rem); font-weight: 400; line-height: 1.09; letter-spacing: -.06em; }
+.message p { width: fit-content; margin: 23px 0 0; font-size: .76rem; color: #899c8d; }
+.art { position: absolute; top: 64px; right: 7%; width: 300px; height: 290px; }
+.watermark { position: absolute; top: -18px; right: -80px; color: #27372b; transform: rotate(22deg); opacity: .55; }
+.tile { position: absolute; bottom: -15px; left: 15px; display: grid; place-items: center; width: 176px; height: 176px; border-radius: 19px; background: #d7e0d7; color: #6d8a73; transform: rotate(-4deg); }
+.contacts { display: flex; justify-content: space-between; gap: 28px; margin-top: 54px; padding-top: 26px; border-top: 1px solid #354439; color: #8d9e90; font-size: clamp(.75rem,1.45vw,1.3rem); line-height: 1.55; letter-spacing: -.04em; }
+.contacts a { display: inline-flex; align-items: center; gap: 9px; }
+.contacts a:hover { color: #fcfcfa; }
+.bottom { display: flex; align-items: end; justify-content: space-between; gap: 32px; margin-top: 66px; }
+.copyright { font-size: .6rem; color: #7e8f82; flex-shrink: 0; }
+.copyright nav { display: flex; gap: 15px; margin-top: 8px; font-size: .54rem; }
+.nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: end; gap: 7px; }
+.nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 0 13px; border-radius: 99px; border: 1px solid #536457; font-size: .64rem; }
+.nav a:hover { background: #26352b; }
+.nav .backtop { width: 39px; padding: 0; border: 0; color: #171c1b; background: #fcfcfa; }
+@media (max-width: 1000px) { .art { right: 4%; width: 230px; top: 65px; } .tile { width: 140px; height: 140px; bottom: 12px; } .watermark { width: 240px; } .message h2 { max-width: 65%; } .bottom { align-items: start; } .nav { gap: 6px; } }
+@media (max-width: 750px) { .root { padding-top: 45px; } .top { min-height: 370px; } .message { margin-top: 62px; } .message h2 { font-size: 2.3rem; max-width: 83%; } .art { right: -1%; top: 42px; width: 180px; height: 280px; opacity: .6; } .tile { bottom: -32px; left: 50px; width: 115px; height: 115px; } .tile svg { width: 59px; } .watermark { width: 160px; right: 0; top: 40px; } .contacts { flex-direction: column; gap: 10px; font-size: .85rem; margin-top: 28px; } .bottom { flex-direction: column-reverse; gap: 25px; margin-top: 40px; } .nav { justify-content: start; } }
+@media (max-width: 520px) { .message h2 { font-size: 2.05rem; max-width: 100%; } .art { opacity: .35; right: 0; } .tile { display: none; } .top { min-height: 330px; } .message { margin-top: 56px; } .nav a { min-height: 36px; font-size: .61rem; padding-inline: 11px; } .brand { height: 52px; font-size: 1.2rem; } .brand img { width: 39px; height: 39px; } }

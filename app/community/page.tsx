@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import { ArrowUpRight, UsersRound } from "lucide-react";
 import CommunityDirectory from "@/src/components/site/CommunityDirectory";
 import CommunityPersonCard, {
   type CommunityPerson,
@@ -13,7 +14,6 @@ import {
   publicMembers,
   publicMetadata,
   readPublicSiteContent,
-  safeImage,
 } from "@/src/components/site/content-utils";
 import { SiteFrame } from "@/src/components/site/SiteUI";
 
@@ -38,7 +38,6 @@ function personFromEntry(
     role: entry.data.role ?? "",
     committee: entry.data.committee ?? "",
     summary: displayResponsibilities(entry).join(" "),
-    image: safeImage(entry.data.image),
   };
 }
 
@@ -65,8 +64,8 @@ export default async function CommunityPage() {
         <section className={communityStyles.intro}>
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
-              <span className={communityStyles.sectionNumber}>02</span>
-              <span>COMMUNITY / THE PEOPLE</span>
+              <span className={communityStyles.sectionNumber}>01</span>
+              <span>Community / The people</span>
             </div>
             <div className={communityStyles.introBody} data-reveal>
               <div>
@@ -76,8 +75,8 @@ export default async function CommunityPage() {
                 </p>
               </div>
               <p className={communityStyles.introCopy}>
-                Meet the people moving IT Club forward. Explore our leadership,
-                find your team, and see how every role contributes.
+                Meet the people moving IT Club forward. Explore the leadership,
+                browse each team, and discover the work behind every role.
               </p>
             </div>
           </div>
@@ -87,8 +86,8 @@ export default async function CommunityPage() {
           <section className={communityStyles.leadership}>
             <div className={communityStyles.container}>
               <div className={communityStyles.sectionLabel}>
-                <span className={communityStyles.sectionNumber}>01</span>
-                <span>CLUB LEADERSHIP / قيادة النادي</span>
+                <span className={communityStyles.sectionNumber}>02</span>
+                <span>Club leadership / قيادة النادي</span>
               </div>
               <div className={communityStyles.leadershipHeading} data-reveal>
                 <h2 className={communityStyles.heading}>
@@ -100,12 +99,11 @@ export default async function CommunityPage() {
                 </p>
               </div>
               <div className={communityStyles.leadershipGrid}>
-                {leadership.map((person, index) => (
+                {leadership.map((person) => (
                   <CommunityPersonCard
                     key={person.slug}
                     person={person}
                     variant="leadership"
-                    priority={index < 3}
                   />
                 ))}
               </div>
@@ -116,15 +114,15 @@ export default async function CommunityPage() {
         <section className={communityStyles.boardSection}>
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
-              <span className={communityStyles.sectionNumber}>02</span>
-              <span>THE BOARDS / اللجان</span>
+              <span className={communityStyles.sectionNumber}>03</span>
+              <span>The boards / اللجان</span>
             </div>
             <div className={communityStyles.boardHeading} data-reveal>
               <h2 className={communityStyles.heading}>
                 Many disciplines. <span>One community.</span>
               </h2>
               <p className={communityStyles.headingNote}>
-                Each board has its own responsibilities. Explore the teams, then
+                Each published board has its own focus. Explore the teams, then
                 meet the people doing that work.
               </p>
             </div>
@@ -153,7 +151,7 @@ export default async function CommunityPage() {
                           className={communityStyles.boardSwatch}
                           aria-hidden="true"
                         />
-                        <span>{board.data.category || "IT CLUB / BOARD"}</span>
+                        <span>{board.data.category || "IT Club / Board"}</span>
                         {theme.arabic ? (
                           <span lang="ar" dir="rtl">
                             · {theme.arabic}
@@ -167,7 +165,7 @@ export default async function CommunityPage() {
                         href="/tracks"
                         aria-label={`See tracks related to ${board.data.title}`}
                       >
-                        ↗
+                        <ArrowUpRight size={18} strokeWidth={1.7} aria-hidden="true" />
                       </Link>
                     </article>
                   );
@@ -177,7 +175,7 @@ export default async function CommunityPage() {
               <div className={communityStyles.noMatches} role="status">
                 <span aria-hidden="true">—</span>
                 <div>
-                  <p className={communityStyles.eyebrow}>BOARD INDEX</p>
+                  <p className={communityStyles.eyebrow}>Board index</p>
                   <h2>No board details are available yet.</h2>
                   <p>
                     The directory below lists people whose profiles are approved
@@ -192,14 +190,14 @@ export default async function CommunityPage() {
         <section className={communityStyles.directorySection}>
           <div className={communityStyles.container}>
             <div className={communityStyles.sectionLabel}>
-              <span className={communityStyles.sectionNumber}>03</span>
-              <span>MEMBER DIRECTORY / دليل الأعضاء</span>
+              <span className={communityStyles.sectionNumber}>04</span>
+              <span>Member directory / دليل الأعضاء</span>
             </div>
             <div className={communityStyles.directoryHeading} data-reveal>
               <h2 className={communityStyles.heading}>Know who does what.</h2>
               <p className={communityStyles.headingNote}>
-                Search names, roles, or committees. Use the color-coded filters
-                to find your team.
+                Search names, roles, or committees. Use the team filters to find
+                the people behind the work.
               </p>
             </div>
           </div>
@@ -215,7 +213,7 @@ export default async function CommunityPage() {
             >
               <span aria-hidden="true">—</span>
               <div>
-                <p className={communityStyles.eyebrow}>MEMBER DIRECTORY</p>
+                <p className={communityStyles.eyebrow}>Member directory</p>
                 <h2>No member profiles are published yet.</h2>
                 <p>
                   The directory will show members once their role, committee,
@@ -228,13 +226,33 @@ export default async function CommunityPage() {
 
         <section className={communityStyles.cta}>
           <div className={communityStyles.container}>
-            <p className={communityStyles.ctaLabel}>
-              A PLACE FOR PEOPLE WHO WANT TO MAKE
-            </p>
-            <h2>Find your team.</h2>
-            <Link className={communityStyles.ctaLink} href="/tracks">
-              EXPLORE TRACKS <span aria-hidden="true">↗</span>
-            </Link>
+            <div className={communityStyles.ctaPanel}>
+              <div className={communityStyles.sectionLabel}>
+                <span className={communityStyles.sectionNumber}>05</span>
+                <span>Find your place</span>
+              </div>
+              <div className={communityStyles.ctaCopy}>
+                <h2>
+                  Find your team.
+                  <span className={communityStyles.ctaAccent} aria-hidden="true">
+                    <UsersRound size={24} strokeWidth={1.6} />
+                  </span>
+                </h2>
+                <p>
+                  Explore the published tracks and find a place to learn and
+                  contribute.
+                </p>
+                <Link className={communityStyles.ctaLink} href="/tracks">
+                  Explore tracks
+                  <span className={communityStyles.ctaArrow} aria-hidden="true">
+                    <ArrowUpRight size={17} strokeWidth={1.8} />
+                  </span>
+                </Link>
+              </div>
+              <span className={communityStyles.ctaIconTile} aria-hidden="true">
+                <UsersRound size={30} strokeWidth={1.4} />
+              </span>
+            </div>
           </div>
         </section>
       </div>

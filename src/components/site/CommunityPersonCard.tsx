@@ -1,5 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  Code2,
+  Crown,
+  FlaskConical,
+  Lightbulb,
+  Megaphone,
+  Palette,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import type { CSSProperties } from "react";
 import { getTrackTheme } from "@/lib/ui/track-theme";
 import styles from "./CommunityPersonCard.module.css";
@@ -10,7 +22,6 @@ export type CommunityPerson = {
   role: string;
   committee: string;
   summary: string;
-  image?: string;
 };
 
 type ThemeVars = CSSProperties & {
@@ -19,26 +30,51 @@ type ThemeVars = CSSProperties & {
   "--track-ink"?: string;
 };
 
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "?";
-  if (words.length === 1)
-    return Array.from(words[0]).slice(0, 2).join("").toUpperCase();
-  return words
-    .slice(0, 2)
-    .map((word) => Array.from(word)[0] ?? "")
-    .join("")
-    .toUpperCase();
+function PersonRoleIcon({ person }: { person: CommunityPerson }) {
+  const scope = `${person.role} ${person.committee} ${person.summary}`;
+  const iconProps = {
+    className: styles.roleIcon,
+    size: 82,
+    strokeWidth: 1.25,
+    "aria-hidden": true as const,
+  };
+
+  if (/\b(president|vice president|chair|leadership|director)\b/i.test(scope)) {
+    return <Crown {...iconProps} />;
+  }
+  if (/\b(research|r\s*&\s*d|innovation|laboratory)\b/i.test(scope)) {
+    return <FlaskConical {...iconProps} />;
+  }
+  if (/\b(public relations|pr|communication|media|social|content|marketing)\b/i.test(scope)) {
+    return <Megaphone {...iconProps} />;
+  }
+  if (/\b(event|operation|logistics|organizing)\b/i.test(scope)) {
+    return <CalendarDays {...iconProps} />;
+  }
+  if (/\b(human resources|hr|people|talent|recruitment)\b/i.test(scope)) {
+    return <UsersRound {...iconProps} />;
+  }
+  if (/\b(design|creative|visual|brand|art)\b/i.test(scope)) {
+    return <Palette {...iconProps} />;
+  }
+  if (/\b(finance|business|partnership|sponsor|treasurer)\b/i.test(scope)) {
+    return <BriefcaseBusiness {...iconProps} />;
+  }
+  if (/\b(education|learning|training)\b/i.test(scope)) {
+    return <Lightbulb {...iconProps} />;
+  }
+  if (/\b(code|coding|developer|development|software|web|technical|it)\b/i.test(scope)) {
+    return <Code2 {...iconProps} />;
+  }
+  return <UserRound {...iconProps} />;
 }
 
 export default function CommunityPersonCard({
   person,
   variant = "directory",
-  priority = false,
 }: {
   person: CommunityPerson;
   variant?: "leadership" | "directory";
-  priority?: boolean;
 }) {
   const theme = getTrackTheme(person.committee);
   const style: ThemeVars = {
@@ -47,6 +83,7 @@ export default function CommunityPersonCard({
     "--track-ink": theme.ink,
   };
   const summary = person.summary.trim();
+  const profileHref = `/community/${person.slug}`;
 
   return (
     <article
@@ -58,32 +95,13 @@ export default function CommunityPersonCard({
     >
       <Link
         className={styles.portraitLink}
-        href={`/community/${person.slug}`}
+        href={profileHref}
         aria-label={`View ${person.name}'s profile`}
       >
         <span className={styles.portrait}>
-          {person.image ? (
-            <Image
-              className={styles.image}
-              src={person.image}
-              alt={person.name}
-              width={420}
-              height={540}
-              sizes={
-                variant === "leadership"
-                  ? "(min-width: 1200px) 31vw, (min-width: 640px) 47vw, 92vw"
-                  : "(min-width: 1280px) 24vw, (min-width: 760px) 46vw, 92vw"
-              }
-              unoptimized
-              priority={priority}
-            />
-          ) : (
-            <span className={styles.fallback} aria-hidden="true">
-              {initials(person.name)}
-            </span>
-          )}
+          <PersonRoleIcon person={person} />
           <span className={styles.portraitMark} aria-hidden="true">
-            ↗
+            <ArrowUpRight size={19} strokeWidth={1.7} />
           </span>
         </span>
       </Link>
@@ -91,7 +109,7 @@ export default function CommunityPersonCard({
       <div className={styles.body}>
         <p className={styles.eyebrow}>
           <span className={styles.swatch} aria-hidden="true" />
-          <span>{person.committee || "IT CLUB"}</span>
+          <span>{person.committee || "IT Club"}</span>
           {theme.arabic ? (
             <span lang="ar" dir="rtl">
               · {theme.arabic}
@@ -99,20 +117,23 @@ export default function CommunityPersonCard({
           ) : null}
         </p>
         <h2 className={styles.name}>
-          <Link href={`/community/${person.slug}`}>
+          <Link href={profileHref}>
             {person.name}
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRight aria-hidden="true" size={18} strokeWidth={1.8} />
           </Link>
         </h2>
         {person.role ? <p className={styles.role}>{person.role}</p> : null}
         {summary ? (
           <div className={styles.focus}>
-            <span className={styles.focusLabel}>TEAM FOCUS</span>
+            <span className={styles.focusLabel}>Team focus</span>
             <p>{summary}</p>
           </div>
         ) : null}
-        <Link className={styles.profileLink} href={`/community/${person.slug}`}>
-          VIEW PROFILE <span aria-hidden="true">↗</span>
+        <Link className={styles.profileLink} href={profileHref}>
+          View profile
+          <span className={styles.profileArrow} aria-hidden="true">
+            <ArrowUpRight size={15} strokeWidth={1.8} />
+          </span>
         </Link>
       </div>
     </article>

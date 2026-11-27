@@ -130,3 +130,19 @@ Tracks تحتفظ باستعراضها ومشاهدها وقدراتها الم�
 ## تراكب صفحة Tracks مع scroll — 18 نوفمبر 2026
 
 مشاهد /tracks نفسها تصبح stacked GSAP slabs على desktop: اللوح التالي يصعد فوق السابق مع scrub وpin داخل الصفحة، بنفس التصميم الحالي وألوان المسارات. يعاد استخدام محرك stack المشترك بمحدد منفصل عن Home لمنع تهيئة مزدوجة، وتظل anchors/index والعودة إلى #slug صحيحة مع keyboard/reduced-motion. الأوصاف الطويلة قابلة للقراءة داخل اللوح ولا تقص، بينما compact/no-JS/reduced-motion يحتفظون بالأقسام في document flow. لا تغيير محتوى أو API/Auth/CMS أو نشر إنتاجي.
+
+## التصميم المعتمد النهائي — المرجع المصوّر 27 نوفمبر 2026
+
+هذا التوجيه هو المرجع الحالي ويتجاوز تفاصيل Hero والصور والـHome stack والـcontainers السابقة: الصفحة الرئيسية landing page/portfolio للنادي بنفس ترتيب وتكوين الصورة تقريبًا، باختلاف محتوى وألوان IT Club. تحليل الأجزاء والأبعاد محفوظ في `docs/editorial-reference.md`.
+
+**حركة التصميم:** editorial community landing، عناوين خفيفة متوسطة الوزن ومسطحات واسعة لا أسلوب SaaS داكن أو uppercase ضخم مضغوط. المبادئ: التكوين مطابق للمرجع؛ المحتوى منشور وصادق؛ سطح أساسي واحد full-width؛ الأيقونات والفراغات تحمل الهوية. فلسفة اللون: canvas أبيض `#fcfcfa`، حبر `#171c1b`، media رمادية `#eceeed`، Logo Teal `#28cdb7` مع teal ink `#087969` للنص المقروء؛ ألوان المسارات الأصلية لمسات مستقلة. لا غلاف رمادي خارجي ولا max-width مركزي يعطي إحساس container.
+
+**التخطيط:** Header capsules فوق Hero فيديو full-bleed، ثم About centered prose/inline icon pills، Tracks كfeature card كبيرة ومعها بطاقتان صغيرتان وتحكم فعلي يعرض جميع المسارات، Events split heading/gray media وقائمة أحداث حقيقية، Community intro مع بطاقتي أشخاص حقيقيين، CTA gray icon scene يتوسطه message panel أبيض، Footer ليلي بالحجم والتوزيع المرجعي. لا قسم Identity منفصل أو صور stock. لوحة Tracks المستقلة تبقى rich scroll showcase متناسقة، لكن Home stack السابق يحل محله تكوين cards في الصورة الأخيرة.
+
+**العناصر المميزة:** circles/capsules للـsection numbers والأزرار، lucide icons على أسطح رمادية بكل مواضع الصور غير Hero، بطاقات asymmetrical بحواف بسيطة. Hero يحتوي فيديو تجريدي تقني أصلي عن المواد والدوائر الإلكترونية، لا تصويرًا مزعومًا لفعالية أو أعضاء النادي؛ ملف MP4 حقيقي مع poster مقتبس منه، pause control وتوقف خارج الشاشة/عند إخفاء الصفحة وreduced-motion. لا تُستخدم الصورة المرجعية كأصل داخل الموقع.
+
+**الحركة والتفاعل:** GSAP masked headline entrances، video parallax معتدل، About symbols drift/word accents، انتقالات carousel فعلية وscroll card lifts، stagger اجتماعي، CTA panel reveal وsymbol rotation؛ لا opacity scrub يبهت نصًا مقروءًا ولا pin طويل يغيّر نسب مرجع Home. احترام keyboard/touch/reduced-motion، وكل البيانات في DOM. العربية لمسات صحيحة لا نسخة منفصلة.
+
+**الطباعة:** Montserrat 400–500 للعناوين، 400–500 للنص و600 metadata، tracking نحو -0.055em وline-height نحو1.03؛ Alexandria للنص العربي. Essence: student-led technology community turning curiosity into shared practice؛ curious / collaborative / deliberate. Voice: مباشر ودود بلا إنجازات مختلقة؛ “Curiosity deserves a community.” و“Find your people. Make something matter.”. Wordmark: شعار النادي القائم مع IT Club في capsule نظيف، Signature color Logo Teal.
+
+**الهيكل والتنفيذ:** Home يقسم إلى `HomeHero`/`HeroVideo` و`EditorialHome` و`EditorialHomeMotion`، CSS Modules مع طبقة `public-editorial.css` للصفحات العامة، وHeader/Footer modules. تعدّل Community/Tracks/Events/Sponsors/Alumni/Contact بملفات ميزاتها لتتبع اللغة نفسها، وتحافظ على published content/filter/search/anchors والتواصل الفعلي. Profile والـcustom content/legal تأخذ shell/type النظام المشترك. عمليات Interview/Admin/Student/APIs/Supabase تظل untouched؛ لا migrations أو نشر إنتاجي. يُحفظ checkpoint المعاينة وفرع GitHub الموجود فقط بعد فحوص المصدر.

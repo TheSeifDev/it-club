@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { HomeHero } from "@/src/components/site/HomeHero";
 import { HomeScrollRail } from "@/src/components/site/HomeScrollRail";
 import { EditorialHome } from "@/src/components/site/EditorialHome";
+import { editorialEvents } from "@/src/components/site/editorial-events";
 import { SiteFrame, SiteUnavailable } from "@/src/components/site/SiteUI";
 import { getTrackTheme } from "@/lib/ui/track-theme";
 import {
   activeAnnouncements,
   displayResponsibilities,
-  formatEventDate,
-  publicEventTimeline,
   publicMembers,
   publicMetadata,
   publicSponsors,
@@ -53,15 +52,7 @@ export default async function HomePage() {
       ink: theme.ink,
     };
   });
-  const timeline = publicEventTimeline(content.events);
-  const eventMode = timeline.upcoming.length ? "upcoming" : timeline.archive.length ? "archive" : "undated";
-  const events = (eventMode === "upcoming" ? timeline.upcoming : eventMode === "archive" ? timeline.archive : timeline.undated).slice(0, 4).map((event) => ({
-    id: event.id,
-    slug: event.slug,
-    title: event.data.title,
-    date: formatEventDate(event.data.date),
-    summary: event.data.summary,
-  }));
+  const { events, eventMode } = editorialEvents(content.events);
   const partners = publicSponsors(content.sponsors).map((partner) => ({
     id: partner.id,
     name: partner.data.title,

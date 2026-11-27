@@ -66,3 +66,102 @@ process.on("exit", () => {
   }
   globalThis.fetch = originalFetch;
 });
+
+// Home presentation tests use fixtures only; they never publish or mutate CMS records.
+import { editorialEvents } from "../src/components/site/editorial-events.ts";
+
+function eventFixture(slug: string, data: ContentEntry["data"], overrides: Partial<ContentEntry> = {}): ContentEntry {
+  return {
+    id: slug, slug, kind: "event", status: "published", sort_order: 1, featured: false,
+    publish_at: null, unpublish_at: null, revision: 1, data, ...overrides,
+  };
+}
+
+const eventNow = Date.parse("2026-11-27T12:00:00Z");
+
+describe("Home featured-event presentation data", () => {
+  it("selects the nearest published upcoming date, never drafts or other content kinds", () => {
+    const result = editorialEvents([
+      eventFixture("later", { title: "Later", date: "2027-01-10" }, { featured: true }),
+      eventFixture("nearest", { title: "Nearest", date: "2026-11-28" }),
+      eventFixture("draft", { title: "Draft", date: "2026-11-27" }, { status: "draft" }),
+      eventFixture("archived", { title: "Archived", date: "2026-11-27" }, { status: "archived" }),
+      eventFixture("track", { title: "Track", date: "2026-11-27" }, { kind: "track" }),
+      eventFixture("past", { title: "Past", date: "2026-11-20" }),
+      eventFixture("undated", { title: "Undated" }),
+    ], eventNow);
+    assert.equal(result.eventMode, "upcoming");
+    assert.deepEqual(result.events.map((event) => event.slug), ["nearest", "later"]);
+  });
+
+  it("keeps same-day dates upcoming and calendar badges consistent with Cairo timestamps", () => {
+    const { events } = editorialEvents([
+      eventFixture("same-day", { title: "Same day", date: "2026-11-27" }),
+      eventFixture("cairo", { title: "Cairo", date: "2026-11-27T23:30:00Z" }),
+    ], eventNow);
+    assert.equal(events[0].date, "27 November 2026");
+    assert.equal(events[0].dateTime, "2026-11-27");
+    assert.equal(events[0].day, "27");
+    assert.equal(events[1].date, "28 November 2026");
+    assert.equal(events[1].day, "28");
+    assert.equal(events[1].month, "Nov");
+    assert.equal(events[1].year, "2026");
+  });
+
+  it("preserves approved optional details and filters unsafe image and event URLs", () => {
+    const { events } = editorialEvents([
+      eventFixture("approved", { title: "Approved", date: "2026-11-28", time: " 14:00 ", location: " BATU ", category: " Workshop ", summary: " A summary ", image: "https://example.invalid/event.webp", href: "https://example.invalid/event" }),
+      eventFixture("unsafe", { title: "Unsafe", date: "2026-11-29", image: "javascript:alert(1)", href: "//example.invalid" }),
+      eventFixture("local", { title: "Local", date: "2026-11-30", image: "/events/approved.webp", href: "/events/local" }),
+    ], eventNow);
+    assert.equal(events[0].image, "https://example.invalid/event.webp");
+    assert.equal(events[0].href, "https://example.invalid/event");
+    assert.equal(events[0].time, "14:00");
+    assert.equal(events[0].location, "BATU");
+    assert.equal(events[0].category, "Workshop");
+    assert.equal(events[0].summary, "A summary");
+    assert.equal(events[1].image, undefined);
+    assert.equal(events[1].href, undefined);
+    assert.equal(events[2].image, "/events/approved.webp");
+    assert.equal(events[2].href, "/events/local");
+  });
+
+  it("uses newest-first archive mode rather than calling past events upcoming", () => {
+    const result = editorialEvents([
+      eventFixture("older", { title: "Older", date: "2026-10-01" }),
+      eventFixture("recent", { title: "Recent", date: "2026-11-20" }),
+      eventFixture("undated", { title: "Undated" }),
+    ], eventNow);
+    assert.equal(result.eventMode, "archive");
+    assert.deepEqual(result.events.map((event) => event.slug), ["recent", "older"]);
+  });
+
+  it("does not invent a date, image, venue, category, or external link for undated events", () => {
+    const result = editorialEvents([
+      eventFixture("no-date", { title: "No date" }),
+      eventFixture("unusable-date", { title: "Unusable date", date: "To be confirmed" }),
+      eventFixture("impossible-date", { title: "Impossible date", date: "2027-02-30" }),
+      eventFixture("invalid-time", { title: "Invalid timestamp", date: "2027-02-01Tinvalid" }),
+    ], eventNow);
+    assert.equal(result.eventMode, "undated");
+    for (const event of result.events) {
+      assert.equal(event.date, "Date not listed");
+      for (const field of ["dateTime", "day", "month", "year", "image", "time", "location", "category", "href"] as const) {
+        assert.equal(event[field], undefined);
+      }
+    }
+  });
+
+  it("keeps the empty state honest and limits the Home excerpt to four real links", () => {
+    assert.deepEqual(editorialEvents([], eventNow), { events: [], eventMode: "undated" });
+    const invalid = [
+      eventFixture("not/a/slug", { title: "Invalid", date: "2026-11-28" }),
+      eventFixture("empty-title", { title: "   ", date: "2026-11-28" }),
+      eventFixture("not-yet-published", { title: "Future publication", date: "2026-11-28" }, { publish_at: "2999-01-01T00:00:00Z" }),
+      eventFixture("expired", { title: "Expired", date: "2026-11-28" }, { unpublish_at: "2000-01-01T00:00:00Z" }),
+    ];
+    assert.deepEqual(editorialEvents(invalid, eventNow).events, []);
+    const entries = Array.from({ length: 6 }, (_, index) => eventFixture(`event-${index}`, { title: `Event ${index}`, date: `2026-12-0${index + 1}` }));
+    assert.equal(editorialEvents(entries, eventNow).events.length, 4);
+  });
+});

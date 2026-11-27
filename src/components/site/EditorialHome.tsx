@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { gsap } from "./motion/gsap";
 import type { EditorialEvent, EditorialPartner, EditorialPerson, EditorialTrack } from "./editorial-types";
+import { HomeEvents } from "./HomeEvents";
 
 // Static Tailwind v4 utilities keep this public page themeable without a CSS module.
 const styles = {
@@ -42,21 +43,6 @@ const styles = {
   previous: "grid size-[45px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background,transform] duration-200 hover:translate-x-[2px] hover:bg-[rgb(40_205_183_/_20%)] disabled:transform-none disabled:cursor-default disabled:opacity-[.35] motion-reduce:hover:translate-x-0 max-[520px]:size-10",
   next: "grid size-[45px] place-items-center rounded-full border border-[var(--site-glass-border)] bg-[rgb(40_205_183_/_14%)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[background,transform] duration-200 hover:translate-x-[2px] hover:bg-[rgb(40_205_183_/_20%)] disabled:transform-none disabled:cursor-default disabled:opacity-[.35] motion-reduce:hover:translate-x-0 max-[520px]:size-10",
   trackDescription: "mt-auto ml-auto w-[51%] pt-[34px] [&_p]:m-0 [&_p]:text-[.78rem] [&_p]:leading-[1.65] [&_p]:tracking-[-.025em] [&_p]:text-[var(--site-copy)] [&_a]:mt-[13px] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-2 [&_a]:text-[.69rem] [&_a]:text-[var(--site-sky-ink)] max-[800px]:ml-0 max-[800px]:w-[68%] max-[800px]:pt-6 max-[520px]:w-full",
-  events: "scroll-mt-[88px] border-t-0 bg-transparent px-[var(--site-gutter)] pt-[65px] pb-[74px] text-[var(--site-ink)] max-[520px]:pt-[44px] max-[520px]:pb-[46px]",
-  eventsGrid: "mt-[35px] grid grid-cols-[1fr_1.2fr] gap-[clamp(46px,8vw,140px)] max-[1100px]:gap-[50px] max-[800px]:grid-cols-1 max-[800px]:gap-9",
-  eventsIntro: "[&_h2]:m-0 [&_h2]:text-[clamp(2rem,3.8vw,4.5rem)] [&_h2]:font-normal [&_h2]:leading-[1.08] [&_h2]:tracking-[-.068em] [&_h2>span]:text-[var(--site-sky-ink)] [&>p]:mt-[26px] [&>p]:mb-0 [&>p]:max-w-[410px] [&>p]:text-[.82rem] [&>p]:leading-[1.7] [&>p]:tracking-[-.025em] [&>p]:text-[var(--site-copy)] max-[800px]:[&>p]:max-w-none max-[520px]:[&_h2]:text-[2.15rem]",
-  eventLandscape: "mt-[47px] grid min-h-[clamp(220px,23vw,360px)] place-items-center content-center gap-[30px] rounded-2xl border border-[var(--site-glass-border)] bg-[var(--site-glass)] text-[var(--site-sky-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] [&>span]:text-[.6rem] [&>span]:tracking-[.12em] [&>span]:text-[var(--site-copy)] max-[800px]:mt-[30px] max-[800px]:min-h-[225px]",
-  eventList: "pt-[6px]",
-  eventRow: "grid grid-cols-[26px_1fr_38px] items-center gap-[14px] py-[21px] [&_h3]:m-0 [&_h3]:text-[clamp(1.2rem,2.25vw,2.8rem)] [&_h3]:font-normal [&_h3]:leading-[1.15] [&_h3]:tracking-[-.065em] max-[800px]:[&_h3]:text-[clamp(1.6rem,4.8vw,2.2rem)]",
-  eventExpanded: "grid-cols-[26px_1fr_118px] items-start pt-0 pb-7 max-[1100px]:grid-cols-[21px_1fr_88px] max-[800px]:grid-cols-[24px_1fr_96px] max-[520px]:grid-cols-[18px_1fr_69px] max-[520px]:gap-[10px]",
-  eventNumber: "self-start pt-[5px] text-[.69rem] text-[var(--site-copy)]",
-  eventDate: "mt-[14px] mb-0 text-[.65rem] text-[var(--site-sky-ink)]",
-  eventSummary: "mt-[10px] mb-0 text-[.77rem] leading-[1.7] text-[var(--site-copy)] max-[520px]:text-[.7rem]",
-  detailLink: "mt-[22px] inline-flex min-h-[39px] items-center gap-[10px] rounded-full border border-[var(--site-glass-border)] px-[14px] text-[.66rem]",
-  eventThumbnail: "mt-[10px] grid size-[118px] place-items-center rounded-[15px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] text-[var(--site-copy)]! shadow-[inset_0_1px_0_var(--site-glass-highlight)] max-[1100px]:size-[88px] max-[1100px]:h-[100px] max-[800px]:size-[96px] max-[800px]:h-[106px] max-[520px]:size-[69px] max-[520px]:h-[82px] max-[520px]:[&_svg]:w-[37px]",
-  eventArrow: "relative grid size-9 place-items-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-soft)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] [&>svg:first-child]:hidden",
-  eventCta: "mt-[26px] flex justify-end",
-  eventEmpty: "flex min-h-[310px] flex-col justify-center rounded-2xl border border-[var(--site-glass-border)] bg-[var(--site-glass)] p-8 text-[var(--site-copy)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_24px_70px_rgb(0_0_0_/_24%)] [&_h3]:mt-[26px] [&_h3]:mb-3 [&_h3]:text-[clamp(1.6rem,2.8vw,3rem)] [&_h3]:font-normal [&_h3]:leading-[1.07] [&_h3]:tracking-[-.055em] [&_h3]:text-[var(--site-ink)] [&_p]:max-w-[400px] [&_p]:text-[.82rem] [&_p]:leading-[1.8] [&_p]:text-[var(--site-copy)] max-[520px]:min-h-[275px] max-[520px]:p-[25px]",
   community: "scroll-mt-[88px] border-t-0 bg-transparent px-[var(--site-gutter)] pt-[68px] pb-[54px] text-[var(--site-ink)] max-[520px]:pt-[44px] max-[520px]:pb-[46px]",
   peopleGrid: "mt-[37px] grid grid-cols-[.95fr_2fr] gap-7 max-[1100px]:grid-cols-[.85fr_2fr] max-[1100px]:gap-5 max-[800px]:grid-cols-1 max-[800px]:gap-[30px]",
   peopleIntro: "flex min-w-0 flex-col justify-between gap-[68px] [&_h2]:m-0 [&_h2]:text-[clamp(2rem,3.5vw,4.2rem)] [&_h2]:font-normal [&_h2]:leading-[1.08] [&_h2]:tracking-[-.068em] max-[800px]:grid max-[800px]:grid-cols-[auto_1fr] max-[800px]:items-end max-[800px]:gap-[30px] max-[800px]:[&_h2]:text-[clamp(1.8rem,4.5vw,3rem)] max-[520px]:gap-[17px] max-[520px]:[&_h2]:text-[1.75rem]",
@@ -261,25 +247,7 @@ export function EditorialHome({ tracks, people, events, eventMode, partners, not
         <TrackCarousel tracks={tracks} />
       </section>
 
-      <section className={styles.events} id="home-events" aria-labelledby="home-events-title" data-editorial-events>
-        <Chapter number="03">Events</Chapter>
-        <div className={styles.eventsGrid}>
-          <div className={styles.eventsIntro} data-editorial-reveal>
-            <h2 id="home-events-title"><span>Ideas, in action.</span><br />{eventMode === "upcoming" ? "What’s coming up." : eventMode === "archive" ? "From the club archive." : "Around the club."}</h2>
-            <p>{eventMode === "upcoming" ? "Published dates and details, so you know where to find us next." : eventMode === "archive" ? "A look at our published past events. New dates appear here when they are announced." : "Published events and sessions from the community. Dates appear when confirmed."}</p>
-            <div className={styles.eventLandscape} aria-hidden="true" data-editorial-symbol><CalendarDays size={110} strokeWidth={.85} /><span>LEARN / CONNECT / MAKE</span></div>
-          </div>
-          <div className={styles.eventList}>
-            {events.map((event, index) => <article key={event.id} className={`${styles.eventRow} ${index === 0 ? styles.eventExpanded : ""}`} data-editorial-reveal>
-              <span className={styles.eventNumber}>{String(index + 1).padStart(2, "0")}.</span>
-              <div><h3><Link href={`/events/${event.slug}`}>{event.title}</Link></h3>{index === 0 ? <><p className={styles.eventDate}>{event.date}</p>{event.summary ? <p className={styles.eventSummary}>{event.summary}</p> : null}<Link href={`/events/${event.slug}`} className={styles.detailLink}>View details <ArrowUpRight size={13} aria-hidden="true" /></Link></> : null}</div>
-              <Link href={`/events/${event.slug}`} className={index === 0 ? styles.eventThumbnail : styles.eventArrow} aria-label={`View ${event.title}`}><CalendarDays size={index === 0 ? 52 : 16} strokeWidth={1.1} aria-hidden="true" />{index !== 0 ? <ArrowUpRight size={17} aria-hidden="true" /> : null}</Link>
-            </article>)}
-            {!events.length ? <div className={styles.eventEmpty}><CalendarDays size={39} strokeWidth={1.2} aria-hidden="true" /><h3>Something worth showing up for.</h3><p>No event listing has been published yet. Follow the events page for confirmed updates.</p></div> : null}
-            <div className={styles.eventCta}><PillLink href="/events">All events</PillLink></div>
-          </div>
-        </div>
-      </section>
+      <HomeEvents events={events} eventMode={eventMode} />
 
       <section className={styles.community} id="home-community" aria-labelledby="home-community-title" data-editorial-community>
         <Chapter number="04">Community</Chapter>

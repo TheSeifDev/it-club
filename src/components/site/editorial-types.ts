@@ -24,6 +24,15 @@ export type EditorialEvent = {
   slug: string;
   title: string;
   date: string;
+  dateTime?: string;
+  day?: string;
+  month?: string;
+  year?: string;
+  time?: string;
+  location?: string;
+  category?: string;
+  image?: string;
+  href?: string;
   summary?: string;
 };
 

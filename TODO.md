@@ -241,3 +241,11 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 ### دليل متابعة المرجع — 27 نوفمبر 2026، الساعة20:13
 
 في Preview `1280×1100` الرابط النشط Partners بارتفاع47px/radius12px وحد Logo Teal `rgb(82,232,209)` وخط أبيض؛ hover أبيض مع نص `rgb(5,7,10)`. قائمة الموبايل المفتوحة فُحصت بأحداث synthetic في DOM: خلفية `rgb(5,7,10)` بلا backdrop/full viewport، ستة روابط نصية68px وفاصلان1px بلون ink38%، Focus على About وEscape/scroll lock يعملان. لقطة Webdev عند375×812 أكدت محاذاة الـlogo وزر menu وعدم قص أفقي ظاهر في الحالة المقفولة؛ أداة اللقطة لا تفتح القائمة وليست تجربة جهاز مادي. TypeScript وESLint المركّز وpure tests29/29 وبناء Next.js16.3.8 وdiff-check نجحت؛ HTTP200 لـPartners والـmanifest. لا تغييرات تطبيق بعد آخر build.
+
+## تصحيح Navbar حسب طلب20:19–20:20 — 27 نوفمبر 2026
+
+هذا الطلب يلغي الخط الأبيض أسفل active desktop والفواصل البيضاء في mobile التي أضيفت في الجولة السابقة. الروابط desktop تصبح pill بنفس تدوير اللوجو، من دون underline أو border مرئي على الروابط غير النشطة، مع إبقاء active Teal والـwhite-rise hover. قائمة الموبايل تحتفظ بالخلفية الصلبة الكاملة، ويعود subtitle عربي تحت كل رابط مع مسافات موحدة ومريحة بين العنوان والـsubtitle وبين الصفوف.
+
+- [x] إزالة underline والإطارات البيضاء من desktop؛ radius كبسولة مثل اللوجو، وإبقاء تمييز Teal والـhover الأبيض الصاعد.
+- [x] إزالة الفواصل البيضاء في mobile وإضافة subtitle عربي لكل الروابط الستة مع ضبط padding/gap/line-height والحفاظ على close/Escape/focus trap/scroll lock والروابط الحالية.
+- [x] تعديل SiteHeader والتوثيق فقط؛ لا Footer أو مسارات محمية/بيانات، ولا نشر. حفظ Manus checkpoint ومزامنة فرع GitHub refactor المحدد فقط.

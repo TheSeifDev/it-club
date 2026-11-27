@@ -131,7 +131,7 @@ export function HomeScrollRail() {
           >
             <span
               aria-hidden="true"
-              className="block h-[2px] w-3 bg-[#606060] transition-[width,background-color] duration-150 group-data-[active=true]:w-8 group-data-[active=true]:bg-[#ff3930] motion-reduce:transition-none"
+              className="block h-[2px] w-3 bg-[#606060] transition-[width,background-color] duration-150 group-data-[active=true]:w-8 group-data-[active=true]:bg-[var(--site-sky)] motion-reduce:transition-none"
             />
             <span
               aria-hidden="true"

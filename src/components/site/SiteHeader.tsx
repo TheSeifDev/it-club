@@ -18,7 +18,7 @@ const wordmarkClass =
 const navClass =
   "flex items-center gap-[7px] bg-transparent p-0 max-[1039px]:hidden";
 const navLinkClass =
-  "inline-flex h-11 items-center justify-center rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass)] px-[15px] text-[.69rem] font-normal !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[color,background-color,border-color] duration-200 min-[1040px]:backdrop-blur-[6px] min-[1040px]:backdrop-saturate-[140%] hover:border-[var(--site-glass-highlight)] hover:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass-strong))] aria-[current=page]:border-[var(--site-glass-highlight)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass-strong))] group-data-[tone=film]:bg-[var(--site-glass-strong)] group-data-[tone=film]:hover:bg-[color-mix(in_srgb,var(--site-sky)_16%,var(--site-glass-strong))] group-data-[tone=film]:aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_16%,var(--site-glass-strong))] motion-reduce:transition-none";
+  "relative isolate inline-flex h-[47px] items-center justify-center overflow-hidden rounded-[12px] border border-[var(--site-glass-border)] bg-[var(--site-glass)] px-[15px] text-[.69rem] font-normal !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight)] transition-[color,border-color] duration-300 before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:border-white hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:border-white focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] aria-[current=page]:border-[var(--site-glass-highlight)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass-strong))] motion-reduce:transition-none";
 const contactClass =
   "inline-flex h-[49px] shrink-0 items-center gap-[10px] rounded-full border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] py-[5px] pr-[5px] pl-[17px] text-[.75rem] font-normal tracking-[-.045em] !text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_12px_38px_rgb(0_0_0_/_24%)] transition-[background-color,border-color] duration-200 min-[1040px]:backdrop-blur-[6px] min-[1040px]:backdrop-saturate-[145%] hover:border-[var(--site-sky-ink)] hover:bg-[var(--site-sky)] hover:!text-[var(--site-paper)] max-[1130px]:text-[.7rem] max-[1039px]:hidden motion-reduce:transition-none";
 const contactArrowClass =
@@ -28,7 +28,7 @@ const toggleClass =
 const mobileClass =
   "absolute top-[66px] right-[var(--site-gutter)] left-[var(--site-gutter)] max-h-[calc(100svh_-_122px)] overflow-y-auto rounded-[18px] border border-[var(--site-glass-border)] bg-[var(--site-glass-strong)] p-[15px] text-[var(--site-ink)] shadow-[inset_0_1px_0_var(--site-glass-highlight),0_20px_70px_rgb(0_0_0_/_38%)] max-[520px]:top-[63px] max-[520px]:p-[10px]";
 const mobileLinkClass =
-  "flex items-center justify-between gap-5 rounded-[13px] px-4 py-[13px] hover:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass))] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass))]";
+  "group relative isolate flex items-center justify-between gap-5 overflow-hidden rounded-[12px] px-4 py-[13px] text-[var(--site-ink)] before:absolute before:inset-0 before:z-0 before:translate-y-full before:rounded-[inherit] before:bg-white before:transition-transform before:duration-300 before:ease-out hover:before:translate-y-0 hover:!text-[var(--site-night)] focus-visible:before:translate-y-0 focus-visible:!text-[var(--site-night)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-sky-ink)] aria-[current=page]:bg-[color-mix(in_srgb,var(--site-sky)_14%,var(--site-glass))] motion-reduce:before:transition-none";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -36,19 +36,6 @@ export default function SiteHeader() {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const header = headerRef.current;
-    const hero = document.querySelector("[data-editorial-hero]");
-    if (!header) return;
-    if (!hero) { header.dataset.tone = "paper"; return; }
-    const observer = new IntersectionObserver(([entry]) => {
-      header.dataset.tone = entry.isIntersecting ? "film" : "paper";
-    }, { rootMargin: "-75px 0px 0px 0px", threshold: 0 });
-    observer.observe(hero);
-    return () => observer.disconnect();
-  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,7 +81,7 @@ export default function SiteHeader() {
   }, [open]);
 
   return (
-    <header ref={headerRef} className={headerClass} data-tone={pathname === "/" ? "film" : "paper"}>
+    <header className={headerClass}>
       <div className={innerClass}>
         <Link
           className={brandClass}
@@ -118,7 +105,7 @@ export default function SiteHeader() {
                 isSitePageActive(pathname, link.href) ? "page" : undefined
               }
             >
-              {link.label}
+              <span className="relative z-10">{link.label}</span>
             </Link>
           ))}
         </nav>
@@ -162,23 +149,23 @@ export default function SiteHeader() {
               }
               onClick={() => setOpen(false)}
             >
-              <span>
+              <span className="relative z-10">
                 <strong className="block text-[1.15rem] font-medium tracking-[-.05em]">{link.label}</strong>
-                <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)]" lang="ar" dir="rtl">
+                <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" lang="ar" dir="rtl">
                   {link.arabic}
                 </small>
               </span>
-              <ArrowUpRight className="text-[var(--site-sky-ink)]" size={18} aria-hidden="true" />
+              <ArrowUpRight className="relative z-10 text-[var(--site-sky-ink)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" size={18} aria-hidden="true" />
             </Link>
           ))}
           <Link className={mobileLinkClass} href="/contact" onClick={() => setOpen(false)}>
-            <span>
+            <span className="relative z-10">
               <strong className="block text-[1.15rem] font-medium tracking-[-.05em]">Contact</strong>
-              <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)]" lang="ar" dir="rtl">
+                <small className="mt-[5px] block w-fit text-[.7rem] text-[var(--site-mist)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" lang="ar" dir="rtl">
                 تواصل معنا
               </small>
             </span>
-            <ArrowUpRight className="text-[var(--site-sky-ink)]" size={18} aria-hidden="true" />
+            <ArrowUpRight className="relative z-10 text-[var(--site-sky-ink)] group-hover:text-[var(--site-night)] group-focus-visible:text-[var(--site-night)]" size={18} aria-hidden="true" />
           </Link>
         </nav>
       </div>

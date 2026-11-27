@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Alexandria, Montserrat } from "next/font/google";
+import PublicPageTransition from "@/src/components/site/PublicPageTransition";
 import "./globals.css";
 
 // CMS snapshots and authentication configuration are runtime concerns. A build
@@ -77,7 +78,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${montserrat.variable} ${alexandria.variable} motion-reduce:scroll-auto!`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PublicPageTransition />
+      </body>
     </html>
   );
 }

@@ -205,3 +205,14 @@ Preview أثبت عند desktop `1280×1100` أن كلمات About تبدأ `0%`
 ### دليل تصحيح اللون
 
 - استُخدم token الموقع نفسه `--site-sky` (`#28cdb7`)، وPreview حسب العلامة النشطة `rgb(40, 205, 183)` بعرض32px وارتفاع2px؛ العلامات الخمس غير النشطة بقيت `rgb(96, 96, 96)` بعرض12px. لا أثر لكلاس الأحمر، والروابط الستة والسلوك محفوظان. TypeScript وESLint المركّز والبناء الإنتاجي و`git diff --check` نجحت؛ لا نشر أو تغييرات بيانات.
+
+## Navbar وpage transition — طلب المستخدم 27 نوفمبر 2026، الساعة19:29
+
+- [x] **تحسين Navbar مع hover fill white دائري خفيف من تحت لفوق.** الحفاظ على الروابط والـmobile menu واللغة، مع ملء أبيض بصري مقوّس يصعد من أسفل link وكلام داكن مقروء عند hover/focus، وأبعاد ومحاذاة متوازنة. التنفيذ Tailwind وحركة transform خفيفة مع reduced-motion؛ لا background blur جديد عند السكرول.
+- [x] **عند تبديل الصفحات انتقال بلاطات هندسية من فوق لتحت بألوان الموقع أو Matrix.** الاختيار الحالي بلاطات هندسية مستوحاة من الصور المرفقة مع ألوان Logo Teal/درجات الموقع الداكنة لا الأحمر، تغطي الصفحة القديمة ثم تكشف الجديدة بالتتابع الرأسي. يعمل مع روابط الصفحات العامة، بدون تعطيل anchors داخل الصفحة أو روابط خارجية/new-tab/download أو Admin/Interview/Student/Auth/APIs، مع cleanup وreduced-motion وحماية من overlay عالقة وفشل التنقل. لا نشر أو تغييرات بيانات؛ checkpoint Manus وفرع GitHub refactor فقط.
+
+### دليل التنفيذ والتحقق
+
+- Hover Preview على سطح مكتب `1280×1100`: الرابط 47px ارتفاعًا؛ المؤشر فوق Tracks أظهر fill أبيض `rgb(255,255,255)` ونصًا داكنًا `rgb(5,7,10)`. حُفظت الروابط الدلالية وactive state وقفل mobile menu/focus trap، وأزيل تبدل لون header المرتبط بالسكرول. لم يُختبر هذا التغيير على جهاز موبايل فعلي.
+- تنقل فعلي Home→Tracks في Preview: `cover` بالبلاطات لمدة نحو600ms ثم `hold`، وعند تحديث المسار بدأ `reveal`؛ عاد الـoverlay إلى `idle/hidden` بعد نحو1.3s، مع154 سداسيًا ممتدة خارج حواف viewport. `history.back()` نفّذ reveal إلى Home ثم أعاد الطبقة `idle/hidden`؛ رابط About إلى `/#about` غيّر hash والتمرير مع بقاء transition مخفيًا.
+- `npm run test:pure`: 29/29؛ اختبارات transition الجديدة والمنفصلة: 5 حالات إضافية. `npx tsc --noEmit` وESLint للملفات المتغيرة و`git diff --check` مرّت؛ `npm run build` أنتج مسارات Next.js16.3.8 بنجاح. اختُبرت قواعد الحماية للمسارات المحمية والتعديلات والروابط الخارجية/download/reduced-motion في pure tests؛ لم تُفعّل تفضيلات reduced-motion مباشرة في browser. لا نشر أو تغييرات بيانات/APIs.
